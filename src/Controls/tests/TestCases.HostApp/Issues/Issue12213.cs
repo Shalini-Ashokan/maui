@@ -29,7 +29,7 @@ namespace Maui.Controls.Sample.Issues
 
 		private void TapGestureRecognizer_Tapped(object sender, TappedEventArgs e)
 		{
-			Label label = new Label { Text = "Tapped" }; 
+			Label label = new Label { Text = "Tapped" };
 			if (Content is Layout layout)
 			{
 				layout.Children.Add(label);
