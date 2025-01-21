@@ -77,8 +77,8 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 			_navigationArea = PlatformInterop.CreateNavigationBarArea(context, _outerLayout);
 			_bottomView = PlatformInterop.CreateNavigationBar(context, Resource.Attribute.bottomNavigationViewStyle, _outerLayout, this);
 
-			if (ShellItem is null || ShellItem.CurrentItem is null)
-				return _outerLayout;
+			if (ShellItem is null)
+				throw new InvalidOperationException("Active Shell Item not set. Have you added any Shell Items to your Shell?");
 
 			if (ShellItem.CurrentItem is null)
 				throw new InvalidOperationException($"Content not found for active {ShellItem}. Title: {ShellItem.Title}. Route: {ShellItem.Route}.");

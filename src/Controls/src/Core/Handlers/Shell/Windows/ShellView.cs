@@ -195,11 +195,6 @@ namespace Microsoft.Maui.Controls.Platform
 		{
 			var navItems = FlyoutItems.OfType<NavigationViewItemViewModel>();
 
-			if (newItem == null)
-			{
-				return;
-			}
-
 			// Implicit items aren't items that are surfaced to the user 
 			// or data structures. So, we just want to find the element
 			// the user defined on Shell
