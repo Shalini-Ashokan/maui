@@ -215,6 +215,18 @@ namespace Microsoft.Maui.Controls.Platform
 			if (shouldAddTouchEvent)
 			{
 				platformView.Touch += OnPlatformViewTouched;
+				if (platformView is MauiScrollView mauiScrollView)
+				{
+					for (int i = 0; i < mauiScrollView.ChildCount; i++)
+					{
+						var child = mauiScrollView.GetChildAt(i);
+						if (child != null)
+						{
+							child.Touch -= OnPlatformViewTouched;
+							child.Touch += OnPlatformViewTouched;
+						}
+					}
+				}
 			}
 		}
 
