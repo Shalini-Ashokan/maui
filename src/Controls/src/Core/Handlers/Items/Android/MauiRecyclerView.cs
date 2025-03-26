@@ -392,12 +392,6 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 
 			var position = DetermineTargetPosition(args);
 
-			bool hasHeader = ItemsViewAdapter.ItemsSource.HasHeader;
-			if (hasHeader)
-			{
-				position += 1;
-			}
-
 			if (args.IsAnimated)
 			{
 				ScrollHelper.AnimateScrollToPosition(position, args.ScrollToPosition);
