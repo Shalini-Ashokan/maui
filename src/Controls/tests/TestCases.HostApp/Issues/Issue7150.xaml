@@ -1,0 +1,60 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Maui.Controls.Sample.Issues.Issue7150"
+             xmlns:local="clr-namespace:Maui.Controls.Sample.Issues"
+             Title="Main Page">
+
+  <Grid RowDefinitions="Auto, *">
+    <StackLayout Margin="20">
+      <SearchBar
+             AutomationId="SearchBar"
+             SearchCommand="{Binding FilterCommand}"
+             SearchCommandParameter="{Binding Source={RelativeSource Self}, Path=Text}"
+             Placeholder="Filter" />
+    </StackLayout>
+    <CarouselView Grid.Row="1" ItemsSource="{Binding Monkeys}">
+      <CarouselView.EmptyView>
+        <local:FilterData Filter="{Binding Source={x:Reference searchBar}, Path=Text}" />
+      </CarouselView.EmptyView>
+      <CarouselView.EmptyViewTemplate>
+        <DataTemplate>
+          <Label Text="{Binding Filter, StringFormat='Your filter term of {0} did not match any records.'}"
+                     Margin="10,25,10,10"
+                     FontAttributes="Bold"
+                     FontSize="18"
+                     HorizontalOptions="Fill"
+                     HorizontalTextAlignment="Center" />
+        </DataTemplate>
+      </CarouselView.EmptyViewTemplate>
+      <CarouselView.ItemTemplate>
+        <DataTemplate>
+          <StackLayout>
+            <Frame HasShadow="True"
+                         BorderColor="DarkGray"
+                         CornerRadius="5"
+                         Margin="20"
+                         HeightRequest="300"
+                         HorizontalOptions="Center"
+                         VerticalOptions="CenterAndExpand">
+              <StackLayout>
+                <Label Text="{Binding Name}" 
+                                 FontAttributes="Bold"
+                                 FontSize="Large"
+                                 HorizontalOptions="Center"
+                                 VerticalOptions="Center" />
+                <Label Text="{Binding Location}"
+                                 HorizontalOptions="Center" />
+                <Label Text="{Binding Details}"
+                                 FontAttributes="Italic"
+                                 HorizontalOptions="Center"
+                                 MaxLines="5"
+                                 LineBreakMode="TailTruncation" />
+              </StackLayout>
+            </Frame>
+          </StackLayout>
+        </DataTemplate>
+      </CarouselView.ItemTemplate>
+    </CarouselView>
+  </Grid>
+</ContentPage>
