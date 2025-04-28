@@ -14,9 +14,8 @@ internal class Issue7150 : _IssuesUITest
 	[Category(UITestCategories.CarouselView)]
 	public void CheckCarouselViewEmptyView()
 	{
-		App.WaitForElement("SearchBar");
-		App.EnterText("SearchBar", "xamarin");
-		App.PressEnter();
+		App.WaitForElement("EmptyViewButton");
+		App.Tap("EmptyViewButton");
 		VerifyScreenshot();
 	}
 }

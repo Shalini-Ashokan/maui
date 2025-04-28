@@ -19,7 +19,7 @@ public partial class Issue7150 : ContentPage
 	internal class Issue7150ViewModel
 	{
 		public ObservableCollection<Monkey>? Monkeys { get; private set; }
-		public ICommand FilterCommand => new Command<string>(FilterItems);
+		public ICommand FilterCommand => new Command(FilterItems);
 		readonly IList<Monkey> source;
 
 		public Issue7150ViewModel()
@@ -49,8 +49,9 @@ public partial class Issue7150 : ContentPage
 			Monkeys = new ObservableCollection<Monkey>(source);
 		}
 
-		private void FilterItems(string filter)
+		private void FilterItems()
 		{
+			var filter = "xamarin";
 			var filteredItems = source.Where(monkey => monkey.Name?.Contains(filter, StringComparison.OrdinalIgnoreCase) ?? false).ToList();
 			foreach (var monkey in source)
 			{
@@ -67,16 +68,5 @@ public partial class Issue7150 : ContentPage
 				}
 			}
 		}
-	}
-}
-
-public class FilterData : BindableObject
-{
-	public static readonly BindableProperty FilterProperty = BindableProperty.Create(nameof(Filter), typeof(string), typeof(FilterData), null);
-
-	public string Filter
-	{
-		get { return (string)GetValue(FilterProperty); }
-		set { SetValue(FilterProperty, value); }
 	}
 }
