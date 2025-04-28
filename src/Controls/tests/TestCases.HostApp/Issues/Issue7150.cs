@@ -1,26 +1,25 @@
-﻿#nullable enable
+﻿using System;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using System.Windows.Input;
 
 namespace Maui.Controls.Sample.Issues;
 
-[XamlCompilation(XamlCompilationOptions.Compile)]
 [Issue(IssueTracker.Github, 7150, "EmptyView using Template displayed at the same time as the content", PlatformAffected.UWP)]
 public class Issue7150 : TestContentPage
 {
 	public Issue7150()
 	{
+		Title = "Issue 7150";
 		BindingContext = new Issue7150ViewModel();
 	}
-
 	protected override void Init()
 	{
+		var layout = new StackLayout();
 		var filterButton = new Button
 		{
-			Text = "Filter",
-			AutomationId = "EmptyViewButton"
+			Margin = new Thickness(6),
+			AutomationId = "FilterButton",
+			Text = "Filter."
 		};
 		filterButton.SetBinding(Button.CommandProperty, "FilterCommand");
 
@@ -51,64 +50,107 @@ public class Issue7150 : TestContentPage
 		};
 
 		var emptyView = new ContentView { Content = emptyViewContent };
-
 		var carouselView = new CarouselView
 		{
+			AutomationId = "carouselView",
+			ItemTemplate = GetCarouselTemplate(),
 			EmptyView = emptyView,
-			ItemTemplate = new DataTemplate(() =>
-			{
-				var label = new Label
-				{
-					FontAttributes = FontAttributes.Bold,
-					FontSize = 20,
-					HorizontalOptions = LayoutOptions.Center,
-					VerticalOptions = LayoutOptions.Center
-				};
-				label.SetBinding(Label.TextProperty, "Name");
-
-				return new StackLayout { Children = { label } };
-			})
 		};
-		carouselView.SetBinding(ItemsView.ItemsSourceProperty, "Monkeys");
 
-		Content = new StackLayout
-		{
-			Children =
-				{
-					filterButton,
-					carouselView
-				}
-		};
+		carouselView.SetBinding(ItemsView.ItemsSourceProperty, "Items");
+		layout.Children.Add(filterButton);
+		layout.Children.Add(carouselView);
+		Content = layout;
 	}
 
-	internal class Issue7150ViewModel
+	protected override async void OnAppearing()
 	{
-		public ObservableCollection<Monkey>? Monkeys { get; private set; }
+		base.OnAppearing();
+
+		await ((Issue7150ViewModel)BindingContext).LoadItemsAsync();
+	}
+
+	internal DataTemplate GetCarouselTemplate()
+	{
+		return new DataTemplate(() =>
+		{
+			var grid = new Grid();
+
+			var info = new Label
+			{
+				HorizontalOptions = LayoutOptions.Center,
+				VerticalOptions = LayoutOptions.Center,
+				Margin = new Thickness(6)
+			};
+
+			info.SetBinding(Label.TextProperty, new Binding("Name"));
+
+			grid.Children.Add(info);
+
+			var border = new Border
+			{
+				Content = grid,
+			};
+
+			border.SetBinding(BackgroundColorProperty, new Binding("Color"));
+
+			return border;
+		});
+	}
+
+	public class Issue7150Model
+	{
+		public Color Color { get; set; }
+		public string Name { get; set; }
+	}
+
+	public class Issue7150ViewModel : BindableObject
+	{
+		ObservableCollection<Issue7150Model> _items;
 		public ICommand FilterCommand => new Command(FilterItems);
-		readonly IList<Monkey> source;
+		readonly IList<Issue7150Model> source;
 
 		public Issue7150ViewModel()
 		{
-			source = new List<Monkey>();
-			source.Add(new Monkey
-			{
-				Name = "Baboon",
-			});
-
-			source.Add(new Monkey
-			{
-				Name = "Blue Monkey",
-			});
-
-			source.Add(new Monkey
-			{
-				Name = "Capuchin Monkey",
-			});
-
-			Monkeys = new ObservableCollection<Monkey>(source);
+			source = new List<Issue7150Model>();
 		}
 
-		private void FilterItems()
+		public ObservableCollection<Issue7150Model> Items
+		{
+			get { return _items; }
+			set
+			{
+				_items = value;
+				OnPropertyChanged();
+			}
+		}
+
+		public async Task LoadItemsAsync()
+		{
+			await Task.Delay(500);
+
+			var random = new Random();
+
+			source.Add(new Issue7150Model
+			{
+				Color = Color.FromRgb(random.Next(0, 255), random.Next(0, 255), random.Next(0, 255)),
+				Name = "Baboon"
+			});
+			source.Add(new Issue7150Model
+			{
+				Color = Color.FromRgb(random.Next(0, 255), random.Next(0, 255), random.Next(0, 255)),
+				Name = "Capucin Monkey"
+			});
+			source.Add(new Issue7150Model
+			{
+				Color = Color.FromRgb(random.Next(0, 255), random.Next(0, 255), random.Next(0, 255)),
+				Name = "Blue Monkey"
+			});
+
+			Items = new ObservableCollection<Issue7150Model>(source);
+		}
+
+		public void FilterItems()
 		{
 			var filter = "xamarin";
 			var filteredItems = source.Where(monkey => monkey.Name?.Contains(filter, StringComparison.OrdinalIgnoreCase) ?? false).ToList();
@@ -116,13 +158,13 @@ public class Issue7150 : TestContentPage
 			{
 				if (!filteredItems.Contains(monkey))
 				{
-					Monkeys?.Remove(monkey);
+					Items?.Remove(monkey);
 				}
 				else
 				{
-					if (Monkeys != null && !Monkeys.Contains(monkey))
+					if (Items != null && !Items.Contains(monkey))
 					{
-						Monkeys.Add(monkey);
+						Items.Add(monkey);
 					}
 				}
 			}

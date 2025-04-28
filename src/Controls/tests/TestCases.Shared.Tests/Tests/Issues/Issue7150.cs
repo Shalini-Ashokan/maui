@@ -3,8 +3,7 @@ using UITest.Appium;
 using UITest.Core;
 
 namespace Microsoft.Maui.TestCases.Tests.Issues;
-
-internal class Issue7150 : _IssuesUITest
+public class Issue7150 : _IssuesUITest
 {
 	public Issue7150(TestDevice device) : base(device) { }
 
@@ -14,8 +13,8 @@ internal class Issue7150 : _IssuesUITest
 	[Category(UITestCategories.CarouselView)]
 	public void CheckCarouselViewEmptyView()
 	{
-		App.WaitForElement("EmptyViewButton");
-		App.Tap("EmptyViewButton");
+		App.WaitForElement("FilterButton");
+		App.Tap("FilterButton");
 		VerifyScreenshot();
 	}
 }
