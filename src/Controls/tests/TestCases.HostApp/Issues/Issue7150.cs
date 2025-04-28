@@ -17,7 +17,7 @@ public class Issue7150 : TestContentPage
 		var layout = new StackLayout();
 		var filterButton = new Button
 		{
-			Margin = new Thickness(6),
+			Margin = new Thickness(20),
 			AutomationId = "FilterButton",
 			Text = "Filter."
 		};
@@ -129,21 +129,19 @@ public class Issue7150 : TestContentPage
 		{
 			await Task.Delay(500);
 
-			var random = new Random();
-
 			source.Add(new Issue7150Model
 			{
-				Color = Color.FromRgb(random.Next(0, 255), random.Next(0, 255), random.Next(0, 255)),
+				Color = Colors.LightBlue,
 				Name = "Baboon"
 			});
 			source.Add(new Issue7150Model
 			{
-				Color = Color.FromRgb(random.Next(0, 255), random.Next(0, 255), random.Next(0, 255)),
-				Name = "Capucin Monkey"
+				Color = Colors.LightGreen,
+				Name = "Capuchin Monkey"
 			});
 			source.Add(new Issue7150Model
 			{
-				Color = Color.FromRgb(random.Next(0, 255), random.Next(0, 255), random.Next(0, 255)),
+				Color = Colors.LightPink,
 				Name = "Blue Monkey"
 			});
 
