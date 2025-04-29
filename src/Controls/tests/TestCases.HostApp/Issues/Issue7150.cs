@@ -19,7 +19,7 @@ public class Issue7150 : TestContentPage
 		{
 			Margin = new Thickness(20),
 			AutomationId = "FilterButton",
-			Text = "Filter."
+			Text = "Filter"
 		};
 		filterButton.SetBinding(Button.CommandProperty, "FilterCommand");
 
@@ -52,7 +52,6 @@ public class Issue7150 : TestContentPage
 		var emptyView = new ContentView { Content = emptyViewContent };
 		var carouselView = new CarouselView
 		{
-			AutomationId = "carouselView",
 			ItemTemplate = GetCarouselTemplate(),
 			EmptyView = emptyView,
 		};
@@ -63,19 +62,11 @@ public class Issue7150 : TestContentPage
 		Content = layout;
 	}
 
-	protected override async void OnAppearing()
-	{
-		base.OnAppearing();
-
-		await ((Issue7150ViewModel)BindingContext).LoadItemsAsync();
-	}
-
 	internal DataTemplate GetCarouselTemplate()
 	{
 		return new DataTemplate(() =>
 		{
 			var grid = new Grid();
-
 			var info = new Label
 			{
 				HorizontalOptions = LayoutOptions.Center,
@@ -84,23 +75,13 @@ public class Issue7150 : TestContentPage
 			};
 
 			info.SetBinding(Label.TextProperty, new Binding("Name"));
-
 			grid.Children.Add(info);
-
-			var border = new Border
-			{
-				Content = grid,
-			};
-
-			border.SetBinding(BackgroundColorProperty, new Binding("Color"));
-
-			return border;
+			return grid;
 		});
 	}
 
 	public class Issue7150Model
 	{
-		public Color Color { get; set; }
 		public string Name { get; set; }
 	}
 
@@ -113,6 +94,20 @@ public class Issue7150 : TestContentPage
 		public Issue7150ViewModel()
 		{
 			source = new List<Issue7150Model>();
+			source.Add(new Issue7150Model
+			{
+				Name = "Baboon"
+			});
+			source.Add(new Issue7150Model
+			{
+				Name = "Capuchin Monkey"
+			});
+			source.Add(new Issue7150Model
+			{
+				Name = "Blue Monkey"
+			});
+
+			Items = new ObservableCollection<Issue7150Model>(source);
 		}
 
 		public ObservableCollection<Issue7150Model> Items
@@ -123,29 +118,6 @@ public class Issue7150 : TestContentPage
 				_items = value;
 				OnPropertyChanged();
 			}
-		}
-
-		public async Task LoadItemsAsync()
-		{
-			await Task.Delay(500);
-
-			source.Add(new Issue7150Model
-			{
-				Color = Colors.LightBlue,
-				Name = "Baboon"
-			});
-			source.Add(new Issue7150Model
-			{
-				Color = Colors.LightGreen,
-				Name = "Capuchin Monkey"
-			});
-			source.Add(new Issue7150Model
-			{
-				Color = Colors.LightPink,
-				Name = "Blue Monkey"
-			});
-
-			Items = new ObservableCollection<Issue7150Model>(source);
 		}
 
 		public void FilterItems()

@@ -11,7 +11,7 @@ public class Issue7150 : _IssuesUITest
 
 	[Test]
 	[Category(UITestCategories.CarouselView)]
-	public void CheckCarouselViewEmptyView()
+	public void VerifyCarouselViewEmptyView()
 	{
 		App.WaitForElement("FilterButton");
 		App.Tap("FilterButton");
