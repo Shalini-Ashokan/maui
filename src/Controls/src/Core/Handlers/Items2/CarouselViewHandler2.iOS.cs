@@ -97,7 +97,8 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 				{
 					//This will allow us to SetPosition when we are scrolling the items
 					//based on the current page
-					var page = (offset.X + sectionMargin) / env.Container.ContentSize.Width;
+					double visibleWidth = env.Container.ContentSize.Width - VirtualView.PeekAreaInsets.HorizontalThickness;
+					var page = (offset.X + sectionMargin) / visibleWidth;
 
 					// Check if we not are at the beginning or end of the page and if we have items
 					if (Math.Abs(page % 1) > (double.Epsilon * 100) || Controller.ItemsSource.ItemCount <= 0)
