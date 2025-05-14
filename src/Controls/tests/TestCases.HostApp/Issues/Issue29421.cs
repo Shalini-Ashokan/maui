@@ -22,6 +22,7 @@ public class Issue29421 : ContentPage
 			AutomationId = "carouselview",
 			ItemsUpdatingScrollMode = ItemsUpdatingScrollMode.KeepScrollOffset,
 			HeightRequest = 300,
+			Position = 1,
 			ItemTemplate = new DataTemplate(() =>
 			{
 				var grid = new Grid
