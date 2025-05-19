@@ -156,10 +156,6 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			if (ItemsView.Loop)
 			{
 				bool isEmpty = (CollectionViewSource?.View?.Count ?? 0) == 0;
-				if (_loopableCollectionView != null)
-				{
-					_loopableCollectionView.IsLoopingEnabled = !isEmpty;
-				}
 
 				var targetTemplate = isEmpty ? null : CarouselItemsViewTemplate;
 				if (ListViewBase.ItemTemplate != targetTemplate)
