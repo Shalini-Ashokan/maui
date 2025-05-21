@@ -344,6 +344,10 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 
 			if (e.Action == NotifyCollectionChangedAction.Add)
 			{
+				if (currentItemPosition != carouselPosition && ItemsView.ItemsUpdatingScrollMode == ItemsUpdatingScrollMode.KeepItemsInView)
+				{
+					SetPosition(currentItemPosition);
+				}
 				_positionAfterUpdate = GetPositionWhenAddingItems(carouselPosition, currentItemPosition);
 			}
 		}
