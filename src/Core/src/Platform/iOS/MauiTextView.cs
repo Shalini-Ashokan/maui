@@ -187,11 +187,35 @@ namespace Microsoft.Maui.Platform
 			}
 		}
 
+		internal void UpdatePlaceholderAlignment(UIUserInterfaceLayoutDirection layoutDirection)
+		{
+			if (_placeholderLabel is not null)
+			{
+				// Use the default Start alignment and let the RTL conversion happen
+				_placeholderLabel.TextAlignment = Maui.TextAlignment.Start.ToPlatformHorizontal(layoutDirection);
+			}
+		}
+
 		void UpdatePlaceholderFont(UIFont? value)
 		{
 			_defaultPlaceholderSize ??= _placeholderLabel.Font.PointSize;
 			_placeholderLabel.Font = value ?? _placeholderLabel.Font.WithSize(
 				value?.PointSize ?? _defaultPlaceholderSize.Value);
+		}
+
+		internal void UpdatePlaceholderTextAlignment(FlowDirection flowDirection, TextAlignment textAlignment)
+		{
+			if (_placeholderLabel is null)
+				return;
+
+			// Convert flow direction to layout direction
+			var layoutDirection = flowDirection == FlowDirection.RightToLeft
+				? UIUserInterfaceLayoutDirection.RightToLeft
+				: UIUserInterfaceLayoutDirection.LeftToRight;
+
+			// Convert MAUI TextAlignment to UITextAlignment, considering flow direction
+			var alignment = textAlignment.ToPlatformHorizontal(layoutDirection);
+			_placeholderLabel.TextAlignment = alignment;
 		}
 
 		[UnconditionalSuppressMessage("Memory", "MEM0002", Justification = IUIViewLifeCycleEvents.UnconditionalSuppressMessage)]

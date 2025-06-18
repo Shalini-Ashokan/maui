@@ -126,6 +126,12 @@ namespace Microsoft.Maui.Platform
 		public static void UpdateHorizontalTextAlignment(this UITextView textView, IEditor editor)
 		{
 			textView.TextAlignment = editor.HorizontalTextAlignment.ToPlatformHorizontal(textView.EffectiveUserInterfaceLayoutDirection);
+
+			// Also update placeholder alignment if this is a MauiTextView
+			if (textView is MauiTextView mauiTextView)
+			{
+				mauiTextView.UpdatePlaceholderTextAlignment(editor.FlowDirection, editor.HorizontalTextAlignment);
+			}
 		}
 
 		public static void UpdateVerticalTextAlignment(this MauiTextView textView, IEditor editor)
@@ -133,11 +139,21 @@ namespace Microsoft.Maui.Platform
 			textView.VerticalTextAlignment = editor.VerticalTextAlignment;
 		}
 
-		public static void UpdatePlaceholder(this MauiTextView textView, IEditor editor) =>
+		public static void UpdatePlaceholder(this MauiTextView textView, IEditor editor)
+		{
 			textView.PlaceholderText = editor.Placeholder;
+			// Also update the placeholder alignment to respect flow direction
+			textView.UpdatePlaceholderAlignment(textView.EffectiveUserInterfaceLayoutDirection);
+		}
 
 		public static void UpdatePlaceholderColor(this MauiTextView textView, IEditor editor) =>
 			textView.PlaceholderTextColor = editor.PlaceholderColor?.ToPlatform() ?? ColorExtensions.PlaceholderColor;
+
+		internal static void UpdateFlowDirection(this MauiTextView textView, IEditor editor)
+		{
+			// Update the placeholder alignment when flow direction changes
+			textView.UpdatePlaceholderAlignment(textView.EffectiveUserInterfaceLayoutDirection);
+		}
 
 		static void UpdateCursorSelection(this UITextView textView, IEditor editor)
 		{
@@ -176,6 +192,14 @@ namespace Microsoft.Maui.Platform
 				editor.SelectionLength = newSelectionLength;
 
 			return end;
+		}
+
+		internal static void UpdateFlowDirection(this UITextView textView, IEditor editor)
+		{
+			if (textView is MauiTextView mauiTextView)
+			{
+				mauiTextView.UpdatePlaceholderTextAlignment(editor.FlowDirection, editor.HorizontalTextAlignment);
+			}
 		}
 	}
 }

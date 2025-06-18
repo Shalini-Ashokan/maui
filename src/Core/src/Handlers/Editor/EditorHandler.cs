@@ -35,6 +35,7 @@ namespace Microsoft.Maui.Handlers
 			[nameof(IEditor.SelectionLength)] = MapSelectionLength,
 #if IOS
 			[nameof(IEditor.IsEnabled)] = MapIsEnabled,
+			[nameof(IView.FlowDirection)] = MapFlowDirection,
 #endif
 		};
 
