@@ -113,6 +113,7 @@ namespace Microsoft.Maui.Platform
 						_hScrollView.AddView(_content);
 					}
 
+					_hScrollView.ScrollTo(0, 0);
 					AddView(_hScrollView);
 				}
 				// If the user has changed between horiztonal and both we want to request a new layout
