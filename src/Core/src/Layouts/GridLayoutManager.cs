@@ -89,8 +89,10 @@ namespace Microsoft.Maui.Layouts
 				_explicitGridHeight = _grid.Height;
 				_explicitGridWidth = _grid.Width;
 
-				_gridWidthConstraint = Dimension.IsExplicitSet(_explicitGridWidth) ? _explicitGridWidth : widthConstraint;
-				_gridHeightConstraint = Dimension.IsExplicitSet(_explicitGridHeight) ? _explicitGridHeight : heightConstraint;
+				// Don't constrain child measurements with explicit Grid dimensions - use parent constraints
+				// Explicit dimensions will be applied later in MeasuredGridWidth/MeasuredGridHeight
+				_gridWidthConstraint = widthConstraint;
+				_gridHeightConstraint = heightConstraint;
 
 				_gridMaxHeight = _grid.MaximumHeight;
 				_gridMinHeight = _grid.MinimumHeight;
