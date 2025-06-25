@@ -96,7 +96,25 @@ namespace Microsoft.Maui.Layouts
 				destination.X += left;
 				destination.Y += top;
 
-				child.Arrange(destination);
+				// Special handling for Shape elements (like Path) to prevent cropping when parent has explicit sizing
+				if (child is IShapeView shapeView && 
+					(ResolveConstraints(double.PositiveInfinity, AbsoluteLayout.Width, 0) != double.PositiveInfinity || 
+					 ResolveConstraints(double.PositiveInfinity, AbsoluteLayout.Height, 0) != double.PositiveInfinity))
+				{
+					// Allow Shape to exceed destination bounds if it needs more space to avoid cropping
+					var shapeDesiredSize = child.DesiredSize;
+					var expandedDestination = new Rect(
+						destination.X,
+						destination.Y,
+						Math.Max(destination.Width, shapeDesiredSize.Width),
+						Math.Max(destination.Height, shapeDesiredSize.Height)
+					);
+					child.Arrange(expandedDestination);
+				}
+				else
+				{
+					child.Arrange(destination);
+				}
 			}
 
 			return new Size(availableWidth, availableHeight);

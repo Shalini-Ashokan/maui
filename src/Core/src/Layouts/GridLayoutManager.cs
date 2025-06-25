@@ -43,7 +43,25 @@ namespace Microsoft.Maui.Layouts
 				}
 
 				var cell = _gridStructure.GetCellBoundsFor(view, bounds.Left, bounds.Top);
-				view.Arrange(cell);
+				
+				// Special handling for Shape elements (like Path) to prevent cropping when parent has explicit sizing
+				if (view is IShapeView shapeView && 
+					(Dimension.IsExplicitSet(Grid.Width) || Dimension.IsExplicitSet(Grid.Height)))
+				{
+					// Allow Shape to exceed cell bounds if it needs more space to avoid cropping
+					var shapeDesiredSize = view.DesiredSize;
+					var expandedCell = new Rect(
+						cell.X,
+						cell.Y,
+						Math.Max(cell.Width, shapeDesiredSize.Width),
+						Math.Max(cell.Height, shapeDesiredSize.Height)
+					);
+					view.Arrange(expandedCell);
+				}
+				else
+				{
+					view.Arrange(cell);
+				}
 			}
 
 			var actual = new Size(_gridStructure.MeasuredGridWidth(), _gridStructure.MeasuredGridHeight());
