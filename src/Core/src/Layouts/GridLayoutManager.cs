@@ -302,7 +302,8 @@ namespace Microsoft.Maui.Layouts
 
 			public double MeasuredGridHeight()
 			{
-				var height = Dimension.IsExplicitSet(_explicitGridHeight) ? _explicitGridHeight : GridMinimumHeight();
+				var minimumHeight = GridMinimumHeight();
+				var height = Dimension.IsExplicitSet(_explicitGridHeight) ? Math.Max(_explicitGridHeight, minimumHeight) : minimumHeight;
 
 				if (_gridMaxHeight >= 0 && height > _gridMaxHeight)
 				{
@@ -319,7 +320,8 @@ namespace Microsoft.Maui.Layouts
 
 			public double MeasuredGridWidth()
 			{
-				var width = Dimension.IsExplicitSet(_explicitGridWidth) ? _explicitGridWidth : GridMinimumWidth();
+				var minimumWidth = GridMinimumWidth();
+				var width = Dimension.IsExplicitSet(_explicitGridWidth) ? Math.Max(_explicitGridWidth, minimumWidth) : minimumWidth;
 
 				if (_gridMaxWidth >= 0 && width > _gridMaxWidth)
 				{
