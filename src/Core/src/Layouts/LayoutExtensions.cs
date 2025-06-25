@@ -46,6 +46,13 @@ namespace Microsoft.Maui.Layouts
 				consumedWidth = Math.Min(bounds.Width, view.MaximumWidth);
 			}
 
+			// Special handling for shapes: allow them to exceed parent bounds if their desired size is larger
+			// This prevents cropping when shapes are placed in explicitly-sized parent containers
+			if (view is Microsoft.Maui.IShapeView && consumedWidth < view.DesiredSize.Width)
+			{
+				consumedWidth = view.DesiredSize.Width;
+			}
+
 			// And the actual frame width needs to subtract the margins
 			var frameWidth = Math.Max(0, consumedWidth - margin.HorizontalThickness);
 
@@ -58,6 +65,13 @@ namespace Microsoft.Maui.Layouts
 			if (view.VerticalLayoutAlignment == LayoutAlignment.Fill && !IsExplicitSet(view.Height))
 			{
 				consumedHeight = Math.Min(bounds.Height, view.MaximumHeight);
+			}
+
+			// Special handling for shapes: allow them to exceed parent bounds if their desired size is larger
+			// This prevents cropping when shapes are placed in explicitly-sized parent containers
+			if (view is Microsoft.Maui.IShapeView && consumedHeight < view.DesiredSize.Height)
+			{
+				consumedHeight = view.DesiredSize.Height;
 			}
 
 			// And the actual frame height needs to subtract the margins
