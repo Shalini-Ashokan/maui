@@ -21,6 +21,7 @@ namespace Microsoft.Maui.Platform
 		ScrollBarVisibility _defaultHorizontalScrollVisibility;
 		ScrollBarVisibility _defaultVerticalScrollVisibility;
 		ScrollBarVisibility _horizontalScrollVisibility;
+		Android.Views.LayoutDirection _previousLayoutDirection = Android.Views.LayoutDirection.Ltr;
 
 		internal float LastX { get; set; }
 		internal float LastY { get; set; }
@@ -101,6 +102,8 @@ namespace Microsoft.Maui.Platform
 					_hScrollView.HorizontalFadingEdgeEnabled = HorizontalFadingEdgeEnabled;
 					_hScrollView.SetFadingEdgeLength(HorizontalFadingEdgeLength);
 					SetHorizontalScrollBarVisibility(_horizontalScrollVisibility);
+					// Update layout direction for the horizontal scroll view to match current flow direction
+					_hScrollView.LayoutDirection = _previousLayoutDirection;
 				}
 
 				_hScrollView.IsBidirectional = _isBidirectional = orientation == ScrollOrientation.Both;
@@ -324,6 +327,15 @@ namespace Microsoft.Maui.Platform
 		}
 
 		internal Func<Graphics.Rect, Graphics.Size>? CrossPlatformArrange { get; set; }
+
+		internal void UpdateFlowDirection(Android.Views.LayoutDirection layoutDirection)
+		{
+			if (_previousLayoutDirection != layoutDirection && _hScrollView != null)
+			{
+				_previousLayoutDirection = layoutDirection;
+				_hScrollView.LayoutDirection = layoutDirection;
+			}
+		}
 	}
 
 	internal class MauiHorizontalScrollView : HorizontalScrollView, IScrollBarView
