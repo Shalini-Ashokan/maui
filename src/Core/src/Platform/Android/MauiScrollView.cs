@@ -22,6 +22,7 @@ namespace Microsoft.Maui.Platform
 		ScrollBarVisibility _defaultVerticalScrollVisibility;
 		ScrollBarVisibility _horizontalScrollVisibility;
 		Android.Views.LayoutDirection _previousLayoutDirection = Android.Views.LayoutDirection.Ltr;
+		bool _checkedForRtlScroll;
 
 		internal float LastX { get; set; }
 		internal float LastY { get; set; }
@@ -233,6 +234,15 @@ namespace Microsoft.Maui.Platform
 				_hScrollView.Layout(0, 0, hScrollViewWidth, hScrollViewHeight);
 			}
 
+			// Handle RTL scroll positioning similar to Compatibility renderer
+			// if the target sdk >= 17 then setting the LayoutDirection on the scroll view natively takes care of the scroll
+			if (!_checkedForRtlScroll && _hScrollView != null && _previousLayoutDirection == Android.Views.LayoutDirection.Rtl)
+			{
+				Post(() => OnScrollChanged(_hScrollView.ScrollX, ScrollY, _hScrollView.ScrollX, ScrollY));
+			}
+
+			_checkedForRtlScroll = true;
+
 			if (CrossPlatformArrange == null)
 			{
 				return;
@@ -322,6 +332,7 @@ namespace Microsoft.Maui.Platform
 		void IOnScrollChangeListener.OnScrollChange(NestedScrollView? v, int scrollX, int scrollY, int oldScrollX, int oldScrollY)
 #pragma warning restore CA1822
 		{
+			_checkedForRtlScroll = true;
 			OnScrollChanged(scrollX, scrollY, oldScrollX, oldScrollY);
 		}
 
@@ -329,10 +340,14 @@ namespace Microsoft.Maui.Platform
 
 		internal void UpdateFlowDirection(Android.Views.LayoutDirection layoutDirection)
 		{
-			if (_previousLayoutDirection != layoutDirection && _hScrollView != null)
+			if (_previousLayoutDirection != layoutDirection)
 			{
 				_previousLayoutDirection = layoutDirection;
-				_hScrollView.LayoutDirection = layoutDirection;
+				_checkedForRtlScroll = false; // Reset to handle RTL scroll positioning
+				if (_hScrollView != null)
+				{
+					_hScrollView.LayoutDirection = layoutDirection;
+				}
 			}
 		}
 	}
