@@ -61,27 +61,8 @@ namespace Microsoft.Maui.Layouts
 				}
 
 				var destination = new Rect(left, stackHeight, width, child.DesiredSize.Height);
-				
-				// Special handling for Shape elements (like Path) to prevent cropping when parent has explicit sizing
-				if (child is IShapeView shapeView && 
-					(Primitives.Dimension.IsExplicitSet(Stack.Width) || Primitives.Dimension.IsExplicitSet(Stack.Height)))
-				{
-					// Allow Shape to exceed destination bounds if it needs more space to avoid cropping
-					var shapeDesiredSize = child.DesiredSize;
-					var expandedDestination = new Rect(
-						destination.X,
-						destination.Y,
-						Math.Max(destination.Width, shapeDesiredSize.Width),
-						Math.Max(destination.Height, shapeDesiredSize.Height)
-					);
-					child.Arrange(expandedDestination);
-					stackHeight += expandedDestination.Height + Stack.Spacing;
-				}
-				else
-				{
-					child.Arrange(destination);
-					stackHeight += destination.Height + Stack.Spacing;
-				}
+				child.Arrange(destination);
+				stackHeight += destination.Height + Stack.Spacing;
 			}
 
 			var actual = new Size(width, stackHeight);

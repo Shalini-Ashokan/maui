@@ -64,25 +64,7 @@ namespace Microsoft.Maui.Layouts
 					continue;
 				}
 
-				// Special handling for Shape elements (like Path) to prevent cropping when parent has explicit sizing
-				if (child is IShapeView shapeView && 
-					(Primitives.Dimension.IsExplicitSet(Stack.Width) || Primitives.Dimension.IsExplicitSet(Stack.Height)))
-				{
-					// Allow Shape to exceed bounds if it needs more space to avoid cropping
-					var shapeDesiredSize = child.DesiredSize;
-					var expandedDestination = new Rect(
-						xPosition, 
-						top, 
-						Math.Max(child.DesiredSize.Width, shapeDesiredSize.Width), 
-						Math.Max(height, shapeDesiredSize.Height)
-					);
-					child.Arrange(expandedDestination);
-					xPosition += expandedDestination.Width;
-				}
-				else
-				{
-					xPosition += ArrangeChild(child, height, top, xPosition);
-				}
+				xPosition += ArrangeChild(child, height, top, xPosition);
 
 				if (n < childCount - 1)
 				{
