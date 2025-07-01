@@ -95,6 +95,7 @@ namespace Microsoft.Maui.Layouts
 
 				destination.X += left;
 				destination.Y += top;
+
 				child.Arrange(destination);
 			}
 
