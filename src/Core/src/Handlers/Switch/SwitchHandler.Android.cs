@@ -1,3 +1,5 @@
+using System;
+using Android.Animation;
 using Android.Graphics.Drawables;
 using Android.Nfc.CardEmulators;
 using Android.Widget;
@@ -9,6 +11,7 @@ namespace Microsoft.Maui.Handlers
 	public partial class SwitchHandler : ViewHandler<ISwitch, ASwitch>
 	{
 		CheckedChangeListener ChangeListener { get; } = new CheckedChangeListener();
+		ValueAnimator? _shadowTrackingAnimator;
 
 		protected override ASwitch CreatePlatformView()
 		{
@@ -27,6 +30,10 @@ namespace Microsoft.Maui.Handlers
 		{
 			ChangeListener.Handler = null;
 			platformView.SetOnCheckedChangeListener(null);
+
+			_shadowTrackingAnimator?.Cancel();
+			_shadowTrackingAnimator?.Dispose();
+			_shadowTrackingAnimator = null;
 
 			base.DisconnectHandler(platformView);
 		}
@@ -71,6 +78,41 @@ namespace Microsoft.Maui.Handlers
 				return;
 
 			VirtualView.IsOn = isOn;
+
+			// For switches with shadow, we need to create an animation to track the thumb movement
+			// and invalidate the container to update the shadow position during the animation
+			if (VirtualView?.Shadow != null && ContainerView != null)
+			{
+				StartShadowTrackingAnimation();
+			}
+		}
+
+		void StartShadowTrackingAnimation()
+		{
+			// Cancel any existing animation
+			_shadowTrackingAnimator?.Cancel();
+
+			// Create an animator that matches the switch thumb animation duration
+			// SwitchCompat typically uses ~250ms for thumb animation
+			_shadowTrackingAnimator = ValueAnimator.OfFloat(0f, 1f);
+			if (_shadowTrackingAnimator != null)
+			{
+				_shadowTrackingAnimator.SetDuration(250);
+
+				_shadowTrackingAnimator.Update += (sender, e) =>
+				{
+					// Force container redraw during the animation to update shadow
+					ContainerView?.Invalidate();
+				};
+
+				_shadowTrackingAnimator.AnimationEnd += (sender, e) =>
+				{
+					// Final invalidation to ensure shadow is in correct position
+					ContainerView?.Invalidate();
+				};
+
+				_shadowTrackingAnimator.Start();
+			}
 		}
 
 		class CheckedChangeListener : Java.Lang.Object, CompoundButton.IOnCheckedChangeListener
