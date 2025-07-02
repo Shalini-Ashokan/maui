@@ -104,8 +104,9 @@ namespace Microsoft.Maui.Controls
 
 		void Apply(BindableObject bindable)
 		{
-			//NOTE specificity could be more fine grained (using distance)
-			ImplicitStyle?.Apply(bindable, new SetterSpecificity(SetterSpecificity.StyleImplicit, 0, 0, 0));
+			// Implicit styles are now applied in OnImplicitStyleChanged with proper cascading
+			// ImplicitStyle?.Apply(bindable, new SetterSpecificity(SetterSpecificity.StyleImplicit, 0, 0, 0));
+
 			if (ClassStyles != null)
 				foreach (var classStyle in ClassStyles)
 					//NOTE specificity could be more fine grained (using distance)
@@ -132,23 +133,46 @@ namespace Microsoft.Maui.Controls
 
 		void OnImplicitStyleChanged()
 		{
-			var first = true;
+			// Collect all implicit styles from the hierarchy and apply them with proper specificity
+			var implicitStyles = new List<(Style Style, int Distance)>();
+			int distance = 0;
 
 			foreach (BindableProperty implicitStyleProperty in _implicitStyles)
 			{
 				var implicitStyle = (Style)Target.GetValue(implicitStyleProperty);
 				if (implicitStyle != null)
 				{
-					if (first || implicitStyle.ApplyToDerivedTypes)
-					{
-						ImplicitStyle = implicitStyle;
-						return;
-					}
+					implicitStyles.Add((implicitStyle, distance));
 				}
-				first = false;
+				distance++;
 			}
 
-			ImplicitStyle = null;
+			// Apply all implicit styles, starting from furthest (application-level) to closest (page-level)
+			// This ensures proper cascading where closer styles override farther ones
+			if (implicitStyles.Count > 0)
+			{
+				// Clear existing implicit style
+				if (ImplicitStyle != null)
+				{
+					ImplicitStyle.UnApply(Target);
+				}
+
+				// Apply styles in reverse order (furthest to closest) so closer styles win
+				for (int i = implicitStyles.Count - 1; i >= 0; i--)
+				{
+					var styleInfo = implicitStyles[i];
+					// Use distance-based specificity: closer styles get higher specificity
+					var specificity = new SetterSpecificity(SetterSpecificity.StyleImplicit, 0, 0, (byte)(99 - styleInfo.Distance));
+					((IStyle)styleInfo.Style).Apply(Target, specificity);
+				}
+
+				// Set the closest style as the primary implicit style for tracking
+				ImplicitStyle = implicitStyles[0].Style;
+			}
+			else
+			{
+				ImplicitStyle = null;
+			}
 		}
 
 		void RegisterImplicitStyles()
@@ -202,9 +226,11 @@ namespace Microsoft.Maui.Controls
 			_classStyles = classStyles;
 			_style = style;
 
-			//FIXME compute specificity
+			// Apply implicit styles with distance-based specificity
+			var implicitDistance = CalculateResourceDistance();
+
 			if (shouldReApplyImplicitStyle)
-				ImplicitStyle?.Apply(Target, new SetterSpecificity(SetterSpecificity.StyleImplicit, 0, 0, 0));
+				ImplicitStyle?.Apply(Target, new SetterSpecificity(SetterSpecificity.StyleImplicit, 0, 0, (byte)implicitDistance));
 
 			if (shouldReApplyClassStyle && ClassStyles != null)
 				foreach (var classStyle in ClassStyles)
@@ -213,6 +239,35 @@ namespace Microsoft.Maui.Controls
 			if (shouldReApplyStyle)
 				//FIXME compute specificity
 				Style?.Apply(Target, new SetterSpecificity(SetterSpecificity.StyleLocal, 0, 0, 0));
+		}
+
+		/// <summary>
+		/// Calculates the distance from the target element to the nearest resource dictionary
+		/// containing implicit styles. Closer dictionaries get higher specificity.
+		/// </summary>
+		int CalculateResourceDistance()
+		{
+			if (Target == null)
+				return 0;
+
+			// Walk up the visual tree to find the distance to the resource dictionary
+			Element current = Target as Element;
+			int distance = 0;
+
+			while (current != null && distance < 99) // Cap at 99 as per CSS specificity rules
+			{
+				// Check if this element has resources that could contain implicit styles
+				if (current is IResourcesProvider resourceProvider && resourceProvider.IsResourcesCreated)
+				{
+					// Return inverse distance - closer elements get higher specificity
+					return Math.Max(0, 99 - distance);
+				}
+				current = current.Parent;
+				distance++;
+			}
+
+			// Default to low specificity for application-level resources
+			return 1;
 		}
 	}
 }
