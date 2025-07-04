@@ -73,10 +73,16 @@ namespace Microsoft.Maui.Handlers
 
 			VirtualView.IsOn = isOn;
 			
-			// Force invalidation to update shadow position when switch toggles
-			if (VirtualView.Shadow is not null && ContainerView is not null)
+			// Force layout and shadow update when switch toggles
+			if (VirtualView.Shadow is not null && ContainerView is WrapperView wrapper)
 			{
-				ContainerView.Invalidate();
+				// Post to ensure switch layout completes before shadow update
+				ContainerView.Post(() =>
+				{
+					var currentShadow = VirtualView.Shadow;
+					wrapper.Shadow = null;
+					wrapper.Shadow = currentShadow;
+				});
 			}
 		}
 
