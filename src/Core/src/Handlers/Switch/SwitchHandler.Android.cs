@@ -2,6 +2,7 @@ using Android.Graphics.Drawables;
 using Android.Nfc.CardEmulators;
 using Android.Widget;
 using Microsoft.Maui.Graphics;
+using Microsoft.Maui.Platform;
 using ASwitch = AndroidX.AppCompat.Widget.SwitchCompat;
 
 namespace Microsoft.Maui.Handlers
@@ -71,11 +72,12 @@ namespace Microsoft.Maui.Handlers
 				return;
 
 			VirtualView.IsOn = isOn;
-
+			
 			// Update shadow to follow the thumb position when switch is toggled
-			if (VirtualView.Shadow is not null)
+			if (VirtualView.Shadow is not null && ContainerView is WrapperView wrapper)
 			{
-				ViewHandler.MapShadow(this, VirtualView);
+				// Directly trigger shadow update on the wrapper view
+				wrapper.UpdateShadow(VirtualView);
 			}
 		}
 
