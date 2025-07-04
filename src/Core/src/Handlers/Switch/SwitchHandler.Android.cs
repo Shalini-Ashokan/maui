@@ -71,6 +71,12 @@ namespace Microsoft.Maui.Handlers
 				return;
 
 			VirtualView.IsOn = isOn;
+
+			// Update shadow to follow the thumb position when switch is toggled
+			if (VirtualView.Shadow is not null)
+			{
+				ViewHandler.MapShadow(this, VirtualView);
+			}
 		}
 
 		class CheckedChangeListener : Java.Lang.Object, CompoundButton.IOnCheckedChangeListener
