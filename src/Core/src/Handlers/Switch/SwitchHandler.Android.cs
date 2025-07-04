@@ -2,6 +2,7 @@ using Android.Graphics.Drawables;
 using Android.Nfc.CardEmulators;
 using Android.Widget;
 using Microsoft.Maui.Graphics;
+using Microsoft.Maui.Platform;
 using ASwitch = AndroidX.AppCompat.Widget.SwitchCompat;
 
 namespace Microsoft.Maui.Handlers
@@ -71,6 +72,18 @@ namespace Microsoft.Maui.Handlers
 				return;
 
 			VirtualView.IsOn = isOn;
+			
+			// Force layout and shadow update when switch toggles
+			if (VirtualView.Shadow is not null && ContainerView is WrapperView wrapper)
+			{
+				// Post to ensure switch layout completes before shadow update
+				ContainerView.Post(() =>
+				{
+					var currentShadow = VirtualView.Shadow;
+					wrapper.Shadow = null;
+					wrapper.Shadow = currentShadow;
+				});
+			}
 		}
 
 		class CheckedChangeListener : Java.Lang.Object, CompoundButton.IOnCheckedChangeListener
