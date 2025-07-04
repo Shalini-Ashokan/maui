@@ -73,11 +73,10 @@ namespace Microsoft.Maui.Handlers
 
 			VirtualView.IsOn = isOn;
 			
-			// Update shadow to follow the thumb position when switch is toggled
-			if (VirtualView.Shadow is not null && ContainerView is WrapperView wrapper)
+			// Force invalidation to update shadow position when switch toggles
+			if (VirtualView.Shadow is not null && ContainerView is not null)
 			{
-				// Directly trigger shadow update on the wrapper view
-				wrapper.UpdateShadow(VirtualView);
+				ContainerView.Invalidate();
 			}
 		}
 
