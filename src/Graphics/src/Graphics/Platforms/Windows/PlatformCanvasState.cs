@@ -147,7 +147,7 @@ namespace Microsoft.Maui.Graphics.Platform
 		{
 			_sourceStrokeColor = Colors.Black;
 			_strokeBrushValid = false;
-			_needsStrokeStyle = true;
+			_needsStrokeStyle = false;
 			_strokeStyle = null;
 
 			_dashes = null;
@@ -608,7 +608,8 @@ namespace Microsoft.Maui.Graphics.Platform
 					_strokeStyle.EndCap = _lineCap;
 					_strokeStyle.LineJoin = _lineJoin;
 
-					_needsStrokeStyle = false;
+
+					return _strokeStyle;
 				}
 
 				return _strokeStyle;

@@ -547,7 +547,17 @@ namespace Microsoft.Maui.Graphics.Platform
 
 		protected override void PlatformDrawLine(float x1, float y1, float x2, float y2)
 		{
-			Draw(s => s.DrawLine(x1, y1, x2, y2, CurrentState.PlatformStrokeBrush, CurrentState.StrokeSize, CurrentState.PlatformStrokeStyle));
+			// Use path-based drawing to avoid line extension issues with Win2D's DrawLine
+			var builder = new CanvasPathBuilder(_session);
+			builder.BeginFigure(x1, y1);
+			builder.AddLine(x2, y2);
+			builder.EndFigure(CanvasFigureLoop.Open);
+			var geometry = CanvasGeometry.CreatePath(builder);
+
+			Draw(s => s.DrawGeometry(geometry, CurrentState.PlatformStrokeBrush, CurrentState.StrokeSize, CurrentState.PlatformStrokeStyle));
+			
+			geometry.Dispose();
+			builder.Dispose();
 		}
 
 		protected override void PlatformDrawArc(float x, float y, float width, float height, float startAngle, float endAngle, bool clockwise, bool closed)
