@@ -76,12 +76,16 @@ namespace Microsoft.Maui.Controls.Shapes
 			{
 				Handler?.UpdateValue(nameof(IShapeView.Shape));
 				
-				// Force shape update on iOS/MacCatalyst to ensure x:Reference bindings work correctly
-				// The issue is that InvalidateShape alone doesn't trigger a redraw, we need UpdateShape
+				// On iOS/MacCatalyst, defer shape updates to ensure x:Reference bindings work correctly
+				// The issue is that the line might be drawn before the referenced element is properly measured
 #if IOS || MACCATALYST
-				if (Handler is IShapeViewHandler shapeHandler)
+				if (Handler is IShapeViewHandler shapeHandler && shapeHandler.PlatformView != null)
 				{
-					shapeHandler.PlatformView?.UpdateShape(this);
+					// Use Dispatcher to defer the update until after the current layout pass
+					Dispatcher.Dispatch(() => 
+					{
+						shapeHandler.PlatformView?.UpdateShape(this);
+					});
 				}
 #endif
 			}
