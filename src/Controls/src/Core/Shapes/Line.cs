@@ -73,7 +73,18 @@ namespace Microsoft.Maui.Controls.Shapes
 				propertyName == Y1Property.PropertyName ||
 				propertyName == X2Property.PropertyName ||
 				propertyName == Y2Property.PropertyName)
+			{
 				Handler?.UpdateValue(nameof(IShapeView.Shape));
+				
+				// Force additional invalidation on iOS/MacCatalyst to ensure
+				// x:Reference bindings work correctly
+#if IOS || MACCATALYST
+				if (Handler is IShapeViewHandler shapeHandler)
+				{
+					shapeHandler.PlatformView?.InvalidateShape(this);
+				}
+#endif
+			}
 		}
 
 		public override PathF GetPath()
