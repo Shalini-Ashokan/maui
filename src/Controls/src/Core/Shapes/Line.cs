@@ -76,11 +76,14 @@ namespace Microsoft.Maui.Controls.Shapes
 			{
 				Handler?.UpdateValue(nameof(IShapeView.Shape));
 				
-				// Force redraw on iOS/MacCatalyst to ensure x:Reference bindings work correctly
+				// Force layout and redraw on iOS/MacCatalyst to ensure x:Reference bindings work correctly
 #if IOS || MACCATALYST
 				if (Handler is IShapeViewHandler shapeHandler && shapeHandler.PlatformView != null)
 				{
-					// Immediately update the shape and force a redraw
+					// Invalidate measure to ensure the Line view is properly sized for the new coordinates
+					InvalidateMeasure();
+					
+					// Update the shape and force a redraw
 					shapeHandler.PlatformView?.UpdateShape(this);
 					shapeHandler.PlatformView?.InvalidateShape(this);
 				}
