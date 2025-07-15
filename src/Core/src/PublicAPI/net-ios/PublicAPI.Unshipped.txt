@@ -1,4 +1,5 @@
 #nullable enable
+Microsoft.Maui.Platform.MauiTextView.GetPlaceholderRequiredSize(double maxWidth = Infinity) -> CoreGraphics.CGSize
 virtual Microsoft.Maui.Animations.Lerp.LerpDelegate.Invoke(object! start, object! end, double progress) -> object!
 Microsoft.Maui.Handlers.ContextFlyoutItemHandlerUpdate.ContextFlyoutItemHandlerUpdate(Microsoft.Maui.Handlers.ContextFlyoutItemHandlerUpdate! original) -> void
 Microsoft.Maui.Handlers.ContextFlyoutItemHandlerUpdate.Deconstruct(out int Index, out Microsoft.Maui.IMenuElement! MenuElement) -> void
@@ -157,3 +158,5 @@ virtual Microsoft.Maui.SwipeViewSwipeStarted.<Clone>$() -> Microsoft.Maui.SwipeV
 virtual Microsoft.Maui.SwipeViewSwipeStarted.EqualityContract.get -> System.Type!
 virtual Microsoft.Maui.SwipeViewSwipeStarted.Equals(Microsoft.Maui.SwipeViewSwipeStarted? other) -> bool
 virtual Microsoft.Maui.SwipeViewSwipeStarted.PrintMembers(System.Text.StringBuilder! builder) -> bool
+Microsoft.Maui.Platform.MauiTextView.PlaceholderSizeChanged -> System.EventHandler?
+override Microsoft.Maui.Platform.MauiTextView.SizeThatFits(CoreGraphics.CGSize size) -> CoreGraphics.CGSize

@@ -1,4 +1,5 @@
 ﻿using System;
+using CoreGraphics;
 using ObjCRuntime;
 using UIKit;
 
@@ -133,8 +134,11 @@ namespace Microsoft.Maui.Platform
 			textView.VerticalTextAlignment = editor.VerticalTextAlignment;
 		}
 
-		public static void UpdatePlaceholder(this MauiTextView textView, IEditor editor) =>
+		public static void UpdatePlaceholder(this MauiTextView textView, IEditor editor)
+		{
 			textView.PlaceholderText = editor.Placeholder;
+			textView.ContentSize = textView.SizeThatFits(new CGSize(textView.Frame.Width, double.PositiveInfinity));
+		}
 
 		public static void UpdatePlaceholderColor(this MauiTextView textView, IEditor editor) =>
 			textView.PlaceholderTextColor = editor.PlaceholderColor?.ToPlatform() ?? ColorExtensions.PlaceholderColor;
