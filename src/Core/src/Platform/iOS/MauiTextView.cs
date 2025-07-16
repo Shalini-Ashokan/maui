@@ -46,7 +46,7 @@ namespace Microsoft.Maui.Platform
 			set
 			{
 				_placeholderLabel.Text = value;
-				UpdatePlaceholderLabelFrame();
+				_placeholderLabel.SizeToFit();
 			}
 		}
 
@@ -56,7 +56,7 @@ namespace Microsoft.Maui.Platform
 			set
 			{
 				_placeholderLabel.AttributedText = value;
-				UpdatePlaceholderLabelFrame();
+				_placeholderLabel.SizeToFit();
 			}
 		}
 
@@ -124,20 +124,12 @@ namespace Microsoft.Maui.Platform
 		public override CGSize SizeThatFits(CGSize size)
 		{
 			var baseSize = base.SizeThatFits(size);
-
-			// If text is empty and we have placeholder text, ensure we're at least as big as the placeholder
 			if (string.IsNullOrEmpty(Text) && !string.IsNullOrEmpty(_placeholderLabel?.Text))
 			{
-				// Configure the placeholder label for proper wrapping
-				_placeholderLabel.Lines = 0;
-				_placeholderLabel.LineBreakMode = UILineBreakMode.WordWrap;
-				
 				var availableWidth = size.Width - (TextContainer.LineFragmentPadding * 2);
-				_placeholderLabel.PreferredMaxLayoutWidth = (nfloat)availableWidth;
-				
 				var placeholderSize = _placeholderLabel.SizeThatFits(new CGSize(availableWidth, nfloat.MaxValue));
 				var totalHeight = placeholderSize.Height + TextContainerInset.Top + TextContainerInset.Bottom;
-				
+
 				baseSize = new CGSize(
 					Math.Max(baseSize.Width, size.Width),
 					Math.Max(baseSize.Height, totalHeight)
@@ -170,15 +162,6 @@ namespace Microsoft.Maui.Platform
 				var y = TextContainerInset.Top;
 				var width = Bounds.Width - (x * 2);
 				var height = Frame.Height - (TextContainerInset.Top + TextContainerInset.Bottom);
-				
-				// Configure the placeholder label for proper wrapping when text is empty
-				if (!string.IsNullOrEmpty(_placeholderLabel.Text) && string.IsNullOrEmpty(Text))
-				{
-					_placeholderLabel.Lines = 0;
-					_placeholderLabel.LineBreakMode = UILineBreakMode.WordWrap;
-					_placeholderLabel.PreferredMaxLayoutWidth = (nfloat)width;
-				}
-				
 				_placeholderLabel.Frame = new CGRect(x, y, width, height);
 			}
 		}
