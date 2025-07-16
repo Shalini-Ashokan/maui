@@ -137,7 +137,6 @@ namespace Microsoft.Maui.Platform
 		public static void UpdatePlaceholder(this MauiTextView textView, IEditor editor)
 		{
 			textView.PlaceholderText = editor.Placeholder;
-			textView.ContentSize = textView.SizeThatFits(new CGSize(textView.Frame.Width, double.PositiveInfinity));
 		}
 
 		public static void UpdatePlaceholderColor(this MauiTextView textView, IEditor editor) =>

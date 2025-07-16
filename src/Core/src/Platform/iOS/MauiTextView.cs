@@ -40,18 +40,13 @@ namespace Microsoft.Maui.Platform
 		[UnconditionalSuppressMessage("Memory", "MEM0001", Justification = "Proven safe in test: MemoryTests.HandlerDoesNotLeak")]
 		public event EventHandler? TextSetOrChanged;
 
-		// Event fired when placeholder changes and may affect the required size
-		[UnconditionalSuppressMessage("Memory", "MEM0001", Justification = "Proven safe in test: MemoryTests.HandlerDoesNotLeak")]
-		public event EventHandler? PlaceholderSizeChanged;
-
 		public string? PlaceholderText
 		{
 			get => _placeholderLabel.Text;
 			set
 			{
 				_placeholderLabel.Text = value;
-				_placeholderLabel.SizeToFit();
-				OnPlaceholderSizeChanged();
+				UpdatePlaceholderLabelFrame();
 			}
 		}
 
@@ -61,8 +56,7 @@ namespace Microsoft.Maui.Platform
 			set
 			{
 				_placeholderLabel.AttributedText = value;
-				_placeholderLabel.SizeToFit();
-				OnPlaceholderSizeChanged();
+				UpdatePlaceholderLabelFrame();
 			}
 		}
 
@@ -134,10 +128,19 @@ namespace Microsoft.Maui.Platform
 			// If text is empty and we have placeholder text, ensure we're at least as big as the placeholder
 			if (string.IsNullOrEmpty(Text) && !string.IsNullOrEmpty(_placeholderLabel?.Text))
 			{
-				var placeholderSize = GetPlaceholderRequiredSize(size.Width);
+				// Configure the placeholder label for proper wrapping
+				_placeholderLabel.Lines = 0;
+				_placeholderLabel.LineBreakMode = UILineBreakMode.WordWrap;
+				
+				var availableWidth = size.Width - (TextContainer.LineFragmentPadding * 2);
+				_placeholderLabel.PreferredMaxLayoutWidth = (nfloat)availableWidth;
+				
+				var placeholderSize = _placeholderLabel.SizeThatFits(new CGSize(availableWidth, nfloat.MaxValue));
+				var totalHeight = placeholderSize.Height + TextContainerInset.Top + TextContainerInset.Bottom;
+				
 				baseSize = new CGSize(
-					Math.Max(baseSize.Width, placeholderSize.Width),
-					Math.Max(baseSize.Height, placeholderSize.Height)
+					Math.Max(baseSize.Width, size.Width),
+					Math.Max(baseSize.Height, totalHeight)
 				);
 			}
 
@@ -167,7 +170,15 @@ namespace Microsoft.Maui.Platform
 				var y = TextContainerInset.Top;
 				var width = Bounds.Width - (x * 2);
 				var height = Frame.Height - (TextContainerInset.Top + TextContainerInset.Bottom);
-				_placeholderLabel.SizeThatFits(new CGSize(width, height));
+				
+				// Configure the placeholder label for proper wrapping when text is empty
+				if (!string.IsNullOrEmpty(_placeholderLabel.Text) && string.IsNullOrEmpty(Text))
+				{
+					_placeholderLabel.Lines = 0;
+					_placeholderLabel.LineBreakMode = UILineBreakMode.WordWrap;
+					_placeholderLabel.PreferredMaxLayoutWidth = (nfloat)width;
+				}
+				
 				_placeholderLabel.Frame = new CGRect(x, y, width, height);
 			}
 		}
@@ -229,42 +240,6 @@ namespace Microsoft.Maui.Platform
 		{
 			base.MovedToWindow();
 			_movedToWindow?.Invoke(this, EventArgs.Empty);
-		}
-
-		void OnPlaceholderSizeChanged()
-		{
-			PlaceholderSizeChanged?.Invoke(this, EventArgs.Empty);
-		}
-
-#pragma warning disable RS0016 // Add public types and members to the declared API
-		public CGSize GetPlaceholderRequiredSize(double maxWidth = double.PositiveInfinity)
-#pragma warning restore RS0016 // Add public types and members to the declared API
-		{
-			if (string.IsNullOrEmpty(_placeholderLabel?.Text))
-				return CGSize.Empty;
-
-			// Calculate available width (same logic as UpdatePlaceholderLabelFrame)
-			var availableWidth = double.IsInfinity(maxWidth)
-				? 300 // fallback width
-				: maxWidth - (TextContainer.LineFragmentPadding * 2);
-
-			// Use a temporary label with the same configuration to calculate size
-			using var tempLabel = new UILabel
-			{
-				Text = _placeholderLabel.Text,
-				Font = _placeholderLabel.Font,
-				Lines = 0, // Allow unlimited lines for wrapping
-				LineBreakMode = UILineBreakMode.WordWrap,
-				PreferredMaxLayoutWidth = (nfloat)availableWidth
-			};
-
-			var placeholderSize = tempLabel.SizeThatFits(new CGSize(availableWidth, nfloat.MaxValue));
-
-			// Add text container insets to get the total required UITextView size
-			var totalHeight = placeholderSize.Height + TextContainerInset.Top + TextContainerInset.Bottom;
-			var totalWidth = Math.Min(placeholderSize.Width + (TextContainer.LineFragmentPadding * 2), availableWidth);
-
-			return new CGSize(totalWidth, totalHeight);
 		}
 	}
 }

@@ -46,19 +46,11 @@ namespace Microsoft.Maui.Handlers
 		protected override void ConnectHandler(MauiTextView platformView)
 		{
 			_proxy.Connect(VirtualView, platformView);
-			platformView.PlaceholderSizeChanged += OnPlaceholderSizeChanged;
 		}
 
 		protected override void DisconnectHandler(MauiTextView platformView)
 		{
 			_proxy.Disconnect(platformView);
-			platformView.PlaceholderSizeChanged -= OnPlaceholderSizeChanged;
-		}
-
-		void OnPlaceholderSizeChanged(object? sender, EventArgs e)
-		{
-			// Invalidate measure when placeholder size changes to trigger GetDesiredSize
-			VirtualView?.InvalidateMeasure();
 		}
 
 		public override bool NeedsContainer
@@ -117,6 +109,7 @@ namespace Microsoft.Maui.Handlers
 		{
 			handler.PlatformView?.UpdatePlaceholder(editor);
 			handler.UpdateValue(nameof(IEditor.CharacterSpacing));
+			editor?.InvalidateMeasure();
 		}
 
 		public static void MapPlaceholderColor(IEditorHandler handler, IEditor editor) =>
