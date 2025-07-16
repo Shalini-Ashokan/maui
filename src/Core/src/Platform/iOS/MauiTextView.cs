@@ -126,14 +126,9 @@ namespace Microsoft.Maui.Platform
 			var baseSize = base.SizeThatFits(size);
 			if (string.IsNullOrEmpty(Text) && !string.IsNullOrEmpty(_placeholderLabel?.Text))
 			{
-				var availableWidth = size.Width - (TextContainer.LineFragmentPadding * 2);
-				var placeholderSize = _placeholderLabel.SizeThatFits(new CGSize(availableWidth, nfloat.MaxValue));
+				var placeholderSize = _placeholderLabel.SizeThatFits(new CGSize(size.Width, nfloat.MaxValue));
 				var totalHeight = placeholderSize.Height + TextContainerInset.Top + TextContainerInset.Bottom;
-
-				baseSize = new CGSize(
-					Math.Max(baseSize.Width, size.Width),
-					Math.Max(baseSize.Height, totalHeight)
-				);
+				return new CGSize(placeholderSize.Width, totalHeight);
 			}
 
 			return baseSize;
@@ -162,6 +157,7 @@ namespace Microsoft.Maui.Platform
 				var y = TextContainerInset.Top;
 				var width = Bounds.Width - (x * 2);
 				var height = Frame.Height - (TextContainerInset.Top + TextContainerInset.Bottom);
+
 				_placeholderLabel.Frame = new CGRect(x, y, width, height);
 			}
 		}
