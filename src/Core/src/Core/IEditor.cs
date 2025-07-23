@@ -9,5 +9,7 @@
 		/// Occurs when the user finalizes the text in an editor with the return key.
 		/// </summary>
 		void Completed();
+
+		bool IsAutoSize();
 	}
 }
