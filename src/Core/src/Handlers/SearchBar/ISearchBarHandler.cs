@@ -4,7 +4,7 @@ using PlatformView = Microsoft.Maui.Platform.MauiSearchBar;
 using QueryEditor = UIKit.UITextField;
 #elif MONOANDROID
 using PlatformView = AndroidX.AppCompat.Widget.SearchView;
-using QueryEditor = Android.Widget.EditText;
+using QueryEditor = Microsoft.Maui.Platform.MauiAppCompatEditText;
 #elif WINDOWS
 using PlatformView = Microsoft.UI.Xaml.Controls.AutoSuggestBox;
 using QueryEditor = Microsoft.UI.Xaml.Controls.AutoSuggestBox;

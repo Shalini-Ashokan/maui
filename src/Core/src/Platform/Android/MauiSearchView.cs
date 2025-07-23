@@ -8,7 +8,7 @@ namespace Microsoft.Maui.Platform
 {
 	public class MauiSearchView : SearchView
 	{
-		internal EditText? _queryEditor;
+		internal MauiAppCompatEditText? _queryEditor;
 
 		public MauiSearchView(Context context) : base(context)
 		{
@@ -20,12 +20,44 @@ namespace Microsoft.Maui.Platform
 			SetIconifiedByDefault(false);
 			MaxWidth = int.MaxValue;
 
-			_queryEditor = this.GetFirstChildOfType<EditText>();
-
-			if (_queryEditor?.LayoutParameters is LinearLayout.LayoutParams layoutParams)
+			// The SearchView creates a default EditText, we need to replace it with MauiAppCompatEditText
+			// to get the SelectionChanged event
+			var defaultEditText = this.GetFirstChildOfType<EditText>();
+			if (defaultEditText != null && !(defaultEditText is MauiAppCompatEditText))
 			{
-				layoutParams.Height = LinearLayout.LayoutParams.MatchParent;
-				layoutParams.Gravity = GravityFlags.FillVertical;
+				// Get the parent view group
+				var parent = defaultEditText.Parent as ViewGroup;
+				if (parent != null && Context != null)
+				{
+					// Get the index and layout params of the default EditText
+					var index = parent.IndexOfChild(defaultEditText);
+					var layoutParams = defaultEditText.LayoutParameters;
+
+					// Remove the default EditText
+					parent.RemoveView(defaultEditText);
+
+					// Create and add MauiAppCompatEditText with the same properties
+					_queryEditor = new MauiAppCompatEditText(Context);
+					_queryEditor.LayoutParameters = layoutParams;
+
+					// Copy important properties from the original EditText
+					_queryEditor.Id = defaultEditText.Id;
+					_queryEditor.Text = defaultEditText.Text;
+					_queryEditor.Hint = defaultEditText.Hint;
+					_queryEditor.InputType = defaultEditText.InputType;
+
+					parent.AddView(_queryEditor, index);
+				}
+			}
+			else if (defaultEditText is MauiAppCompatEditText mauiEditText)
+			{
+				_queryEditor = mauiEditText;
+			}
+
+			if (_queryEditor?.LayoutParameters is LinearLayout.LayoutParams layoutParams2)
+			{
+				layoutParams2.Height = LinearLayout.LayoutParams.MatchParent;
+				layoutParams2.Gravity = GravityFlags.FillVertical;
 			}
 
 			var searchCloseButtonIdentifier = Resource.Id.search_close_btn;

@@ -1,8 +1,10 @@
+using System;
 using Android.Content;
 using Android.Content.Res;
 using Android.Views;
 using Android.Widget;
 using AndroidX.AppCompat.Widget;
+using Google.Android.Material.DatePicker;
 using static AndroidX.AppCompat.Widget.SearchView;
 using SearchView = AndroidX.AppCompat.Widget.SearchView;
 
@@ -16,7 +18,7 @@ namespace Microsoft.Maui.Handlers
 
 		MauiSearchView? _platformSearchView;
 
-		public EditText? QueryEditor => _platformSearchView?._queryEditor;
+		public MauiAppCompatEditText? QueryEditor => _platformSearchView?._queryEditor;
 
 		protected override SearchView CreatePlatformView()
 		{
@@ -31,6 +33,9 @@ namespace Microsoft.Maui.Handlers
 
 			platformView.QueryTextChange += OnQueryTextChange;
 			platformView.QueryTextSubmit += OnQueryTextSubmit;
+
+			if (QueryEditor != null)
+				QueryEditor.SelectionChanged += OnSelectionChanged;
 		}
 
 		protected override void DisconnectHandler(SearchView platformView)
@@ -40,6 +45,9 @@ namespace Microsoft.Maui.Handlers
 
 			platformView.QueryTextChange -= OnQueryTextChange;
 			platformView.QueryTextSubmit -= OnQueryTextSubmit;
+
+			if (QueryEditor != null)
+				QueryEditor.SelectionChanged -= OnSelectionChanged;
 		}
 
 		public static void MapBackground(ISearchBarHandler handler, ISearchBar searchBar)
@@ -132,6 +140,16 @@ namespace Microsoft.Maui.Handlers
 				handler.QueryEditor?.Focus(request);
 		}
 
+		internal static void MapCursorPosition(ISearchBarHandler handler, ISearchBar searchBar)
+		{
+			handler.QueryEditor?.UpdateCursorPosition(searchBar);
+		}
+
+		internal static void MapSelectionLength(ISearchBarHandler handler, ISearchBar searchBar)
+		{
+			handler.QueryEditor?.UpdateSelectionLength(searchBar);
+		}
+
 		void OnQueryTextSubmit(object? sender, QueryTextSubmitEventArgs e)
 		{
 			VirtualView.SearchButtonPressed();
@@ -141,7 +159,37 @@ namespace Microsoft.Maui.Handlers
 		void OnQueryTextChange(object? sender, QueryTextChangeEventArgs e)
 		{
 			VirtualView.UpdateText(e.NewText);
+
+			// After text changes, update cursor position and selection length
+			// This ensures the properties are updated when user types
+			if (QueryEditor != null)
+			{
+				var cursorPosition = QueryEditor.SelectionStart;
+				var selectionLength = QueryEditor.SelectionEnd - QueryEditor.SelectionStart;
+
+				if (VirtualView.CursorPosition != cursorPosition)
+					VirtualView.CursorPosition = cursorPosition;
+
+				if (VirtualView.SelectionLength != selectionLength)
+					VirtualView.SelectionLength = selectionLength;
+			}
+
 			e.Handled = true;
+		}
+
+		void OnSelectionChanged(object? sender, EventArgs e)
+		{
+			if (QueryEditor == null)
+				return;
+
+			var cursorPosition = QueryEditor.SelectionStart;
+			var selectionLength = QueryEditor.SelectionEnd - QueryEditor.SelectionStart;
+
+			if (VirtualView.CursorPosition != cursorPosition)
+				VirtualView.CursorPosition = cursorPosition;
+
+			if (VirtualView.SelectionLength != selectionLength)
+				VirtualView.SelectionLength = selectionLength;
 		}
 
 		class FocusChangeListener : Java.Lang.Object, SearchView.IOnFocusChangeListener

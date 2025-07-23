@@ -584,7 +584,7 @@ Microsoft.Maui.Handlers.IScrollViewHandler.PlatformView.get -> Microsoft.Maui.Pl
 Microsoft.Maui.Handlers.IScrollViewHandler.VirtualView.get -> Microsoft.Maui.IScrollView!
 Microsoft.Maui.Handlers.ISearchBarHandler
 Microsoft.Maui.Handlers.ISearchBarHandler.PlatformView.get -> AndroidX.AppCompat.Widget.SearchView!
-Microsoft.Maui.Handlers.ISearchBarHandler.QueryEditor.get -> Android.Widget.EditText?
+Microsoft.Maui.Handlers.ISearchBarHandler.QueryEditor.get -> Microsoft.Maui.Platform.MauiAppCompatEditText?
 Microsoft.Maui.Handlers.ISearchBarHandler.VirtualView.get -> Microsoft.Maui.ISearchBar!
 Microsoft.Maui.Handlers.IShapeViewHandler
 Microsoft.Maui.Handlers.IShapeViewHandler.PlatformView.get -> Microsoft.Maui.Platform.MauiShapeView!
@@ -725,7 +725,7 @@ Microsoft.Maui.Handlers.ScrollViewHandler.ScrollViewHandler() -> void
 Microsoft.Maui.Handlers.ScrollViewHandler.ScrollViewHandler(Microsoft.Maui.IPropertyMapper? mapper, Microsoft.Maui.CommandMapper? commandMapper) -> void
 Microsoft.Maui.Handlers.ScrollViewHandler.ScrollViewHandler(Microsoft.Maui.IPropertyMapper? mapper) -> void
 Microsoft.Maui.Handlers.SearchBarHandler
-Microsoft.Maui.Handlers.SearchBarHandler.QueryEditor.get -> Android.Widget.EditText?
+Microsoft.Maui.Handlers.SearchBarHandler.QueryEditor.get -> Microsoft.Maui.Platform.MauiAppCompatEditText?
 Microsoft.Maui.Handlers.SearchBarHandler.SearchBarHandler() -> void
 Microsoft.Maui.Handlers.SearchBarHandler.SearchBarHandler(Microsoft.Maui.IPropertyMapper? mapper, Microsoft.Maui.CommandMapper? commandMapper) -> void
 Microsoft.Maui.Handlers.SearchBarHandler.SearchBarHandler(Microsoft.Maui.IPropertyMapper? mapper) -> void
