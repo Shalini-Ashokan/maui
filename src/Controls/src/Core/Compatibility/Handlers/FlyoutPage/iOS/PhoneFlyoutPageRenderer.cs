@@ -337,6 +337,13 @@ namespace Microsoft.Maui.Controls.Handlers.Compatibility
 
 		void EmptyContainers()
 		{
+			// Unsubscribe from flyout toolbar items collection changes
+			var flyoutPage = ((FlyoutPage)Element)?.Flyout;
+			if (flyoutPage?.ToolbarItems is System.Collections.Specialized.INotifyCollectionChanged toolbarItems)
+			{
+				toolbarItems.CollectionChanged -= OnFlyoutToolbarItemsChanged;
+			}
+
 			foreach (var child in _detailController.View.Subviews.Concat(_flyoutController.View.Subviews))
 				child.RemoveFromSuperview();
 
@@ -348,6 +355,8 @@ namespace Microsoft.Maui.Controls.Handlers.Compatibility
 		{
 			if (e.PropertyName == Page.IconImageSourceProperty.PropertyName || e.PropertyName == Page.TitleProperty.PropertyName)
 				UpdateLeftBarButton();
+			else if (e.PropertyName == nameof(Page.ToolbarItems))
+				UpdateDetailToolbarItems();
 		}
 
 		void HandlePropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -557,6 +566,14 @@ namespace Microsoft.Maui.Controls.Handlers.Compatibility
 
 			((FlyoutPage)Element).Flyout.PropertyChanged += HandleFlyoutPropertyChanged;
 
+			// Monitor toolbar items collection changes on the flyout page
+			var flyoutPage = ((FlyoutPage)Element).Flyout;
+			if (flyoutPage?.ToolbarItems is System.Collections.Specialized.INotifyCollectionChanged toolbarItems)
+			{
+				toolbarItems.CollectionChanged -= OnFlyoutToolbarItemsChanged;
+				toolbarItems.CollectionChanged += OnFlyoutToolbarItemsChanged;
+			}
+
 			UIView flyoutView = flyoutRenderer.ViewController.View;
 
 			_flyoutController.View.AddSubview(flyoutView);
@@ -576,6 +593,9 @@ namespace Microsoft.Maui.Controls.Handlers.Compatibility
 
 			ToggleAccessibilityElementsHidden();
 			UpdatePageSpecifics();
+
+			// Trigger initial toolbar update to include flyout toolbar items
+			UpdateDetailToolbarItems();
 		}
 
 		void UpdateLeftBarButton()
@@ -591,6 +611,23 @@ namespace Microsoft.Maui.Controls.Handlers.Compatibility
 			UIViewController firstPage = detailRenderer?.ViewControllers.FirstOrDefault();
 			if (firstPage != null)
 				NavigationRenderer.SetFlyoutLeftBarButton(firstPage, FlyoutPage);
+		}
+
+		void UpdateDetailToolbarItems()
+		{
+			var FlyoutPage = Element as FlyoutPage;
+			if (!(FlyoutPage?.Detail is NavigationPage navigationPage))
+				return;
+
+			// Send update message to NavigationRenderer
+#pragma warning disable CS0618 // Type or member is obsolete
+			MessagingCenter.Instance.Send<IPlatformViewHandler>(this, NavigationRenderer.UpdateToolbarButtons);
+#pragma warning restore CS0618 // Type or member is obsolete
+		}
+
+		void OnFlyoutToolbarItemsChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+		{
+			UpdateDetailToolbarItems();
 		}
 
 		void UpdateApplyShadow(bool value)

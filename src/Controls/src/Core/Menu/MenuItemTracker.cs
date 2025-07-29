@@ -84,7 +84,7 @@ namespace Microsoft.Maui.Controls
 
 				if (AdditionalTargets != null)
 					foreach (var item in AdditionalTargets)
-						foreach (var menuItem in GetMenuItems(item))
+						foreach (var menuItem in GetCurrentToolbarItems(item))
 							if (!returnValue.Contains(menuItem))
 								returnValue.Add(menuItem);
 
