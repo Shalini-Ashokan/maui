@@ -257,11 +257,6 @@ namespace Microsoft.Maui.Controls.Handlers.Compatibility
 
 			if (disposing)
 			{
-				// Unsubscribe from MessagingCenter
-#pragma warning disable CS0618 // Type or member is obsolete
-				MessagingCenter.Instance.Unsubscribe<IPlatformViewHandler>(this, UpdateToolbarButtons);
-#pragma warning restore CS0618 // Type or member is obsolete
-
 				Delegate = null;
 				foreach (var childViewController in ViewControllers)
 					childViewController.Dispose();
@@ -1308,8 +1303,6 @@ namespace Microsoft.Maui.Controls.Handlers.Compatibility
 				_tracker.Target = Child;
 				_tracker.AdditionalTargets = Child.GetParentPages();
 
-				_tracker.SeparateFlyoutPage = false;
-
 				UpdateToolbarItems();
 			}
 
@@ -1675,7 +1668,7 @@ namespace Microsoft.Maui.Controls.Handlers.Compatibility
 				}
 			}
 
-			internal void UpdateToolbarItems()
+			void UpdateToolbarItems()
 			{
 				if (NavigationItem.RightBarButtonItems != null)
 				{
