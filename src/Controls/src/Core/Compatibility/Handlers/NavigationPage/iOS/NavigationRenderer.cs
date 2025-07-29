@@ -214,21 +214,6 @@ namespace Microsoft.Maui.Controls.Handlers.Compatibility
 
 			FindParentFlyoutPage();
 
-			// Subscribe to toolbar update messages from FlyoutPage renderer
-#pragma warning disable CS0618 // Type or member is obsolete
-			MessagingCenter.Instance.Subscribe<IPlatformViewHandler>(this, UpdateToolbarButtons, sender =>
-			{
-				// Force toolbar refresh on all view controllers
-				foreach (var viewController in ViewControllers)
-				{
-					if (viewController is ParentingViewController parentingViewController)
-					{
-						parentingViewController.UpdateToolbarItems();
-					}
-				}
-			});
-#pragma warning restore CS0618 // Type or member is obsolete
-
 			var navPage = NavPage;
 			INavigationPageController navPageController = NavPage;
 			if (navPage.CurrentPage == null)
@@ -1322,6 +1307,8 @@ namespace Microsoft.Maui.Controls.Handlers.Compatibility
 
 				_tracker.Target = Child;
 				_tracker.AdditionalTargets = Child.GetParentPages();
+
+				_tracker.SeparateFlyoutPage = false;
 
 				UpdateToolbarItems();
 			}
