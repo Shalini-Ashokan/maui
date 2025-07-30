@@ -84,10 +84,23 @@ namespace Microsoft.Maui.Controls
 
 				if (AdditionalTargets != null)
 					foreach (var item in AdditionalTargets)
-						foreach (var menuItem in GetCurrentToolbarItems(item))
-							if (!returnValue.Contains(menuItem))
-								returnValue.Add(menuItem);
-
+					{
+						if (item is FlyoutPage flyoutPage)
+						{
+							if (flyoutPage.Flyout != null)
+							{
+								foreach (var menuItem in GetCurrentToolbarItems(flyoutPage.Flyout))
+									if (!returnValue.Contains(menuItem))
+										returnValue.Add(menuItem);
+							}
+						}
+						else
+						{
+							foreach (var menuItem in GetMenuItems(item))
+								if (!returnValue.Contains(menuItem))
+									returnValue.Add(menuItem);
+						}
+					}
 				returnValue.Sort(CreateComparer());
 				return returnValue;
 			}
