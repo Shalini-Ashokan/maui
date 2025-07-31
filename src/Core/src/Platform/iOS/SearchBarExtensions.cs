@@ -186,5 +186,53 @@ namespace Microsoft.Maui.Platform
 
 			uiSearchBar.ReloadInputViews();
 		}
+
+		public static void UpdateCursorPosition(this UITextField textField, ISearchBar searchBar)
+		{
+			var selectedTextRange = textField.SelectedTextRange;
+			if (selectedTextRange == null)
+				return;
+			if (textField.GetOffsetFromPosition(textField.BeginningOfDocument, selectedTextRange.Start) != searchBar.CursorPosition)
+				UpdateCursorSelection(textField, searchBar);
+		}
+
+		static void UpdateCursorSelection(this UITextField textField, ISearchBar searchBar)
+		{
+			if (!searchBar.IsReadOnly)
+			{
+				UITextPosition start = GetSelectionStart(textField, searchBar, out int startOffset);
+				UITextPosition end = GetSelectionEnd(textField, searchBar, start, startOffset);
+
+				textField.SelectedTextRange = textField.GetTextRange(start, end);
+			}
+		}
+
+		static UITextPosition GetSelectionStart(UITextField textField, ISearchBar searchBar, out int startOffset)
+		{
+			int cursorPosition = searchBar.CursorPosition;
+
+			UITextPosition start = textField.GetPosition(textField.BeginningOfDocument, cursorPosition) ?? textField.EndOfDocument;
+			startOffset = Math.Max(0, (int)textField.GetOffsetFromPosition(textField.BeginningOfDocument, start));
+
+			if (startOffset != cursorPosition)
+				searchBar.CursorPosition = startOffset;
+
+			return start;
+		}
+
+		static UITextPosition GetSelectionEnd(UITextField textField, ISearchBar searchBar, UITextPosition start, int startOffset)
+		{
+			int selectionLength = searchBar.SelectionLength;
+			int textFieldLength = textField.Text == null ? 0 : textField.Text.Length;
+			// Get the desired range in respect to the actual length of the text we are working with
+			UITextPosition end = textField.GetPosition(start, Math.Min(textFieldLength - searchBar.CursorPosition, selectionLength)) ?? start;
+			int endOffset = Math.Max(startOffset, (int)textField.GetOffsetFromPosition(textField.BeginningOfDocument, end));
+
+			int newSelectionLength = Math.Max(0, endOffset - startOffset);
+			if (newSelectionLength != selectionLength)
+				searchBar.SelectionLength = newSelectionLength;
+
+			return end;
+		}
 	}
 }

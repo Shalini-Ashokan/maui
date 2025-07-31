@@ -146,6 +146,11 @@ namespace Microsoft.Maui.Handlers
 			handler.PlatformView?.UpdateKeyboard(searchBar);
 		}
 
+		public static void MapCursorPosition(ISearchBarHandler handler, ISearchBar searchBar)
+		{
+			handler.QueryEditor?.UpdateCursorPosition(searchBar);
+		}
+
 		void UpdateCancelButtonVisibility()
 		{
 			if (PlatformView.ShowsCancelButton != VirtualView.ShouldShowCancelButton())
