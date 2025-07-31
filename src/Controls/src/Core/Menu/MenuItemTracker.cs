@@ -87,6 +87,7 @@ namespace Microsoft.Maui.Controls
 						foreach (var menuItem in GetMenuItems(item))
 							if (!returnValue.Contains(menuItem))
 								returnValue.Add(menuItem);
+
 				returnValue.Sort(CreateComparer());
 				return returnValue;
 			}
