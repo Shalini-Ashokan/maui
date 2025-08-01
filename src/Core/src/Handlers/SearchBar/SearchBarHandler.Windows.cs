@@ -117,6 +117,11 @@ namespace Microsoft.Maui.Handlers
 			handler.PlatformView?.UpdateKeyboard(searchBar);
 		}
 
+		public static void MapCursorPosition(ISearchBarHandler handler, ISearchBar searchBar)
+		{
+			handler.PlatformView?.UpdateCursorPosition(searchBar);
+		}
+
 		void OnLoaded(object sender, UI.Xaml.RoutedEventArgs e)
 		{
 			if (VirtualView != null)
@@ -155,6 +160,9 @@ namespace Microsoft.Maui.Handlers
 				return;
 
 			VirtualView.Text = sender.Text;
+
+			// Update cursor position after text change to ensure it's positioned correctly
+			PlatformView?.UpdateCursorPosition(VirtualView);
 		}
 
 		void OnGotFocus(object sender, UI.Xaml.RoutedEventArgs e)

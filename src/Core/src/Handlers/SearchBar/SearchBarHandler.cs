@@ -19,10 +19,6 @@ namespace Microsoft.Maui.Handlers
 		{
 #if __IOS__
 			[nameof(ISearchBar.IsEnabled)] = MapIsEnabled,
-			[nameof(ISearchBar.CursorPosition)] = MapCursorPosition,
-#endif
-#if ANDROID
-			[nameof(ISearchBar.CursorPosition)] = MapCursorPosition,
 #endif
 			[nameof(ISearchBar.Background)] = MapBackground,
 			[nameof(ISearchBar.CharacterSpacing)] = MapCharacterSpacing,
@@ -39,6 +35,7 @@ namespace Microsoft.Maui.Handlers
 			[nameof(ISearchBar.TextColor)] = MapTextColor,
 			[nameof(ISearchBar.CancelButtonColor)] = MapCancelButtonColor,
 			[nameof(ISearchBar.Keyboard)] = MapKeyboard,
+			[nameof(ISearchBar.CursorPosition)] = MapCursorPosition,
 
 		};
 
