@@ -132,3 +132,4 @@ virtual Microsoft.Maui.SwipeViewSwipeStarted.<Clone>$() -> Microsoft.Maui.SwipeV
 virtual Microsoft.Maui.SwipeViewSwipeStarted.EqualityContract.get -> System.Type!
 virtual Microsoft.Maui.SwipeViewSwipeStarted.Equals(Microsoft.Maui.SwipeViewSwipeStarted? other) -> bool
 virtual Microsoft.Maui.SwipeViewSwipeStarted.PrintMembers(System.Text.StringBuilder! builder) -> bool
+static Microsoft.Maui.Handlers.SearchBarHandler.MapCursorPosition(Microsoft.Maui.Handlers.IViewHandler! handler, Microsoft.Maui.ISearchBar! searchBar) -> void

@@ -201,12 +201,8 @@ namespace Microsoft.Maui.Platform
 			if (!searchBar.IsReadOnly)
 			{
 				int cursorPosition = searchBar.CursorPosition;
-				int textLength = textField.Text?.Length ?? 0;
 
-				// Constrain cursor position to text length (like Entry does)
-				int validCursorPosition = Math.Max(0, Math.Min(cursorPosition, textLength));
-
-				UITextPosition start = textField.GetPosition(textField.BeginningOfDocument, validCursorPosition) ?? textField.EndOfDocument;
+				UITextPosition start = textField.GetPosition(textField.BeginningOfDocument, cursorPosition) ?? textField.EndOfDocument;
 				int actualOffset = Math.Max(0, (int)textField.GetOffsetFromPosition(textField.BeginningOfDocument, start));
 
 				// Update the virtual view if the position was corrected (like Entry does)
