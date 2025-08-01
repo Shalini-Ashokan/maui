@@ -21,6 +21,9 @@ namespace Microsoft.Maui.Handlers
 			[nameof(ISearchBar.IsEnabled)] = MapIsEnabled,
 			[nameof(ISearchBar.CursorPosition)] = MapCursorPosition,
 #endif
+#if ANDROID
+			[nameof(ISearchBar.CursorPosition)] = MapCursorPosition,
+#endif
 			[nameof(ISearchBar.Background)] = MapBackground,
 			[nameof(ISearchBar.CharacterSpacing)] = MapCharacterSpacing,
 			[nameof(ISearchBar.Font)] = MapFont,

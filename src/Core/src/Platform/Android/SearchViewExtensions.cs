@@ -162,6 +162,31 @@ namespace Microsoft.Maui.Platform
 			searchView.SetInputType(searchBar);
 		}
 
+		public static void UpdateCursorPosition(this EditText editText, ISearchBar searchBar)
+		{
+			if (editText.SelectionStart != searchBar.CursorPosition)
+				UpdateCursorSelection(editText, searchBar);
+		}
+
+		static void UpdateCursorSelection(EditText editText, ISearchBar searchBar)
+		{
+			if (!searchBar.IsReadOnly)
+			{
+				int cursorPosition = searchBar.CursorPosition;
+				int textLength = editText.Text?.Length ?? 0;
+
+				// Constrain cursor position to text length (same as iOS implementation)
+				int validCursorPosition = System.Math.Max(0, System.Math.Min(cursorPosition, textLength));
+
+				// Update the virtual view if the position was corrected
+				if (validCursorPosition != cursorPosition)
+					searchBar.CursorPosition = validCursorPosition;
+
+				// Set cursor position without selection (start and end are the same)
+				editText.SetSelection(validCursorPosition, validCursorPosition);
+			}
+		}
+
 		internal static void SetInputType(this SearchView searchView, ISearchBar searchBar, EditText? editText = null)
 		{
 			editText ??= searchView.GetFirstChildOfType<EditText>();
