@@ -10,5 +10,21 @@ namespace Microsoft.Maui.Controls.Platform
 		{
 			platformControl.Text = TextTransformUtilites.GetTransformedText(inputView.Text, inputView.TextTransform);
 		}
+
+		internal static void SyncCursorPositionFromPlatformToVirtual(this AutoSuggestBox platformView, ISearchBar virtualView)
+		{
+			if (virtualView == null || platformView == null)
+				return;
+
+			var textBox = platformView.GetFirstDescendant<TextBox>();
+			if (textBox != null)
+			{
+				var cursorPosition = textBox.GetCursorPosition();
+				if (virtualView.CursorPosition != cursorPosition)
+				{
+					virtualView.CursorPosition = cursorPosition;
+				}
+			}
+		}
 	}
 }

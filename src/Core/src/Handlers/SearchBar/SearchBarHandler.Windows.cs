@@ -117,7 +117,8 @@ namespace Microsoft.Maui.Handlers
 			handler.PlatformView?.UpdateKeyboard(searchBar);
 		}
 
-		public static void MapCursorPosition(ISearchBarHandler handler, ISearchBar searchBar)
+		//TODO: Make it public in .NET 10.
+		internal static void MapCursorPosition(ISearchBarHandler handler, ISearchBar searchBar)
 		{
 			handler.PlatformView?.UpdateCursorPosition(searchBar);
 		}
@@ -160,18 +161,7 @@ namespace Microsoft.Maui.Handlers
 				return;
 
 			VirtualView.Text = sender.Text;
-			if (sender is AutoSuggestBox platformView)
-			{
-				var textBox = platformView.GetFirstDescendant<TextBox>();
-				if (textBox != null)
-				{
-					var cursorPosition = textBox.GetCursorPosition();
-					if (VirtualView.CursorPosition != cursorPosition)
-					{
-						VirtualView.CursorPosition = cursorPosition;
-					}
-				}
-			}
+			SyncCursorPositionFromPlatformToVirtual(VirtualView);
 		}
 
 		void OnGotFocus(object sender, UI.Xaml.RoutedEventArgs e)

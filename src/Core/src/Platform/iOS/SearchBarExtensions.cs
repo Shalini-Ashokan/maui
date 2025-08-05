@@ -187,13 +187,16 @@ namespace Microsoft.Maui.Platform
 			uiSearchBar.ReloadInputViews();
 		}
 
-		public static void UpdateCursorPosition(this UITextField textField, ISearchBar searchBar)
+		internal static void UpdateCursorPosition(this UITextField textField, ISearchBar searchBar)
 		{
 			var selectedTextRange = textField.SelectedTextRange;
 			if (selectedTextRange == null)
 				return;
+
 			if (textField.GetOffsetFromPosition(textField.BeginningOfDocument, selectedTextRange.Start) != searchBar.CursorPosition)
+			{
 				UpdateCursorSelection(textField, searchBar);
+			}
 		}
 
 		static void UpdateCursorSelection(this UITextField textField, ISearchBar searchBar)
@@ -204,13 +207,24 @@ namespace Microsoft.Maui.Platform
 
 				UITextPosition start = textField.GetPosition(textField.BeginningOfDocument, cursorPosition) ?? textField.EndOfDocument;
 				int actualOffset = Math.Max(0, (int)textField.GetOffsetFromPosition(textField.BeginningOfDocument, start));
-
-				// Update the virtual view if the position was corrected (like Entry does)
 				if (actualOffset != cursorPosition)
+				{
 					searchBar.CursorPosition = actualOffset;
+				}
 
-				// Set cursor position without selection (start and end are the same)
 				textField.SelectedTextRange = textField.GetTextRange(start, start);
+			}
+		}
+
+		internal static void SyncCursorPositionFromPlatformToVirtual(this UITextField textField, ISearchBar searchBar)
+		{
+			if (searchBar == null)
+				return;
+
+			var cursorPosition = textField.GetCursorPosition();
+			if (searchBar.CursorPosition != cursorPosition)
+			{
+				searchBar.CursorPosition = cursorPosition;
 			}
 		}
 	}

@@ -205,7 +205,7 @@ namespace Microsoft.Maui.Platform
 			cancelButton.UpdateTextColor(searchBar.CancelButtonColor, CancelButtonColorKeys);
 		}
 
-		public static void UpdateCursorPosition(this AutoSuggestBox platformControl, ISearchBar searchBar)
+		internal static void UpdateCursorPosition(this AutoSuggestBox platformControl, ISearchBar searchBar)
 		{
 			var textBox = platformControl.GetFirstDescendant<TextBox>();
 
@@ -215,7 +215,9 @@ namespace Microsoft.Maui.Platform
 			searchBar.CursorPosition = Math.Min(searchBar.CursorPosition, textBox.Text.Length);
 
 			if (textBox.SelectionStart != searchBar.CursorPosition)
+			{
 				textBox.SelectionStart = searchBar.CursorPosition;
+			}
 		}
 	}
 }

@@ -114,7 +114,8 @@ namespace Microsoft.Maui.Handlers
 			handler.QueryEditor?.UpdateIsReadOnly(searchBar);
 		}
 
-		public static void MapCursorPosition(ISearchBarHandler handler, ITextInput searchBar)
+		//TODO: Make it public in .NET 10. 
+		internal static void MapCursorPosition(ISearchBarHandler handler, ITextInput searchBar)
 		{
 			handler.QueryEditor?.UpdateCursorPosition(searchBar);
 		}
