@@ -191,7 +191,9 @@ namespace Microsoft.Maui.Platform
 		{
 			var selectedTextRange = textField.SelectedTextRange;
 			if (selectedTextRange == null)
+			{
 				return;
+			}
 
 			if (textField.GetOffsetFromPosition(textField.BeginningOfDocument, selectedTextRange.Start) != searchBar.CursorPosition)
 			{
@@ -216,7 +218,7 @@ namespace Microsoft.Maui.Platform
 			}
 		}
 
-		internal static void SyncCursorPositionFromPlatformToVirtual(this UITextField textField, ISearchBar searchBar)
+		internal static void UpdateCursorPositionFromPlatformToVirtual(this UITextField textField, ISearchBar searchBar)
 		{
 			if (searchBar == null)
 				return;

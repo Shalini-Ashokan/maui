@@ -210,7 +210,9 @@ namespace Microsoft.Maui.Platform
 			var textBox = platformControl.GetFirstDescendant<TextBox>();
 
 			if (textBox is null)
+			{
 				return;
+			}
 
 			searchBar.CursorPosition = Math.Min(searchBar.CursorPosition, textBox.Text.Length);
 
@@ -220,10 +222,12 @@ namespace Microsoft.Maui.Platform
 			}
 		}
 
-		internal static void SyncCursorPositionFromPlatformToVirtual(this AutoSuggestBox platformView, ISearchBar virtualView)
+		internal static void UpdateCursorPositionFromPlatformToVirtual(this AutoSuggestBox platformView, ISearchBar virtualView)
 		{
 			if (virtualView == null || platformView == null)
+			{
 				return;
+			}
 
 			var textBox = platformView.GetFirstDescendant<TextBox>();
 			if (textBox != null)
