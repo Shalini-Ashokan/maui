@@ -160,9 +160,18 @@ namespace Microsoft.Maui.Handlers
 				return;
 
 			VirtualView.Text = sender.Text;
-
-			// Update cursor position after text change to ensure it's positioned correctly
-			PlatformView?.UpdateCursorPosition(VirtualView);
+			if (sender is AutoSuggestBox platformView)
+			{
+				var textBox = platformView.GetFirstDescendant<TextBox>();
+				if (textBox != null)
+				{
+					var cursorPosition = textBox.GetCursorPosition();
+					if (VirtualView.CursorPosition != cursorPosition)
+					{
+						VirtualView.CursorPosition = cursorPosition;
+					}
+				}
+			}
 		}
 
 		void OnGotFocus(object sender, UI.Xaml.RoutedEventArgs e)
