@@ -35,6 +35,9 @@ namespace Microsoft.Maui.Handlers
 		public static void MapIsSpellCheckEnabled(IViewHandler handler, ISearchBar searchBar) { }
 		public static void MapMaxLength(IViewHandler handler, ISearchBar searchBar) { }
 		public static void MapIsReadOnly(IViewHandler handler, ISearchBar searchBar) { }
-		public static void MapKeyboard(IViewHandler handler, ISearchBar searchBar) { }\
+		public static void MapKeyboard(IViewHandler handler, ISearchBar searchBar) { }
+
+	    //TODO: Make it public in .NET 10.
+		internal static void MapCursorPosition(IViewHandler handler, ISearchBar searchBar) { }
 	}
 }

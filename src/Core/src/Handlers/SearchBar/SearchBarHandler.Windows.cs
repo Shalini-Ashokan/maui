@@ -161,7 +161,7 @@ namespace Microsoft.Maui.Handlers
 				return;
 
 			VirtualView.Text = sender.Text;
-			SyncCursorPositionFromPlatformToVirtual(VirtualView);
+			sender.SyncCursorPositionFromPlatformToVirtual(VirtualView);
 		}
 
 		void OnGotFocus(object sender, UI.Xaml.RoutedEventArgs e)
