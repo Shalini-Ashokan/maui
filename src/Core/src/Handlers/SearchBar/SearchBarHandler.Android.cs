@@ -114,7 +114,7 @@ namespace Microsoft.Maui.Handlers
 			handler.QueryEditor?.UpdateIsReadOnly(searchBar);
 		}
 
-		public static void MapCursorPosition(ISearchBarHandler handler, ISearchBar searchBar)
+		public static void MapCursorPosition(ISearchBarHandler handler, ITextInput searchBar)
 		{
 			handler.QueryEditor?.UpdateCursorPosition(searchBar);
 		}
@@ -147,17 +147,6 @@ namespace Microsoft.Maui.Handlers
 		{
 			VirtualView.UpdateText(e.NewText);
 			e.Handled = true;
-
-			if (QueryEditor == null)
-			{
-				return;
-			}
-
-			var cursorPosition = QueryEditor.SelectionStart;
-			if (VirtualView.CursorPosition != cursorPosition)
-			{
-				VirtualView.CursorPosition = cursorPosition;
-			}
 		}
 
 		class FocusChangeListener : Java.Lang.Object, SearchView.IOnFocusChangeListener
