@@ -22,27 +22,16 @@ public class Issue30779 : ContentPage
 			FontSize = 16
 		};
 
-		var button = new Button
+		label.SetBinding(Label.TextProperty, new Binding
 		{
-			Text = "Change the text",
-			AutomationId = "ChangeTextButton",
-			HorizontalOptions = LayoutOptions.Center,
-			Margin = 10
-		};
-
-		button.Clicked += (sender, args) =>
-		{
-			label.Text = $"SearchBar CursorPosition: {searchBar.CursorPosition}";
-		};
-
-		searchBar.TextChanged += (sender, args) =>
-		{
-			label.Text = $"SearchBar CursorPosition: {searchBar.CursorPosition}";
-		};
+			Path = "CursorPosition",
+			Source = searchBar,
+			StringFormat = "SearchBar CursorPosition: {0}"
+		});
 
 		Content = new StackLayout
 		{
-			Children = { searchBar, label, button },
+			Children = { searchBar, label },
 			Spacing = 20,
 			Padding = new Thickness(20),
 			VerticalOptions = LayoutOptions.Center

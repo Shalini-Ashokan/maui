@@ -20,7 +20,6 @@ public class Issue30779 : _IssuesUITest
         App.WaitForElement("SearchBar");
         App.Tap("SearchBar");
         App.EnterText("SearchBar", "Hello");
-        App.Tap("ChangeTextButton");
         var text = App.FindElement("CursorPositionLabel").GetText();
         Assert.That(text, Is.EqualTo("SearchBar CursorPosition: 5"));
     }
