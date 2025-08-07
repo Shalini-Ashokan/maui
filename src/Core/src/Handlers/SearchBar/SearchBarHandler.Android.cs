@@ -148,6 +148,10 @@ namespace Microsoft.Maui.Handlers
 		{
 			VirtualView.UpdateText(e.NewText);
 			e.Handled = true;
+			if (sender is SearchView searchView)
+			{
+				searchView.UpdateCursorPositionFromPlatformToVirtual(VirtualView);
+			}
 		}
 
 		class FocusChangeListener : Java.Lang.Object, SearchView.IOnFocusChangeListener

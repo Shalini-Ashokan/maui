@@ -171,5 +171,18 @@ namespace Microsoft.Maui.Platform
 
 			editText.SetInputType(searchBar);
 		}
+
+		internal static void UpdateCursorPositionFromPlatformToVirtual(this SearchView searchView, ISearchBar virtualView)
+		{
+			var editText = searchView.GetFirstChildOfType<EditText>();
+			if (editText == null || virtualView == null)
+				return;
+
+			var cursorPosition = editText.SelectionStart;
+			if (virtualView.CursorPosition != cursorPosition)
+			{
+				virtualView.CursorPosition = cursorPosition;
+			}
+		}
 	}
 }

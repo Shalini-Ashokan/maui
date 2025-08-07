@@ -227,7 +227,6 @@ namespace Microsoft.Maui.Handlers
 				if (VirtualView is ISearchBar virtualView)
 				{
 					virtualView.UpdateText(a.SearchText);
-					textField.UpdateCursorPositionFromPlatformToVirtual(virtualView);
 
 					if (Handler is SearchBarHandler handler)
 					{
@@ -253,6 +252,7 @@ namespace Microsoft.Maui.Handlers
 				if (sender is UITextField textField && VirtualView is ISearchBar virtualView)
 				{
 					virtualView.UpdateText(textField.Text);
+					textField.UpdateCursorPositionFromPlatformToVirtual(virtualView);
 				}
 
 				if (Handler is SearchBarHandler handler)
