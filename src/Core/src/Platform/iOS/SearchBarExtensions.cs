@@ -190,7 +190,7 @@ namespace Microsoft.Maui.Platform
 		internal static void UpdateCursorPosition(this UITextField textField, ISearchBar searchBar)
 		{
 			var selectedTextRange = textField.SelectedTextRange;
-			if (selectedTextRange == null)
+			if (selectedTextRange is null)
 			{
 				return;
 			}
@@ -203,23 +203,26 @@ namespace Microsoft.Maui.Platform
 
 		static void UpdateCursorSelection(this UITextField textField, ISearchBar searchBar)
 		{
-			if (!searchBar.IsReadOnly)
+			if (searchBar.IsReadOnly)
 			{
-				int cursorPosition = searchBar.CursorPosition;
-				UITextPosition start = textField.GetPosition(textField.BeginningOfDocument, cursorPosition) ?? textField.EndOfDocument;
-				int actualOffset = Math.Max(0, (int)textField.GetOffsetFromPosition(textField.BeginningOfDocument, start));
-				if (actualOffset != cursorPosition)
-				{
-					searchBar.CursorPosition = actualOffset;
-				}
-
-				textField.SelectedTextRange = textField.GetTextRange(start, start);
+				return;
 			}
+
+			int cursorPosition = searchBar.CursorPosition;
+			UITextPosition start = textField.GetPosition(textField.BeginningOfDocument, cursorPosition) ?? textField.EndOfDocument;
+			int actualOffset = Math.Max(0, (int)textField.GetOffsetFromPosition(textField.BeginningOfDocument, start));
+			if (actualOffset != cursorPosition)
+			{
+				searchBar.CursorPosition = actualOffset;
+			}
+
+			textField.SelectedTextRange = textField.GetTextRange(start, start);
+
 		}
 
 		internal static void UpdateCursorPositionFromPlatformToVirtual(this UITextField textField, ISearchBar searchBar)
 		{
-			if (searchBar == null)
+			if (searchBar is null)
 			{
 				return;
 			}

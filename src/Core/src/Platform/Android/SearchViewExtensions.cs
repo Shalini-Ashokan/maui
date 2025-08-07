@@ -175,7 +175,7 @@ namespace Microsoft.Maui.Platform
 		internal static void UpdateCursorPositionFromPlatformToVirtual(this SearchView searchView, ISearchBar virtualView)
 		{
 			var editText = searchView.GetFirstChildOfType<EditText>();
-			if (editText == null || virtualView == null)
+			if (editText is null || virtualView is null)
 			{
 				return;
 			}

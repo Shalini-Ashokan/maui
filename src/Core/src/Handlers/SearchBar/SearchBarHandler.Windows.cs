@@ -152,16 +152,16 @@ namespace Microsoft.Maui.Handlers
 			VirtualView.SearchButtonPressed();
 		}
 
-		void OnTextChanged(AutoSuggestBox? sender, AutoSuggestBoxTextChangedEventArgs e)
+		void OnTextChanged(AutoSuggestBox? autoSuggestBox, AutoSuggestBoxTextChangedEventArgs e)
 		{
 			if (e.Reason == AutoSuggestionBoxTextChangeReason.ProgrammaticChange)
 				return;
 
-			if (VirtualView == null || sender == null)
+			if (VirtualView == null || autoSuggestBox == null)
 				return;
 
-			VirtualView.Text = sender.Text;
-			sender.UpdateCursorPositionFromPlatformToVirtual(VirtualView);
+			VirtualView.Text = autoSuggestBox.Text;
+			autoSuggestBox.UpdateCursorPositionFromPlatformToVirtual(VirtualView);
 		}
 
 		void OnGotFocus(object sender, UI.Xaml.RoutedEventArgs e)

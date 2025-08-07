@@ -222,13 +222,13 @@ namespace Microsoft.Maui.Platform
 
 		internal static void UpdateCursorPositionFromPlatformToVirtual(this AutoSuggestBox platformView, ISearchBar virtualView)
 		{
-			if (virtualView == null || platformView == null)
+			if (virtualView is null || platformView is null)
 			{
 				return;
 			}
 
 			var textBox = platformView.GetFirstDescendant<TextBox>();
-			if (textBox != null)
+			if (textBox is not null)
 			{
 				var cursorPosition = textBox.GetCursorPosition();
 				if (virtualView.CursorPosition != cursorPosition)
