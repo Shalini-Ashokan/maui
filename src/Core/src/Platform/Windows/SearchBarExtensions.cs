@@ -203,5 +203,40 @@ namespace Microsoft.Maui.Platform
 
 			cancelButton.UpdateTextColor(searchBar.CancelButtonColor, CancelButtonColorKeys);
 		}
+
+		internal static void UpdateCursorPosition(this AutoSuggestBox platformControl, ISearchBar searchBar)
+		{
+			var textBox = platformControl.GetFirstDescendant<TextBox>();
+
+			if (textBox is null)
+			{
+				return;
+			}
+
+			searchBar.CursorPosition = Math.Min(searchBar.CursorPosition, textBox.Text.Length);
+
+			if (textBox.SelectionStart != searchBar.CursorPosition)
+			{
+				textBox.SelectionStart = searchBar.CursorPosition;
+			}
+		}
+
+		internal static void UpdateCursorPositionFromPlatformToVirtual(this AutoSuggestBox platformView, ISearchBar virtualView)
+		{
+			if (virtualView == null || platformView == null)
+			{
+				return;
+			}
+
+			var textBox = platformView.GetFirstDescendant<TextBox>();
+			if (textBox != null)
+			{
+				var cursorPosition = textBox.GetCursorPosition();
+				if (virtualView.CursorPosition != cursorPosition)
+				{
+					virtualView.CursorPosition = cursorPosition;
+				}
+			}
+		}
 	}
 }

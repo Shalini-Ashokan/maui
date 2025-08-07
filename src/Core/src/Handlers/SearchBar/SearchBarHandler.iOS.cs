@@ -146,6 +146,12 @@ namespace Microsoft.Maui.Handlers
 			handler.PlatformView?.UpdateKeyboard(searchBar);
 		}
 
+		//TODO: Make it public in .NET 10.
+		internal static void MapCursorPosition(ISearchBarHandler handler, ISearchBar searchBar)
+		{
+			handler.QueryEditor?.UpdateCursorPosition(searchBar);
+		}
+
 		void UpdateCancelButtonVisibility()
 		{
 			if (PlatformView.ShowsCancelButton != VirtualView.ShouldShowCancelButton())
@@ -221,6 +227,7 @@ namespace Microsoft.Maui.Handlers
 				if (VirtualView is ISearchBar virtualView)
 				{
 					virtualView.UpdateText(a.SearchText);
+					textField.UpdateCursorPositionFromPlatformToVirtual(virtualView);
 
 					if (Handler is SearchBarHandler handler)
 					{

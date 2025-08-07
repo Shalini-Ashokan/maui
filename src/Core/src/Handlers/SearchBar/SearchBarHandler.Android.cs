@@ -132,6 +132,12 @@ namespace Microsoft.Maui.Handlers
 				handler.QueryEditor?.Focus(request);
 		}
 
+		//TODO: Make it public in .NET 10. 
+		internal static void MapCursorPosition(ISearchBarHandler handler, ITextInput searchBar)
+		{
+			handler.QueryEditor?.UpdateCursorPosition(searchBar);
+		}
+
 		void OnQueryTextSubmit(object? sender, QueryTextSubmitEventArgs e)
 		{
 			VirtualView.SearchButtonPressed();

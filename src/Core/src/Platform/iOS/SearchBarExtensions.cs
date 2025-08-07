@@ -186,5 +186,48 @@ namespace Microsoft.Maui.Platform
 
 			uiSearchBar.ReloadInputViews();
 		}
+
+		internal static void UpdateCursorPosition(this UITextField textField, ISearchBar searchBar)
+		{
+			var selectedTextRange = textField.SelectedTextRange;
+			if (selectedTextRange == null)
+			{
+				return;
+			}
+
+			if (textField.GetOffsetFromPosition(textField.BeginningOfDocument, selectedTextRange.Start) != searchBar.CursorPosition)
+			{
+				UpdateCursorSelection(textField, searchBar);
+			}
+		}
+
+		static void UpdateCursorSelection(this UITextField textField, ISearchBar searchBar)
+		{
+			if (!searchBar.IsReadOnly)
+			{
+				int cursorPosition = searchBar.CursorPosition;
+
+				UITextPosition start = textField.GetPosition(textField.BeginningOfDocument, cursorPosition) ?? textField.EndOfDocument;
+				int actualOffset = Math.Max(0, (int)textField.GetOffsetFromPosition(textField.BeginningOfDocument, start));
+				if (actualOffset != cursorPosition)
+				{
+					searchBar.CursorPosition = actualOffset;
+				}
+
+				textField.SelectedTextRange = textField.GetTextRange(start, start);
+			}
+		}
+
+		internal static void UpdateCursorPositionFromPlatformToVirtual(this UITextField textField, ISearchBar searchBar)
+		{
+			if (searchBar == null)
+				return;
+
+			var cursorPosition = textField.GetCursorPosition();
+			if (searchBar.CursorPosition != cursorPosition)
+			{
+				searchBar.CursorPosition = cursorPosition;
+			}
+		}
 	}
 }
