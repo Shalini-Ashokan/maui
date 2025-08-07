@@ -206,7 +206,6 @@ namespace Microsoft.Maui.Platform
 			if (!searchBar.IsReadOnly)
 			{
 				int cursorPosition = searchBar.CursorPosition;
-
 				UITextPosition start = textField.GetPosition(textField.BeginningOfDocument, cursorPosition) ?? textField.EndOfDocument;
 				int actualOffset = Math.Max(0, (int)textField.GetOffsetFromPosition(textField.BeginningOfDocument, start));
 				if (actualOffset != cursorPosition)
@@ -221,7 +220,9 @@ namespace Microsoft.Maui.Platform
 		internal static void UpdateCursorPositionFromPlatformToVirtual(this UITextField textField, ISearchBar searchBar)
 		{
 			if (searchBar == null)
+			{
 				return;
+			}
 
 			var cursorPosition = textField.GetCursorPosition();
 			if (searchBar.CursorPosition != cursorPosition)

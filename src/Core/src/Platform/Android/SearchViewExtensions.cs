@@ -176,7 +176,9 @@ namespace Microsoft.Maui.Platform
 		{
 			var editText = searchView.GetFirstChildOfType<EditText>();
 			if (editText == null || virtualView == null)
+			{
 				return;
+			}
 
 			var cursorPosition = editText.SelectionStart;
 			if (virtualView.CursorPosition != cursorPosition)
