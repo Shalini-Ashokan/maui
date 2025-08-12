@@ -142,17 +142,27 @@ namespace Microsoft.Maui.Platform
 
 		private static void UpdateTextInputFlags(EditText editText, ISearchBar searchBar)
 		{
-			// Remove both flags first
+			// Remove all prediction and suggestion related flags first
 			editText.InputType &= ~InputTypes.TextFlagAutoCorrect;
 			editText.InputType &= ~InputTypes.TextFlagNoSuggestions;
+			editText.InputType &= ~InputTypes.TextFlagAutoComplete;
 
-			// Apply text prediction flag
-			if (searchBar.IsTextPredictionEnabled)
-				editText.InputType |= InputTypes.TextFlagAutoCorrect;
-
-			// Apply spell check flag  
-			if (!searchBar.IsSpellCheckEnabled)
+			// When both text prediction and spell check are disabled, ensure QuickType bar is hidden
+			if (!searchBar.IsTextPredictionEnabled && !searchBar.IsSpellCheckEnabled)
+			{
+				// Add both flags to completely disable predictions and suggestions
 				editText.InputType |= InputTypes.TextFlagNoSuggestions;
+			}
+			else
+			{
+				// Apply text prediction flag
+				if (searchBar.IsTextPredictionEnabled)
+					editText.InputType |= InputTypes.TextFlagAutoCorrect;
+
+				// Apply spell check flag  
+				if (!searchBar.IsSpellCheckEnabled)
+					editText.InputType |= InputTypes.TextFlagNoSuggestions;
+			}
 		}
 
 		public static void UpdateIsEnabled(this SearchView searchView, ISearchBar searchBar, EditText? editText = null)
