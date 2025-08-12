@@ -153,10 +153,7 @@ namespace Microsoft.Maui.Platform
 			if (textField == null)
 				return;
 
-			if (searchBar.IsTextPredictionEnabled)
-				textField.AutocorrectionType = UITextAutocorrectionType.Yes;
-			else
-				textField.AutocorrectionType = UITextAutocorrectionType.No;
+			UpdateTextInputFlags(textField, searchBar);
 		}
 
 		public static void UpdateIsSpellCheckEnabled(this UISearchBar uiSearchBar, ISearchBar searchBar, UITextField? textField = null)
@@ -166,10 +163,26 @@ namespace Microsoft.Maui.Platform
 			if (textField == null)
 				return;
 
-			if (searchBar.IsSpellCheckEnabled)
-				textField.SpellCheckingType = UITextSpellCheckingType.Yes;
+			UpdateTextInputFlags(textField, searchBar);
+		}
+
+		private static void UpdateTextInputFlags(UITextField textField, ISearchBar searchBar)
+		{
+			// On iOS, when IsTextPredictionEnabled is false, we need to disable both autocorrection
+			// and spell checking to fully hide the QuickType prediction bar
+			if (searchBar.IsTextPredictionEnabled)
+			{
+				textField.AutocorrectionType = UITextAutocorrectionType.Yes;
+				// When text prediction is enabled, respect the IsSpellCheckEnabled setting
+				textField.SpellCheckingType = searchBar.IsSpellCheckEnabled ? UITextSpellCheckingType.Yes : UITextSpellCheckingType.No;
+			}
 			else
+			{
+				// When text prediction is disabled, disable both autocorrection and spell checking
+				// to ensure the QuickType prediction bar is hidden
+				textField.AutocorrectionType = UITextAutocorrectionType.No;
 				textField.SpellCheckingType = UITextSpellCheckingType.No;
+			}
 		}
 
 		public static void UpdateKeyboard(this UISearchBar uiSearchBar, ISearchBar searchBar)
