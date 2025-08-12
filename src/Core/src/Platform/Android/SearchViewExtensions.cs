@@ -125,10 +125,8 @@ namespace Microsoft.Maui.Platform
 			if (editText == null)
 				return;
 
-			if (searchBar.IsTextPredictionEnabled)
-				editText.InputType |= InputTypes.TextFlagAutoCorrect;
-			else
-				editText.InputType &= ~InputTypes.TextFlagAutoCorrect;
+			// Apply both text prediction and spell check settings together to ensure consistency
+			UpdateTextInputFlags(editText, searchBar);
 		}
 
 		public static void UpdateIsSpellCheckEnabled(this SearchView searchView, ISearchBar searchBar, EditText? editText = null)
@@ -138,10 +136,23 @@ namespace Microsoft.Maui.Platform
 			if (editText == null)
 				return;
 
+			// Apply both text prediction and spell check settings together to ensure consistency
+			UpdateTextInputFlags(editText, searchBar);
+		}
+
+		private static void UpdateTextInputFlags(EditText editText, ISearchBar searchBar)
+		{
+			// Remove both flags first
+			editText.InputType &= ~InputTypes.TextFlagAutoCorrect;
+			editText.InputType &= ~InputTypes.TextFlagNoSuggestions;
+
+			// Apply text prediction flag
+			if (searchBar.IsTextPredictionEnabled)
+				editText.InputType |= InputTypes.TextFlagAutoCorrect;
+
+			// Apply spell check flag  
 			if (!searchBar.IsSpellCheckEnabled)
 				editText.InputType |= InputTypes.TextFlagNoSuggestions;
-			else
-				editText.InputType &= ~InputTypes.TextFlagNoSuggestions;
 		}
 
 		public static void UpdateIsEnabled(this SearchView searchView, ISearchBar searchBar, EditText? editText = null)
