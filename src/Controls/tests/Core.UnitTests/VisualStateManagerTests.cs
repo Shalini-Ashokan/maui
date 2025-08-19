@@ -561,6 +561,10 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 			var groups = VisualStateManager.GetVisualStateGroups(label);
 			Assert.Null(groups[0].CurrentState);
 
+			// Store original values
+			var originalTextColor = label.TextColor;
+			var originalBackgroundColor = label.BackgroundColor;
+
 			// Apply the Selected state
 			VisualStateManager.GoToState(label, selectedStateName);
 			Assert.Equal(selectedStateName, groups[0].CurrentState.Name);
@@ -577,10 +581,9 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 			// But the current state should be cleared and properties should be reset
 			Assert.Null(groups[0].CurrentState);
 			
-			// Properties should be reset to their default values (not the Selected state values)
-			// Note: Default Label.TextColor and BackgroundColor are null/transparent
-			Assert.NotEqual(Colors.Red, label.TextColor);
-			Assert.NotEqual(Colors.Blue, label.BackgroundColor);
+			// Properties should be reset to their original values (not the Selected state values)
+			Assert.Equal(originalTextColor, label.TextColor);
+			Assert.Equal(originalBackgroundColor, label.BackgroundColor);
 		}
 	}
 }

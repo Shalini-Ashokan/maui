@@ -82,14 +82,14 @@ namespace Microsoft.Maui.Controls
 
 			var specificity = vsgSpecificity.CopyStyle(1, 0, 0, 0);
 
-			bool foundStateInAnyGroup = false;
+			bool stateFound = false;
 
 			foreach (VisualStateGroup group in groups)
 			{
 				if (group.CurrentState?.Name == name)
 				{
-					// We're already in the target state for this group; nothing else to do
-					foundStateInAnyGroup = true;
+					// We're already in the target state; nothing else to do
+					stateFound = true;
 					continue;
 				}
 
@@ -115,11 +115,11 @@ namespace Microsoft.Maui.Controls
 						setter.Apply(visualElement, specificity);
 					}
 
-					foundStateInAnyGroup = true;
+					stateFound = true;
 				}
 				else if (name == CommonStates.Normal && group.CurrentState != null)
 				{
-					// Special case: transitioning to "Normal" state that doesn't exist in this group
+					// Special case: transitioning to "Normal" state that doesn't exist
 					// We should unapply the current state setters to reset properties
 					foreach (Setter setter in group.CurrentState.Setters)
 					{
@@ -130,7 +130,7 @@ namespace Microsoft.Maui.Controls
 				}
 			}
 
-			return foundStateInAnyGroup;
+			return stateFound;
 		}
 
 		/// <include file="../../docs/Microsoft.Maui.Controls/VisualStateManager.xml" path="//Member[@MemberName='HasVisualStateGroups']/Docs/*" />
