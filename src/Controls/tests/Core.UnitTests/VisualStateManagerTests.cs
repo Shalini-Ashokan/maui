@@ -566,17 +566,18 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 			var originalBackgroundColor = label.BackgroundColor;
 
 			// Apply the Selected state
-			VisualStateManager.GoToState(label, selectedStateName);
+			var result1 = VisualStateManager.GoToState(label, selectedStateName);
+			Assert.True(result1);
 			Assert.Equal(selectedStateName, groups[0].CurrentState.Name);
 			Assert.Equal(Colors.Red, label.TextColor);
 			Assert.Equal(Colors.Blue, label.BackgroundColor);
 
 			// Now try to transition to "Normal" state that doesn't exist
 			// This should unapply the Selected state setters even though Normal doesn't exist
-			var result = VisualStateManager.GoToState(label, VisualStateManager.CommonStates.Normal);
+			var result2 = VisualStateManager.GoToState(label, VisualStateManager.CommonStates.Normal);
 			
 			// The method should return false since Normal state doesn't exist
-			Assert.False(result);
+			Assert.False(result2);
 			
 			// But the current state should be cleared and properties should be reset
 			Assert.Null(groups[0].CurrentState);

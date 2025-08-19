@@ -83,6 +83,7 @@ namespace Microsoft.Maui.Controls
 			var specificity = vsgSpecificity.CopyStyle(1, 0, 0, 0);
 
 			bool stateFound = false;
+			bool alreadyInTargetState = false;
 
 			foreach (VisualStateGroup group in groups)
 			{
@@ -90,6 +91,7 @@ namespace Microsoft.Maui.Controls
 				{
 					// We're already in the target state; nothing else to do
 					stateFound = true;
+					alreadyInTargetState = true;
 					continue;
 				}
 
@@ -117,16 +119,24 @@ namespace Microsoft.Maui.Controls
 
 					stateFound = true;
 				}
-				else if (name == CommonStates.Normal && group.CurrentState != null)
+			}
+
+			// If we couldn't find the target state anywhere and we're not already in it,
+			// but we're trying to go to Normal state, clear current states to reset properties
+			if (!stateFound && !alreadyInTargetState && name == CommonStates.Normal)
+			{
+				foreach (VisualStateGroup group in groups)
 				{
-					// Special case: transitioning to "Normal" state that doesn't exist
-					// We should unapply the current state setters to reset properties
-					foreach (Setter setter in group.CurrentState.Setters)
+					if (group.CurrentState != null)
 					{
-						setter.UnApply(visualElement, specificity);
+						// Unapply the current state setters to reset properties
+						foreach (Setter setter in group.CurrentState.Setters)
+						{
+							setter.UnApply(visualElement, specificity);
+						}
+						// Clear the current state
+						group.CurrentState = null;
 					}
-					// Clear the current state
-					group.CurrentState = null;
 				}
 			}
 
