@@ -534,5 +534,53 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 			Debug.WriteLine($">>>>> VisualStateManagerTests ValidatePerformance: {watch.ElapsedMilliseconds}ms over {iterations} iterations; average of {average}ms");
 
 		}
+
+		[Fact]
+		public void TransitioningToNonExistentNormalStateShouldUnapplyCurrentState()
+		{
+			// Test case for the issue: VisualStateManager doesn't reset properties when deselecting items with no Normal state
+			var label = new Label();
+			var selectedStateName = "Selected";
+
+			// Create a visual state group with only a "Selected" state, no "Normal" state
+			VisualStateManager.SetVisualStateGroups(label, new VisualStateGroupList {
+				new VisualStateGroup {
+					States = {
+						new VisualState {
+							Name = selectedStateName,
+							Setters = { 
+								new Setter { Property = Label.TextColorProperty, Value = Colors.Red },
+								new Setter { Property = Label.BackgroundColorProperty, Value = Colors.Blue }
+							}
+						}
+					}
+				}
+			});
+
+			// Initially, no state should be current
+			var groups = VisualStateManager.GetVisualStateGroups(label);
+			Assert.Null(groups[0].CurrentState);
+
+			// Apply the Selected state
+			VisualStateManager.GoToState(label, selectedStateName);
+			Assert.Equal(selectedStateName, groups[0].CurrentState.Name);
+			Assert.Equal(Colors.Red, label.TextColor);
+			Assert.Equal(Colors.Blue, label.BackgroundColor);
+
+			// Now try to transition to "Normal" state that doesn't exist
+			// This should unapply the Selected state setters even though Normal doesn't exist
+			var result = VisualStateManager.GoToState(label, VisualStateManager.CommonStates.Normal);
+			
+			// The method should return false since Normal state doesn't exist
+			Assert.False(result);
+			
+			// But the current state should be cleared and properties should be reset
+			Assert.Null(groups[0].CurrentState);
+			
+			// Properties should be reset to their default values (not the Selected state values)
+			// Note: Default Label.TextColor and BackgroundColor are null/transparent
+			Assert.NotEqual(Colors.Red, label.TextColor);
+			Assert.NotEqual(Colors.Blue, label.BackgroundColor);
+		}
 	}
 }

@@ -82,43 +82,55 @@ namespace Microsoft.Maui.Controls
 
 			var specificity = vsgSpecificity.CopyStyle(1, 0, 0, 0);
 
+			bool foundStateInAnyGroup = false;
+
 			foreach (VisualStateGroup group in groups)
 			{
 				if (group.CurrentState?.Name == name)
 				{
-					// We're already in the target state; nothing else to do
-					return true;
+					// We're already in the target state for this group; nothing else to do
+					foundStateInAnyGroup = true;
+					continue;
 				}
 
 				// See if this group contains the new state
 				var target = group.GetState(name);
-				if (target == null)
+				if (target != null)
 				{
-					continue;
-				}
+					// If we've got a new state to transition to, unapply the setters from the current state
+					if (group.CurrentState != null)
+					{
+						foreach (Setter setter in group.CurrentState.Setters)
+						{
+							setter.UnApply(visualElement, specificity);
+						}
+					}
 
-				// If we've got a new state to transition to, unapply the setters from the current state
-				if (group.CurrentState != null)
+					// Update the current state
+					group.CurrentState = target;
+
+					// Apply the setters from the new state
+					foreach (Setter setter in target.Setters)
+					{
+						setter.Apply(visualElement, specificity);
+					}
+
+					foundStateInAnyGroup = true;
+				}
+				else if (name == CommonStates.Normal && group.CurrentState != null)
 				{
+					// Special case: transitioning to "Normal" state that doesn't exist in this group
+					// We should unapply the current state setters to reset properties
 					foreach (Setter setter in group.CurrentState.Setters)
 					{
 						setter.UnApply(visualElement, specificity);
 					}
+					// Clear the current state
+					group.CurrentState = null;
 				}
-
-				// Update the current state
-				group.CurrentState = target;
-
-				// Apply the setters from the new state
-				foreach (Setter setter in target.Setters)
-				{
-					setter.Apply(visualElement, specificity);
-				}
-
-				return true;
 			}
 
-			return false;
+			return foundStateInAnyGroup;
 		}
 
 		/// <include file="../../docs/Microsoft.Maui.Controls/VisualStateManager.xml" path="//Member[@MemberName='HasVisualStateGroups']/Docs/*" />
