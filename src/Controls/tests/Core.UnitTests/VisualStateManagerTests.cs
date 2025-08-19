@@ -586,5 +586,95 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 			Assert.Equal(originalTextColor, label.TextColor);
 			Assert.Equal(originalBackgroundColor, label.BackgroundColor);
 		}
+
+		[Fact]
+		public void MultipleGroupsWithMixedNormalStateAvailability()
+		{
+			// Test mixed scenario: some groups have Normal state, others don't
+			var label = new Label();
+
+			VisualStateManager.SetVisualStateGroups(label, new VisualStateGroupList {
+				new VisualStateGroup {
+					Name = "SelectionStates",
+					States = {
+						new VisualState {
+							Name = VisualStateManager.CommonStates.Selected,
+							Setters = { 
+								new Setter { Property = Label.TextColorProperty, Value = Colors.Red }
+							}
+						}
+						// No Normal state in this group
+					}
+				},
+				new VisualStateGroup {
+					Name = "ValidationStates", 
+					States = {
+						new VisualState {
+							Name = VisualStateManager.CommonStates.Normal,
+							Setters = { 
+								new Setter { Property = Label.BackgroundColorProperty, Value = Colors.Green }
+							}
+						}
+					}
+				}
+			});
+
+			var groups = VisualStateManager.GetVisualStateGroups(label);
+			
+			// Apply Selected state (only exists in first group)
+			var result1 = VisualStateManager.GoToState(label, VisualStateManager.CommonStates.Selected);
+			Assert.True(result1);
+			Assert.Equal(VisualStateManager.CommonStates.Selected, groups[0].CurrentState?.Name);
+			Assert.Equal(Colors.Red, label.TextColor);
+			
+			// Now go to Normal state (exists in second group, not in first)
+			var result2 = VisualStateManager.GoToState(label, VisualStateManager.CommonStates.Normal);
+			Assert.True(result2); // Should return true since Normal exists in at least one group
+			
+			// First group should have current state cleared since it doesn't have Normal
+			Assert.Null(groups[0].CurrentState);
+			// Second group should be in Normal state  
+			Assert.Equal(VisualStateManager.CommonStates.Normal, groups[1].CurrentState?.Name);
+			
+			// TextColor should be reset (Selected state unapplied)
+			Assert.NotEqual(Colors.Red, label.TextColor);
+			// BackgroundColor should be Green (Normal state applied)
+			Assert.Equal(Colors.Green, label.BackgroundColor);
+		}
+
+		[Fact]
+		public void TransitioningToNonExistentNonNormalStateShouldNotClearCurrentStates()
+		{
+			// Verify that only Normal state gets special treatment, not other missing states
+			var label = new Label();
+
+			VisualStateManager.SetVisualStateGroups(label, new VisualStateGroupList {
+				new VisualStateGroup {
+					States = {
+						new VisualState {
+							Name = VisualStateManager.CommonStates.Selected,
+							Setters = { 
+								new Setter { Property = Label.TextColorProperty, Value = Colors.Red }
+							}
+						}
+					}
+				}
+			});
+
+			var groups = VisualStateManager.GetVisualStateGroups(label);
+			
+			// Apply Selected state
+			var result1 = VisualStateManager.GoToState(label, VisualStateManager.CommonStates.Selected);
+			Assert.True(result1);
+			Assert.Equal(Colors.Red, label.TextColor);
+			
+			// Try to go to a non-existent non-Normal state
+			var result2 = VisualStateManager.GoToState(label, "NonExistentState");
+			Assert.False(result2);
+			
+			// Current state should remain unchanged (no special clearing for non-Normal states)
+			Assert.Equal(VisualStateManager.CommonStates.Selected, groups[0].CurrentState?.Name);
+			Assert.Equal(Colors.Red, label.TextColor);
+		}
 	}
 }
