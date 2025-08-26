@@ -422,7 +422,18 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 				return _emptyUIView.Frame.Size.ToSize();
 			}
 
-			return CollectionView.CollectionViewLayout.CollectionViewContentSize.ToSize();
+			var contentSize = CollectionView.CollectionViewLayout.CollectionViewContentSize.ToSize();
+			var visibleCells = CollectionView?.VisibleCells;
+			var templatedCell = visibleCells?.OfType<TemplatedCell2>().FirstOrDefault(c => c?.MeasuredSize.Height > 0);
+			if (templatedCell != null)
+			{
+				if (ItemsView is CarouselView && templatedCell.MeasuredSize.Height > 0)
+				{
+					return new Size(contentSize.Width, templatedCell.MeasuredSize.Height);
+				}
+			}
+
+			return contentSize;
 		}
 
 		internal void UpdateView(object view, DataTemplate viewTemplate, ref UIView uiView, ref VisualElement formsElement)
