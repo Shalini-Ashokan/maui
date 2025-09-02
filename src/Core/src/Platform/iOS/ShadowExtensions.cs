@@ -13,6 +13,18 @@ namespace Microsoft.Maui.Platform
 			if (shadow == null || shadow.Paint == null)
 				return;
 
+			// Special handling for MauiPageControl to ensure shadow compatibility with indicator size
+			if (platformView is MauiPageControl pageControl)
+			{
+				// Check if we need special handling
+				if (pageControl.IndicatorSize != 6 && pageControl.IndicatorSize > 0)
+				{
+					// Use our custom implementation when both shadow and custom size are used
+					pageControl.ApplyShadow(shadow);
+					return;
+				}
+			}
+
 			var layer = platformView.Layer;
 			layer?.SetShadow(shadow);
 		}
