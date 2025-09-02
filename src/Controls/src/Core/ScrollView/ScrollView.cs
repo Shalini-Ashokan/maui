@@ -427,6 +427,10 @@ namespace Microsoft.Maui.Controls
 
 		void IScrollView.ScrollFinished() => SendScrollFinished();
 
+
+		// Don't delete this override. At some point in the future we'd like to delete Compatibility.Layout
+		// and this is the only way to ensure binary compatibility with code that's already compiled against MAUI
+		// and is overriding MeasureOverride.
 		protected override Size MeasureOverride(double widthConstraint, double heightConstraint)
 		{
 			return this.ComputeDesiredSize(widthConstraint, heightConstraint);
@@ -460,12 +464,24 @@ namespace Microsoft.Maui.Controls
 			return content.DesiredSize;
 		}
 
+
+		// Don't delete this override. At some point in the future we'd like to delete Compatibility.Layout
+		// and this is the only way to ensure binary compatibility with code that's already compiled against MAUI
+		// and is overriding ArrangeOverride.
 		protected override Size ArrangeOverride(Rect bounds)
 		{
 			Frame = this.ComputeFrame(bounds);
 			Handler?.PlatformArrange(Frame);
 
 			return Frame.Size;
+		}
+
+		// Don't delete this override. At some point in the future we'd like to delete Compatibility.Layout
+		// and this is the only way to ensure binary compatibility with code that's already compiled against MAUI
+		// and is overriding OnSizeAllocated.
+		protected override void OnSizeAllocated(double width, double height)
+		{
+			base.OnSizeAllocated(width, height);
 		}
 
 		Size ICrossPlatformLayout.CrossPlatformArrange(Rect bounds)
@@ -476,11 +492,6 @@ namespace Microsoft.Maui.Controls
 			}
 
 			return bounds.Size;
-		}
-
-		private protected override void InvalidateMeasureLegacy(InvalidationTrigger trigger, int depth, int depthLeveltoInvalidate)
-		{
-			base.InvalidateMeasureLegacy(trigger, depth, 1);
 		}
 
 		private protected override string GetDebuggerDisplay()

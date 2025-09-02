@@ -446,8 +446,7 @@ namespace Microsoft.Maui.Controls.Handlers.Compatibility
 					if (OperatingSystem.IsIOSVersionAtLeast(11) || OperatingSystem.IsTvOSVersionAtLeast(11))
 						this.BeginInvokeOnMainThread(() =>
 						{
-							if (Control != null /*&& !_disposed*/)
-								Control.ScrollToRow(NSIndexPath.FromRowSection(index, 0), position, e.ShouldAnimate);
+							Control?.ScrollToRow(NSIndexPath.FromRowSection(index, 0), position, e.ShouldAnimate);
 						});
 					else
 						Control.ScrollToRow(NSIndexPath.FromRowSection(index, 0), position, e.ShouldAnimate);
@@ -535,8 +534,7 @@ namespace Microsoft.Maui.Controls.Handlers.Compatibility
 		void UpdateIsRefreshing()
 		{
 			var refreshing = Element.IsRefreshing;
-			if (_tableViewController != null)
-				_tableViewController.UpdateIsRefreshing(refreshing);
+			_tableViewController?.UpdateIsRefreshing(refreshing);
 		}
 
 		void UpdateItems(NotifyCollectionChangedEventArgs e, int section, bool resetWhenGrouped)
@@ -756,8 +754,7 @@ namespace Microsoft.Maui.Controls.Handlers.Compatibility
 		{
 			var color = Element.RefreshControlColor;
 
-			if (_tableViewController != null)
-				_tableViewController.UpdateRefreshControlColor(color == null ? null : color.ToPlatform());
+			_tableViewController?.UpdateRefreshControlColor(color?.ToPlatform());
 		}
 
 		void UpdateVerticalScrollBarVisibility()
@@ -986,6 +983,7 @@ namespace Microsoft.Maui.Controls.Handlers.Compatibility
 			readonly WeakReference<UITableView> _uiTableView;
 			readonly WeakReference<FormsUITableViewController> _uiTableViewController;
 			protected readonly WeakReference<ListView> _list;
+			readonly HashSet<ContextActionsCell> _contextActionsCells = new();
 			bool _isDragging;
 			bool _setupSelection;
 			bool _selectionFromNative;
@@ -1113,6 +1111,10 @@ namespace Microsoft.Maui.Controls.Handlers.Compatibility
 				SetCellBackgroundColor(platformCell, bgColor);
 				PreserveActivityIndicatorState(cell);
 				Performance.Stop(reference);
+
+				if (platformCell is ContextActionsCell contextActionsCell)
+					_contextActionsCells.Add(contextActionsCell);
+
 				return platformCell;
 			}
 
@@ -1495,11 +1497,15 @@ namespace Microsoft.Maui.Controls.Handlers.Compatibility
 
 				if (disposing)
 				{
-					if (!_list.TryGetTarget(out var list))
+					if (_list.TryGetTarget(out var list))
 					{
 						list.ItemSelected -= OnItemSelected;
 						WatchShortNameCollection(false);
 					}
+
+					foreach (var cell in _contextActionsCells)
+						cell.Dispose();
+					_contextActionsCells.Clear();
 
 					_templateToId = null;
 				}

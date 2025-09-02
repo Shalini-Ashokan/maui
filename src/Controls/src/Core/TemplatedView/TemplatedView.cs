@@ -127,6 +127,9 @@ namespace Microsoft.Maui.Controls
 			Handler?.UpdateValue(nameof(IContentView.Content));
 		}
 
+		// Don't delete this override. At some point in the future we'd like to delete Compatibility.Layout
+		// and this is the only way to ensure binary compatibility with code that's already compiled against MAUI
+		// and is overriding MeasureOverride.
 		protected override Size MeasureOverride(double widthConstraint, double heightConstraint)
 		{
 			return this.ComputeDesiredSize(widthConstraint, heightConstraint);
@@ -137,6 +140,18 @@ namespace Microsoft.Maui.Controls
 			return this.MeasureContent(widthConstraint, heightConstraint);
 		}
 
+		// Don't delete this override. At some point in the future we'd like to delete Compatibility.Layout
+		// and this is the only way to ensure binary compatibility with code that's already compiled against MAUI
+		// and is overriding OnSizeAllocated.
+		protected override void OnSizeAllocated(double width, double height)
+		{
+			base.OnSizeAllocated(width, height);
+		}
+
+
+		// Don't delete this override. At some point in the future we'd like to delete Compatibility.Layout
+		// and this is the only way to ensure binary compatibility with code that's already compiled against MAUI
+		// and is overriding ArrangeOverride.
 		protected override Size ArrangeOverride(Rect bounds)
 		{
 			Frame = this.ComputeFrame(bounds);
@@ -148,11 +163,6 @@ namespace Microsoft.Maui.Controls
 		{
 			this.ArrangeContent(bounds);
 			return bounds.Size;
-		}
-
-		private protected override void InvalidateMeasureLegacy(InvalidationTrigger trigger, int depth, int depthLeveltoInvalidate)
-		{
-			base.InvalidateMeasureLegacy(trigger, depth, 1);
 		}
 
 #nullable disable

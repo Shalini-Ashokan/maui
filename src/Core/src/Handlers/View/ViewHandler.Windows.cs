@@ -112,6 +112,9 @@ namespace Microsoft.Maui.Handlers
 		{
 			if (view is IContextFlyoutElement contextFlyoutContainer)
 			{
+				if (handler.IsConnectingHandler() && contextFlyoutContainer.ContextFlyout is null)
+					return;
+
 				MapContextFlyout(handler, contextFlyoutContainer);
 			}
 		}
@@ -155,7 +158,7 @@ namespace Microsoft.Maui.Handlers
 			}
 		}
 
-		void UpdateIsFocused(bool isFocused)
+		private protected void UpdateIsFocused(bool isFocused)
 		{
 			if (VirtualView is not { } virtualView)
 			{

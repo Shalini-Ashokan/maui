@@ -114,7 +114,7 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 			{
 				bool accept = true;
 				var r = RendererForViewController(viewController);
-				if (r != null)
+				if (r is not null)
 					accept = ((IShellItemController)ShellItem).ProposeSection(r.ShellSection, false);
 
 				return accept;
@@ -438,8 +438,13 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 			if (ShellItemController == null)
 				return;
 
-			if (OperatingSystemMacCatalyst18Workaround.IsMacCatalystVersionAtLeast18() || OperatingSystem.IsIOSVersionAtLeast(18))
+			if (OperatingSystem.IsMacCatalystVersionAtLeast(18) || OperatingSystem.IsIOSVersionAtLeast(18))
 			{
+				if (TabBarHidden == !ShellItemController.ShowTabs)
+				{
+					return;
+				}
+
 				TabBarHidden = !ShellItemController.ShowTabs;
 			}
 			else

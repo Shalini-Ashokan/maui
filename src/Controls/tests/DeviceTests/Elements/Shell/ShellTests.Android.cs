@@ -454,6 +454,123 @@ namespace Microsoft.Maui.DeviceTests
 			});
 		}
 
+		//src/Compatibility/Core/tests/Android/ShellTests.cs
+		[Fact(DisplayName = "Flyout Header Changes When Updated")]
+		public async Task FlyoutHeaderReactsToChanges()
+		{
+			SetupBuilder();
+
+			var initialHeader = new Label() { Text = "Hello" };
+			var newHeader = new Label() { Text = "Hello Part 2" };
+
+			var shell = await CreateShellAsync(shell =>
+			{
+				shell.CurrentItem = new FlyoutItem() { Items = { new ContentPage() }, Title = "Flyout Item" };
+				shell.FlyoutHeader = initialHeader;
+			});
+
+			await CreateHandlerAndAddToWindow<ShellRenderer>(shell, async (handler) =>
+			{
+				var initialHeaderPlatformView = initialHeader.ToPlatform();
+				Assert.NotNull(initialHeaderPlatformView);
+				Assert.NotNull(initialHeader.Handler);
+
+				shell.FlyoutHeader = newHeader;
+
+				var newHeaderPlatformView = newHeader.ToPlatform();
+				Assert.NotNull(newHeaderPlatformView);
+				Assert.NotNull(newHeader.Handler);
+
+				Assert.Null(initialHeader.Handler);
+
+				await OpenFlyout(handler);
+
+				var appBar = newHeaderPlatformView.GetParentOfType<AppBarLayout>();
+				Assert.NotNull(appBar);
+			});
+		}
+
+		//src/Compatibility/Core/tests/Android/ShellTests.cs
+		[Fact(DisplayName = "Ensure Default Colors are White for BottomNavigationView")]
+		public async Task ShellTabColorsDefaultToWhite()
+		{
+			SetupBuilder();
+
+			var shell = await CreateShellAsync(shell =>
+			{
+				shell.Items.Add(new Tab() { Items = { new ContentPage() }, Title = "Tab 1" });
+			});
+
+			await CreateHandlerAndAddToWindow<ShellRenderer>(shell, (handler) =>
+			{
+				var bottomNavigationView = GetDrawerLayout(handler).GetFirstChildOfType<BottomNavigationView>();
+				Assert.NotNull(bottomNavigationView);
+
+				var background = bottomNavigationView.Background;
+				Assert.NotNull(background);
+
+				if (background is ColorChangeRevealDrawable changeRevealDrawable)
+				{
+					Assert.Equal(Android.Graphics.Color.White, changeRevealDrawable.EndColor);
+				}
+			});
+		}
+
+		[Fact(DisplayName = "ShellContentFragment.Destroy handles null _shellContext gracefully")]
+		public async Task ShellContentFragmentDestroyHandlesNullShellContext()
+		{
+			SetupBuilder();
+
+			var shell = await CreateShellAsync(shell =>
+			{
+				shell.Items.Add(new TabBar()
+				{
+					Items =
+					{
+						new ShellContent()
+						{
+							Route = "Item1",
+							Content = new ContentPage { Title = "Page 1" }
+						},
+						new ShellContent()
+						{
+							Route = "Item2",
+							Content = new ContentPage { Title = "Page 2" }
+						},
+					}
+				});
+			});
+
+			await CreateHandlerAndAddToWindow<ShellHandler>(shell, async (handler) =>
+			{
+				await OnLoadedAsync(shell.CurrentPage);
+				await OnNavigatedToAsync(shell.CurrentPage);
+
+				// Navigate to trigger fragment creation
+				await shell.GoToAsync("//Item2");
+				await OnNavigatedToAsync(shell.CurrentPage);
+
+				// Test normal destruction - should work without issues
+				await shell.GoToAsync("//Item1");
+				await OnNavigatedToAsync(shell.CurrentPage);
+
+				// Test null context scenario
+				var exception = Record.Exception(() =>
+				{
+					// Create fragment with null context - this should not throw
+					Page page = new ContentPage();
+					var fragment = new ShellContentFragment((IShellContext)null, page);
+
+					// Dispose the fragment which calls Destroy internally
+					// This validates the null-conditional operators in Destroy method
+					fragment.Dispose();
+				});
+
+				// Verify no exception was thrown - validates (_shellContext?.Shell as IShellController)?.RemoveAppearanceObserver(this);
+				Assert.Null(exception);
+			});
+		}
+
 		protected AView GetFlyoutPlatformView(ShellRenderer shellRenderer)
 		{
 			var drawerLayout = GetDrawerLayout(shellRenderer);
