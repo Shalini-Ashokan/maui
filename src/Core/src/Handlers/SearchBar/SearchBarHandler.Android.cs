@@ -36,8 +36,6 @@ namespace Microsoft.Maui.Handlers
 			// Ensure the EditText replacement happens and subscribe to SelectionChanged
 			if (_platformSearchView != null)
 			{
-				_platformSearchView.EnsureEditTextReplaced();
-
 				// Try to subscribe to SelectionChanged, with retry if EditText isn't ready yet
 				SubscribeToSelectionChanged();
 			}
