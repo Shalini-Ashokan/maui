@@ -1,3 +1,4 @@
+using System;
 using Android.Content;
 using Android.Content.Res;
 using Android.Views;
@@ -31,6 +32,28 @@ namespace Microsoft.Maui.Handlers
 
 			platformView.QueryTextChange += OnQueryTextChange;
 			platformView.QueryTextSubmit += OnQueryTextSubmit;
+
+			// Ensure the EditText replacement happens and subscribe to SelectionChanged
+			if (_platformSearchView != null)
+			{
+				_platformSearchView.EnsureEditTextReplaced();
+
+				// Try to subscribe to SelectionChanged, with retry if EditText isn't ready yet
+				SubscribeToSelectionChanged();
+			}
+		}
+
+		void SubscribeToSelectionChanged()
+		{
+			if (_platformSearchView?._queryEditor != null)
+			{
+				_platformSearchView._queryEditor.SelectionChanged += OnSelectionChanged;
+			}
+			else
+			{
+				// Retry after a short delay if EditText isn't ready yet
+				_platformSearchView?.PostDelayed(() => SubscribeToSelectionChanged(), 100);
+			}
 		}
 
 		protected override void DisconnectHandler(SearchView platformView)
@@ -40,6 +63,12 @@ namespace Microsoft.Maui.Handlers
 
 			platformView.QueryTextChange -= OnQueryTextChange;
 			platformView.QueryTextSubmit -= OnQueryTextSubmit;
+
+			// Unsubscribe from the EditText's SelectionChanged event
+			if (_platformSearchView?._queryEditor != null)
+			{
+				_platformSearchView._queryEditor.SelectionChanged -= OnSelectionChanged;
+			}
 		}
 
 		public static void MapBackground(ISearchBarHandler handler, ISearchBar searchBar)
@@ -138,6 +167,12 @@ namespace Microsoft.Maui.Handlers
 			handler.QueryEditor?.UpdateCursorPosition(searchBar);
 		}
 
+		//TODO: Make it public in .NET 10. 
+		internal static void MapSelectionLength(ISearchBarHandler handler, ITextInput searchBar)
+		{
+			handler.QueryEditor?.UpdateSelectionLength(searchBar);
+		}
+
 		void OnQueryTextSubmit(object? sender, QueryTextSubmitEventArgs e)
 		{
 			VirtualView.SearchButtonPressed();
@@ -151,6 +186,21 @@ namespace Microsoft.Maui.Handlers
 			if (sender is SearchView searchView)
 			{
 				searchView.UpdateCursorPositionFromPlatformToVirtual(VirtualView);
+			}
+		}
+
+		void OnSelectionChanged(object? sender, EventArgs e)
+		{
+			if (QueryEditor != null && VirtualView is ITextInput textInput)
+			{
+				var cursorPosition = QueryEditor.GetCursorPosition();
+				var selectedTextLength = QueryEditor.GetSelectedTextLength();
+
+				if (textInput.CursorPosition != cursorPosition)
+					textInput.CursorPosition = cursorPosition;
+
+				if (textInput.SelectionLength != selectedTextLength)
+					textInput.SelectionLength = selectedTextLength;
 			}
 		}
 

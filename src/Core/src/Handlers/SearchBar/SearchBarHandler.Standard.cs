@@ -39,5 +39,8 @@ namespace Microsoft.Maui.Handlers
 
 		//TODO: Make it public in .NET 10.
 		internal static void MapCursorPosition(IViewHandler handler, ISearchBar searchBar) { }
+
+		//TODO: Make it public in .NET 10.
+		internal static void MapSelectionLength(IViewHandler handler, ISearchBar searchBar) { }
 	}
 }

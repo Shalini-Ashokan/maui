@@ -152,6 +152,12 @@ namespace Microsoft.Maui.Handlers
 			handler.QueryEditor?.UpdateCursorPosition(searchBar);
 		}
 
+		//TODO: Make it public in .NET 10.
+		internal static void MapSelectionLength(ISearchBarHandler handler, ITextInput searchBar)
+		{
+			handler.QueryEditor?.UpdateSelectionLength(searchBar);
+		}
+
 		void UpdateCancelButtonVisibility()
 		{
 			if (PlatformView.ShowsCancelButton != VirtualView.ShouldShowCancelButton())
