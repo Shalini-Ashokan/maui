@@ -9,7 +9,7 @@ namespace Microsoft.Maui.Controls
 	public partial class SwipeItem : MenuItem, Controls.ISwipeItem, Maui.ISwipeItemMenuItem
 	{
 		/// <summary>Bindable property for <see cref="BackgroundColor"/>.</summary>
-		public static readonly BindableProperty BackgroundColorProperty = BindableProperty.Create(nameof(BackgroundColor), typeof(Color), typeof(SwipeItem), null);
+		public static readonly BindableProperty BackgroundColorProperty = BindableProperty.Create(nameof(BackgroundColor), typeof(Color), typeof(SwipeItem), null, propertyChanged: OnBackgroundColorChanged);
 
 		/// <summary>Bindable property for <see cref="IsVisible"/>.</summary>
 		public static readonly BindableProperty IsVisibleProperty = BindableProperty.Create(nameof(IsVisible), typeof(bool), typeof(SwipeItem), true);
@@ -45,6 +45,16 @@ namespace Microsoft.Maui.Controls
 
 		void IImageSourcePart.UpdateIsLoading(bool isLoading)
 		{
+		}
+
+		static void OnBackgroundColorChanged(BindableObject bindable, object oldValue, object newValue)
+		{
+			if (bindable is SwipeItem swipeItem)
+			{
+				// Notify handler that Background property has changed when BackgroundColor changes
+				// This ensures the handler's MapBackground method gets called for theme changes
+				swipeItem.Handler?.UpdateValue(nameof(IView.Background));
+			}
 		}
 	}
 }
