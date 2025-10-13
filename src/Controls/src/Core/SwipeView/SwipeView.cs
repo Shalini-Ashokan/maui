@@ -21,7 +21,7 @@ namespace Microsoft.Maui.Controls
 			_platformConfigurationRegistry = new Lazy<PlatformConfigurationRegistry<SwipeView>>(() => new PlatformConfigurationRegistry<SwipeView>(this));
 
 			// This just disables any of the legacy layout code from running
-			DisableLayout = true;
+			//DisableLayout = true;
 
 			// SwipeItems is an Element so it participates in the Visual Hierarchy.
 			// This is why we add each set of items to the logical children of swipeview
@@ -110,7 +110,7 @@ namespace Microsoft.Maui.Controls
 			elements.Add(TopItems);
 			elements.Add(BottomItems);
 
-			foreach (var item in LogicalChildrenInternal)
+			foreach (var item in InternalChildren)
 			{
 				if (item is IVisualTreeElement vte)
 				{
@@ -128,6 +128,53 @@ namespace Microsoft.Maui.Controls
 			SetInheritedBindingContext(RightItems, BindingContext);
 			SetInheritedBindingContext(TopItems, BindingContext);
 			SetInheritedBindingContext(BottomItems, BindingContext);
+
+			// Ensure theme changes propagate to SwipeItems even with DisableLayout = true
+			PropagateThemeToSwipeItems(LeftItems);
+			PropagateThemeToSwipeItems(RightItems);
+			PropagateThemeToSwipeItems(TopItems);
+			PropagateThemeToSwipeItems(BottomItems);
+		}
+
+		internal override void OnParentResourcesChanged(System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, object>> values)
+		{
+			base.OnParentResourcesChanged(values);
+
+			// Check if this is a theme change
+			if (values != null)
+			{
+				foreach (var kvp in values)
+				{
+					if (kvp.Key == AppThemeBinding.AppThemeResource)
+					{
+						// Theme changed - force re-evaluation of AppThemeBindings on SwipeItems
+						PropagateThemeToSwipeItems(LeftItems);
+						PropagateThemeToSwipeItems(RightItems);
+						PropagateThemeToSwipeItems(TopItems);
+						PropagateThemeToSwipeItems(BottomItems);
+						break;
+					}
+				}
+			}
+		}
+
+		void PropagateThemeToSwipeItems(SwipeItems swipeItems)
+		{
+			if (swipeItems != null)
+			{
+				foreach (var item in swipeItems)
+				{
+					if (item is Element element)
+					{
+						// Force re-evaluation of AppThemeBindings by triggering resource change
+						element.OnParentResourcesChanged(
+							new System.Collections.Generic.KeyValuePair<string, object>[]
+							{
+								new(AppThemeBinding.AppThemeResource, Application.Current?.RequestedTheme ?? Microsoft.Maui.ApplicationModel.AppInfo.RequestedTheme)
+							});
+					}
+				}
+			}
 		}
 
 		static void OnSwipeItemsChanged(BindableObject bindable, object oldValue, object newValue)

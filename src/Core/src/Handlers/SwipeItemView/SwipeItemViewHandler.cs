@@ -15,13 +15,13 @@ namespace Microsoft.Maui.Handlers
 {
 	public partial class SwipeItemViewHandler : ViewHandler<ISwipeItemView, PlatformView>, ISwipeItemViewHandler
 	{
-		public static IPropertyMapper<ISwipeItemView, ISwipeItemViewHandler> Mapper = new PropertyMapper<ISwipeItemView, ISwipeItemViewHandler>(ViewHandler.ViewMapper)
+		public static IPropertyMapper<ISwipeItemView, ISwipeItemViewHandler> Mapper = new PropertyMapper<ISwipeItemView, ISwipeItemViewHandler>(ContentViewHandler.Mapper)
 		{
 			[nameof(ISwipeItemView.Content)] = MapContent,
 			[nameof(ISwipeItemView.Visibility)] = MapVisibility
 		};
 
-		public static CommandMapper<ISwipeItemView, ISwipeItemViewHandler> CommandMapper = new(ViewHandler.ViewCommandMapper)
+		public static CommandMapper<ISwipeItemView, ISwipeItemViewHandler> CommandMapper = new(ContentViewHandler.CommandMapper)
 		{
 		};
 
