@@ -321,7 +321,14 @@ namespace Microsoft.Maui.Platform
 				return;
 			}
 
-			platformView.LayoutDirection = GetLayoutDirection(view);
+			var layoutDirection = GetLayoutDirection(view);
+			platformView.LayoutDirection = layoutDirection;
+
+			// Special handling for MauiScrollView to update horizontal scroll view layout direction
+			if (platformView is MauiScrollView scrollView)
+			{
+				scrollView.UpdateFlowDirection(layoutDirection);
+			}
 		}
 
 		static ALayoutDirection GetLayoutDirection(IView view)
