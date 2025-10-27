@@ -199,5 +199,61 @@ namespace Microsoft.Maui.DeviceTests
 				Assert.Equal(1000, measuredHeight);
 			});
 		}
+
+		[Fact]
+		public async Task MauiScrollViewUpdatesHorizontalScrollViewLayoutDirectionOnRTL()
+		{
+			await InvokeOnMainThreadAsync(() =>
+			{
+				var sv = new MauiScrollView(MauiContext.Context);
+				sv.SetOrientation(ScrollOrientation.Horizontal);
+				var content = new Button(MauiContext.Context);
+				sv.SetContent(content);
+
+				var hsv = sv.FindViewWithTag("Microsoft.Maui.Android.HorizontalScrollView") as MauiHorizontalScrollView;
+
+				Assert.NotNull(hsv);
+
+				// Initial layout direction should be LTR
+				Assert.Equal(Android.Views.LayoutDirection.Ltr, hsv.LayoutDirection);
+
+				// Update to RTL
+				sv.UpdateFlowDirection(Android.Views.LayoutDirection.Rtl);
+
+				// The horizontal scroll view should now have RTL layout direction
+				Assert.Equal(Android.Views.LayoutDirection.Rtl, hsv.LayoutDirection);
+
+				// Update back to LTR
+				sv.UpdateFlowDirection(Android.Views.LayoutDirection.Ltr);
+
+				// The horizontal scroll view should now have LTR layout direction
+				Assert.Equal(Android.Views.LayoutDirection.Ltr, hsv.LayoutDirection);
+			});
+		}
+
+		[Fact]
+		public async Task MauiScrollViewPreservesLayoutDirectionOnOrientationChange()
+		{
+			await InvokeOnMainThreadAsync(() =>
+			{
+				var sv = new MauiScrollView(MauiContext.Context);
+				sv.SetOrientation(ScrollOrientation.Vertical);
+				var content = new Button(MauiContext.Context);
+				sv.SetContent(content);
+
+				// Set to RTL first
+				sv.UpdateFlowDirection(Android.Views.LayoutDirection.Rtl);
+
+				// Change to horizontal orientation
+				sv.SetOrientation(ScrollOrientation.Horizontal);
+
+				var hsv = sv.FindViewWithTag("Microsoft.Maui.Android.HorizontalScrollView") as MauiHorizontalScrollView;
+
+				Assert.NotNull(hsv);
+
+				// The newly created horizontal scroll view should have RTL layout direction
+				Assert.Equal(Android.Views.LayoutDirection.Rtl, hsv.LayoutDirection);
+			});
+		}
 	}
 }
