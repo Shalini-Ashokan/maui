@@ -337,6 +337,8 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 				}
 
 				position = items.IndexOf(Carousel.CurrentItem);
+				if (position == -1)
+					return;
 				Carousel.Position = position;
 			}
 			else
