@@ -17,8 +17,9 @@ namespace Microsoft.Maui.Platform
 			// Should apply to iOS and Catalyst
 			if (OperatingSystem.IsMacCatalystVersionAtLeast(18))
 			{
+				// On MacCatalyst, only set the size class to maintain bottom tab bar
+				// Do NOT set Mode to TabSidebar as it causes tabs to not appear
 				tabBarController.TraitOverrides.HorizontalSizeClass = UIUserInterfaceSizeClass.Compact;
-				tabBarController.Mode = UITabBarControllerMode.TabSidebar;
 			}
 			else if (OperatingSystem.IsIOSVersionAtLeast(18, 0) && UIDevice.CurrentDevice.UserInterfaceIdiom == UIUserInterfaceIdiom.Pad)
 			{
