@@ -14,11 +14,12 @@ namespace Microsoft.Maui.Platform
 	{
 		internal static void DisableiOS18ToolbarTabs(this UITabBarController tabBarController)
 		{
-			// For MacCatalyst 18+, explicitly set TabBar mode to force bottom tab bar
-			// The default 'automatic' mode shows tabs in toolbar/sidebar on Mac
+			// For MacCatalyst 18+, force bottom tab bar placement
+			// Setting Mode=TabBar alone is not enough; must also override horizontalSizeClass
 			if (OperatingSystem.IsMacCatalystVersionAtLeast(18))
 			{
 				tabBarController.Mode = UITabBarControllerMode.TabBar;
+				tabBarController.TraitOverrides.HorizontalSizeClass = UIUserInterfaceSizeClass.Compact;
 				return;
 			}
 			
