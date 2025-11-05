@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using CoreGraphics;
 using Foundation;
@@ -103,9 +104,67 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 		{
 			base.ViewDidLayoutSubviews();
 
+			// On Mac Catalyst 18+, explicitly ensure TabBar is in view hierarchy
+			if (OperatingSystem.IsMacCatalystVersionAtLeast(18))
+			{
+				Debug.WriteLine($"[DEBUG] TabBar is null: {TabBar == null}");
+				Debug.WriteLine($"[DEBUG] View is null: {View == null}");
+
+				if (TabBar != null)
+				{
+					Debug.WriteLine($"[DEBUG] TabBar.Hidden: {TabBar.Hidden}");
+					Debug.WriteLine($"[DEBUG] TabBar.Alpha: {TabBar.Alpha}");
+					Debug.WriteLine($"[DEBUG] TabBar.Frame: {TabBar.Frame}");
+					Debug.WriteLine($"[DEBUG] TabBar.Superview: {TabBar.Superview}");
+					Debug.WriteLine($"[DEBUG] View.Subviews.Length: {View.Subviews.Length}");
+
+					// Force TabBar properties
+					TabBar.Hidden = false;
+					TabBar.Alpha = 1.0f;
+					TabBar.UserInteractionEnabled = true;
+
+					// CRITICAL FIX: Remove TabBar from the wrong Superview (has negative Y position)
+					if (TabBar.Superview != null && TabBar.Superview != View)
+					{
+						Debug.WriteLine($"[DEBUG] Removing TabBar from wrong Superview: {TabBar.Superview}");
+						TabBar.RemoveFromSuperview();
+					}
+
+					if (TabBar.Superview == null)
+					{
+						Debug.WriteLine("[DEBUG] Adding TabBar directly to main View");
+						View.AddSubview(TabBar);
+					}
+
+					// Ensure TabBar is positioned at the bottom
+					var viewBounds = View.Bounds;
+					var tabBarHeight = TabBar.Frame.Height > 0 ? TabBar.Frame.Height : 72;
+					TabBar.Frame = new CoreGraphics.CGRect(
+							x: 0,
+							y: viewBounds.Height - tabBarHeight,
+							width: viewBounds.Width,
+							height: tabBarHeight
+						);
+
+					Debug.WriteLine($"[DEBUG] After setting - TabBar.Frame: {TabBar.Frame}");
+
+					// Set blue background for testing visibility
+					TabBar.BackgroundColor = UIKit.UIColor.Blue;
+					TabBar.BarTintColor = UIKit.UIColor.Blue;
+					View.BackgroundColor = UIKit.UIColor.Red; // Red background for main view
+
+					// Bring TabBar to front
+					View.BringSubviewToFront(TabBar);
+
+					Debug.WriteLine($"[DEBUG] TabBar setup complete");
+				}
+				else
+				{
+					Debug.WriteLine("[DEBUG] TabBar is NULL!");
+				}
+			}
 			_appearanceTracker?.UpdateLayout(this);
 		}
-
 		public override void ViewDidLoad()
 		{
 			base.ViewDidLoad();
@@ -430,6 +489,23 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 		public override void ViewWillLayoutSubviews()
 		{
 			UpdateTabBarHidden();
+
+			// On Mac Catalyst 18+, force TabBar to bottom BEFORE layout
+			if (OperatingSystem.IsMacCatalystVersionAtLeast(18) && TabBar != null)
+			{
+				var viewBounds = View.Bounds;
+				var tabBarHeight = TabBar.Frame.Height > 0 ? TabBar.Frame.Height : 72;
+
+				TabBar.Frame = new CoreGraphics.CGRect(
+					x: 0,
+					y: viewBounds.Height - tabBarHeight,
+					width: viewBounds.Width,
+					height: tabBarHeight
+				);
+
+				Debug.WriteLine($"[ViewWillLayoutSubviews] Setting TabBar.Frame: {TabBar.Frame}");
+			}
+
 			base.ViewWillLayoutSubviews();
 		}
 
