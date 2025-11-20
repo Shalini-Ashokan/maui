@@ -165,7 +165,7 @@ namespace Microsoft.Maui.Platform
 			}
 		}
 
-		internal static void SetupContainer(AView platformView, Context context, AView containerView, Action<AView> setWrapperView)
+		internal static void SetupContainer(AView platformView, Context context, AView containerView, Action<AView> setWrapperView, IView view)
 		{
 			if (context == null || platformView == null || containerView != null)
 				return;
@@ -178,6 +178,9 @@ namespace Microsoft.Maui.Platform
 			containerView ??= new WrapperView(context);
 			setWrapperView.Invoke(containerView);
 
+			// Apply initial scale from IView to container
+			containerView.ScaleX = (float)(view.Scale * view.ScaleX);
+			containerView.ScaleY = (float)(view.Scale * view.ScaleY);
 			((ViewGroup)containerView).AddView(platformView);
 
 			if (oldIndex is int idx && idx >= 0)

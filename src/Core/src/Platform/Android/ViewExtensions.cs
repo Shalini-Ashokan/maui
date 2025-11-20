@@ -39,6 +39,11 @@ namespace Microsoft.Maui.Platform
 				visibility = (int)view.Visibility.ToPlatformVisibility();
 			}
 
+			// If view has shadow or clip, scale will be applied to WrapperView container instead
+			bool hasContainer = view.Clip != null || view.Shadow != null;
+			float scaleX = hasContainer ? 1.0f : (float)(view.Scale * view.ScaleX);
+			float scaleY = hasContainer ? 1.0f : (float)(view.Scale * view.ScaleY);
+
 			// NOTE: use named arguments for clarity
 			PlatformInterop.Set(platformView,
 				visibility: visibility,
@@ -49,8 +54,8 @@ namespace Microsoft.Maui.Platform
 				alpha: (float)view.Opacity,
 				translationX: platformView.ToPixels(view.TranslationX),
 				translationY: platformView.ToPixels(view.TranslationY),
-				scaleX: (float)(view.Scale * view.ScaleX),
-				scaleY: (float)(view.Scale * view.ScaleY),
+				scaleX: scaleX,
+				scaleY: scaleY,
 				rotation: (float)view.Rotation,
 				rotationX: (float)view.RotationX,
 				rotationY: (float)view.RotationY,

@@ -374,7 +374,7 @@ namespace Microsoft.Maui.Controls.Handlers.Compatibility
 		}
 
 		void SetupContainer() =>
-			WrapperView.SetupContainer(this, Context, _wrapperView, (cv) => _wrapperView = cv);
+			WrapperView.SetupContainer(this, Context, _wrapperView, (cv) => _wrapperView = cv, Element);
 
 		void RemoveContainer() =>
 			WrapperView.RemoveContainer(this, Context, _wrapperView, () => _wrapperView = null);

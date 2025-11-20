@@ -18,7 +18,7 @@ namespace Microsoft.Maui.Handlers
 			this.GetDesiredSizeFromHandler(widthConstraint, heightConstraint);
 
 		protected override void SetupContainer() =>
-			WrapperView.SetupContainer(PlatformView, Context, ContainerView, (cv) => ContainerView = cv);
+			WrapperView.SetupContainer(PlatformView, Context, ContainerView, (cv) => ContainerView = cv, VirtualView);
 
 		protected override void RemoveContainer() =>
 			WrapperView.RemoveContainer(PlatformView, Context, ContainerView, () => ContainerView = null);
