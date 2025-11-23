@@ -53,14 +53,41 @@ namespace Microsoft.Maui.Platform
 			if (Subviews.Length == 0)
 				return;
 
-			UpdateIndicatorSize();
+			// Check if we have a templated indicator view
+			// Templated indicators have a single subview (the custom layout)
+			// Native UIPageControl has nested subview structure
+			bool hasTemplatedIndicator = HasTemplatedIndicator();
 
-			if (!IsSquare)
-				return;
+			if (hasTemplatedIndicator)
+			{
+				// For templated indicators, set the frame to match the bounds
+				// so the custom layout is visible and properly positioned
+				if (Subviews.Length > 0)
+				{
+					Subviews[0].Frame = Bounds;
+				}
+			}
+			else
+			{
+				// For native indicators, apply the indicator size transform
+				UpdateIndicatorSize();
 
-			UpdateSquareShape();
+				if (!IsSquare)
+					return;
+
+				UpdateSquareShape();
+			}
 		}
 
+		bool HasTemplatedIndicator()
+		{
+			// If we have a weak reference to the indicator view, check if it's templated
+			if (_indicatorView != null && _indicatorView.TryGetTarget(out var indicatorView))
+			{
+				return indicatorView is ITemplatedIndicatorView templated && templated.IndicatorsLayoutOverride != null;
+			}
+			return false;
+		}
 		public void UpdateIndicatorSize()
 		{
 			if (IndicatorSize == 0 || IndicatorSize == DefaultIndicatorSize)
@@ -69,7 +96,10 @@ namespace Microsoft.Maui.Platform
 			float scale = (float)IndicatorSize / DefaultIndicatorSize;
 			var newTransform = CGAffineTransform.MakeScale(scale, scale);
 
-			Transform = newTransform;
+			foreach (var view in Subviews)
+			{
+				view.Transform = newTransform;
+			}
 		}
 
 		public void UpdatePosition()
@@ -98,6 +128,14 @@ namespace Microsoft.Maui.Platform
 			UpdatePosition();
 		}
 
+#pragma warning disable CA1822 // Mark members as static
+		public void UpdateIndicatorFlowDirection(IIndicatorView indicatorView)
+#pragma warning restore CA1822 // Mark members as static
+		{
+			// When using a templated indicator view, we need to re-update the indicators
+			// to apply the FlowDirection changes to the templated layout
+			// The actual propagation happens in UpdateIndicator() in the handler
+		}
 		void UpdateSquareShape()
 		{
 			if (!(OperatingSystem.IsIOSVersionAtLeast(14) || OperatingSystem.IsTvOSVersionAtLeast(14)))

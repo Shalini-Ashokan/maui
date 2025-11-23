@@ -63,6 +63,20 @@ namespace Microsoft.Maui.Handlers
 			handler.PlatformView?.UpdateIndicatorShape(indicator);
 		}
 
+#pragma warning disable RS0016 // Add public types and members to the declared API
+		public static void MapFlowDirection(IIndicatorViewHandler handler, IIndicatorView indicator)
+#pragma warning restore RS0016 // Add public types and members to the declared API
+		{
+			// First apply the base FlowDirection mapping to the platform view
+			ViewHandler.MapFlowDirection(handler, indicator);
+
+			// Then update the templated indicators to propagate FlowDirection
+			if (handler is IndicatorViewHandler indicatorHandler)
+			{
+				indicatorHandler.UpdateIndicator();
+			}
+		}
+
 		void UpdateIndicator()
 		{
 			if (VirtualView is ITemplatedIndicatorView iTemplatedIndicatorView)
@@ -73,7 +87,15 @@ namespace Microsoft.Maui.Handlers
 				{
 					ClearIndicators();
 					handler = indicatorsLayoutOverride.ToPlatform(MauiContext);
+
 					PlatformView.AddSubview(handler);
+
+					// Propagate the FlowDirection SemanticContentAttribute to the templated layout
+					// so that RTL/LTR is respected when using custom templates
+					if (indicatorsLayoutOverride is IView layoutView)
+					{
+						handler.UpdateFlowDirection(layoutView);
+					}
 				}
 			}
 

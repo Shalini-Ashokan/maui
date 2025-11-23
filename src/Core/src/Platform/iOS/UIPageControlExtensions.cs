@@ -36,5 +36,20 @@ namespace Microsoft.Maui.Platform
 
 		public static void UpdateCurrentPagesIndicatorTintColor(this UIPageControl pageControl, IIndicatorView indicatorView)
 			=> pageControl.CurrentPageIndicatorTintColor = indicatorView.SelectedIndicatorColor?.ToColor()?.ToPlatform();
+
+		internal static void UpdateIndicatorFlowDirection(this MauiPageControl pageControl, IIndicatorView indicatorView)
+		{
+			var semantic = indicatorView.FlowDirection == FlowDirection.RightToLeft ?
+				UISemanticContentAttribute.ForceRightToLeft : UISemanticContentAttribute.ForceLeftToRight;
+			pageControl.SemanticContentAttribute = semantic;
+
+			// Apply semantic attribute to all subviews (indicators)
+			foreach (var subview in pageControl.Subviews)
+			{
+				subview.SemanticContentAttribute = semantic;
+			}
+
+			pageControl.LayoutSubviews();
+		}
 	}
 }

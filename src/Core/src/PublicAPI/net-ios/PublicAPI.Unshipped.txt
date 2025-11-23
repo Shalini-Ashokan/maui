@@ -1,1 +1,3 @@
 #nullable enable
+Microsoft.Maui.Platform.MauiPageControl.UpdateIndicatorFlowDirection(Microsoft.Maui.IIndicatorView! indicatorView) -> void
+override Microsoft.Maui.Platform.MauiView.DidUpdateFocus(UIKit.UIFocusUpdateContext! context, UIKit.UIFocusAnimationCoordinator! coordinator) -> void
