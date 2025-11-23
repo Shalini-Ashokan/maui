@@ -22,6 +22,21 @@ namespace Microsoft.Maui.Platform
 			pageControl.LayoutSubviews();
 		}
 
+		internal static void UpdateIndicatorFlowDirection(this MauiPageControl pageControl, IIndicatorView indicatorView)
+		{
+			var parent = indicatorView.Parent?.Handler?.PlatformView as UIView;
+			bool isRtl = parent?.SemanticContentAttribute == UISemanticContentAttribute.ForceRightToLeft || indicatorView.FlowDirection == FlowDirection.RightToLeft;
+
+			var semantic = isRtl ? UISemanticContentAttribute.ForceRightToLeft : UISemanticContentAttribute.ForceLeftToRight;
+			pageControl.SemanticContentAttribute = semantic;
+
+			// Apply semantic attribute to all subviews (indicators)
+			foreach (var subview in pageControl.Subviews)
+			{
+				subview.SemanticContentAttribute = semantic;
+			}
+		}
+
 		public static void UpdateHideSingle(this UIPageControl pageControl, IIndicatorView indicatorView)
 			=> pageControl.HidesForSinglePage = indicatorView.HideSingle;
 

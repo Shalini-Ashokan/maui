@@ -55,6 +55,16 @@ namespace Microsoft.Maui.Platform
 
 			UpdateIndicatorSize();
 
+			if (_indicatorView?.TryGetTarget(out var indicatorView) == true && (indicatorView as ITemplatedIndicatorView)?.IndicatorsLayoutOverride is not null)
+			{
+				bool isRtl = SemanticContentAttribute == UISemanticContentAttribute.ForceRightToLeft ||
+				indicatorView.FlowDirection == FlowDirection.RightToLeft;
+				if (isRtl)
+				{
+					Subviews[0].Frame = Bounds;
+				}
+			}
+
 			if (!IsSquare)
 				return;
 
