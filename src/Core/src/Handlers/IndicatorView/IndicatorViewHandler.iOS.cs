@@ -63,6 +63,11 @@ namespace Microsoft.Maui.Handlers
 			handler.PlatformView?.UpdateIndicatorShape(indicator);
 		}
 
+		public static void MapFlowDirection(IIndicatorViewHandler handler, IIndicatorView indicator)
+		{
+			handler.PlatformView?.UpdateIndicatorFlowDirection(indicator);
+		}
+
 		void UpdateIndicator()
 		{
 			if (VirtualView is ITemplatedIndicatorView iTemplatedIndicatorView)
