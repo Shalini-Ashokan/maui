@@ -76,9 +76,7 @@ namespace Microsoft.Maui.Handlers
 				return;
 			}
 
-			// Apply to container if it exists (for shadow), otherwise to platform view
-			var targetView = (handler.ContainerView ?? handler.ToPlatform()) as PlatformView;
-			targetView?.UpdateScale(view);
+			handler.ToPlatform().UpdateScale(view);
 		}
 		public static void MapScaleX(IViewHandler handler, IView view)
 		{
@@ -88,9 +86,7 @@ namespace Microsoft.Maui.Handlers
 				return;
 			}
 
-			// Apply to container if it exists (for shadow), otherwise to platform view
-			var targetView = (handler.ContainerView ?? handler.ToPlatform()) as PlatformView;
-			targetView?.UpdateScaleX(view);
+			handler.ToPlatform().UpdateScaleX(view);
 		}
 		public static void MapScaleY(IViewHandler handler, IView view)
 		{
@@ -100,9 +96,7 @@ namespace Microsoft.Maui.Handlers
 				return;
 			}
 
-			// Apply to container if it exists (for shadow), otherwise to platform view
-			var targetView = (handler.ContainerView ?? handler.ToPlatform()) as PlatformView;
-			targetView?.UpdateScaleY(view);
+			handler.ToPlatform().UpdateScaleY(view);
 		}
 		public static void MapRotation(IViewHandler handler, IView view)
 		{
