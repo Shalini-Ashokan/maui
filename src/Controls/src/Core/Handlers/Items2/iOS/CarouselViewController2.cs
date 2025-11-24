@@ -181,8 +181,23 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 
 		internal NSIndexPath GetScrollToIndexPath(int position)
 		{
-			if (ItemsView?.Loop == true && _carouselViewLoopManager != null)
+			if (ItemsView?.Loop == true && _carouselViewLoopManager != null && ItemsView is CarouselView carousel)
 			{
+				var itemCount = ItemsSource?.ItemCount ?? 0;
+				if (itemCount > 0)
+				{
+					var currentPosition = carousel.Position;
+					// Cross loop boundary forward (last->first): use duplicate at end
+					if (currentPosition == itemCount - 1 && position == 0)
+					{
+						position = itemCount;
+					}
+					// Cross loop boundary backward (first->last): use duplicate at start
+					else if (currentPosition == 0 && position == itemCount - 1)
+					{
+						position = -1;
+					}
+				}
 				return _carouselViewLoopManager.GetCorrectedIndexPathFromIndex(position);
 			}
 
