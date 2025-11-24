@@ -400,9 +400,13 @@ internal static class LayoutFactory2
 							return;
 						}
 
+						// Newly added 
+						// Reason : Before: the scrolling position is always left if the orientation is vertical so it not scrolled proper.
+						// After: now it checks the orientation and set the scrolling position accordingly.
+
 						var scrollPosition = isHorizontal
-							? UICollectionViewScrollPosition.CenteredHorizontally
-							: UICollectionViewScrollPosition.CenteredVertically;
+							? UICollectionViewScrollPosition.Left
+							: UICollectionViewScrollPosition.Top;
 
 						//This will move the carousel to fake the loop
 						cv2Controller.CollectionView.ScrollToItem(

@@ -183,6 +183,7 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 		{
 			if (ItemsView?.Loop == true && _carouselViewLoopManager != null && ItemsView is CarouselView carousel)
 			{
+				// Newly added 
 				var itemCount = ItemsSource?.ItemCount ?? 0;
 				if (itemCount > 0)
 				{
@@ -198,6 +199,7 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 						position = -1;
 					}
 				}
+				// End newly added
 				return _carouselViewLoopManager.GetCorrectedIndexPathFromIndex(position);
 			}
 
