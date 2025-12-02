@@ -14,13 +14,17 @@ namespace Microsoft.Maui.Platform
 	{
 		internal static void DisableiOS18ToolbarTabs(this UITabBarController tabBarController)
 		{
-			// Should apply to iOS and Catalyst
+			// For MacCatalyst 18+, force bottom tab bar placement
+			// Setting Mode=TabBar alone is not enough; must also override horizontalSizeClass
 			if (OperatingSystem.IsMacCatalystVersionAtLeast(18))
 			{
+				tabBarController.Mode = UITabBarControllerMode.TabBar;
 				tabBarController.TraitOverrides.HorizontalSizeClass = UIUserInterfaceSizeClass.Compact;
-				tabBarController.Mode = UITabBarControllerMode.TabSidebar;
+				return;
 			}
-			else if (OperatingSystem.IsIOSVersionAtLeast(18, 0) && UIDevice.CurrentDevice.UserInterfaceIdiom == UIUserInterfaceIdiom.Pad)
+			
+			// For iPad iOS 18+, set compact size class to maintain traditional bottom tab bar
+			if (OperatingSystem.IsIOSVersionAtLeast(18, 0) && UIDevice.CurrentDevice.UserInterfaceIdiom == UIUserInterfaceIdiom.Pad)
 			{
 				tabBarController.TraitOverrides.HorizontalSizeClass = UIUserInterfaceSizeClass.Compact;
 			}
