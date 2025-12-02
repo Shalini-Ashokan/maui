@@ -1,5 +1,7 @@
 ﻿#nullable disable
 using System;
+using System.Runtime.InteropServices;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Maui.Controls.Platform;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -12,6 +14,23 @@ namespace Microsoft.Maui.Controls.Handlers
 {
 	public partial class ShellHandler : ViewHandler<Shell, ShellView>
 	{
+		// P/Invoke declarations for window style manipulation
+		[DllImport("user32.dll", SetLastError = true)]
+		static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+
+		[DllImport("user32.dll", SetLastError = true)]
+		static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+
+		[DllImport("user32.dll", SetLastError = true)]
+		static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+		const int GWL_EXSTYLE = -20;
+		const int WS_EX_LAYOUTRTL = 0x00400000;
+		const uint SWP_NOSIZE = 0x0001;
+		const uint SWP_NOMOVE = 0x0002;
+		const uint SWP_NOZORDER = 0x0004;
+		const uint SWP_FRAMECHANGED = 0x0020;
+
 		ScrollViewer _scrollViewer;
 		double? _topAreaHeight = null;
 		double? _headerHeight = null;
@@ -43,6 +62,7 @@ namespace Microsoft.Maui.Controls.Handlers
 			UpdateValue(nameof(Shell.FlyoutIcon));
 			UpdateValue(nameof(Shell.FlyoutBackground));
 			UpdateValue(nameof(Shell.FlyoutBackgroundImage));
+			UpdateValue(nameof(Shell.FlowDirection));
 		}
 
 		protected override void DisconnectHandler(ShellView platformView)
@@ -164,8 +184,112 @@ namespace Microsoft.Maui.Controls.Handlers
 		internal static void MapFlowDirection(ShellHandler handler, Shell view)
 		{
 			handler.PlatformView.UpdateFlowDirection(view);
-		}
 
+			// Space required for Windows title bar system buttons: ~138px (46px * 3 buttons)
+			const double WindowsSystemButtonsWidth = 138;
+
+			var windowRootView = handler.MauiContext?.GetNavigationRootManager()?.RootView as WindowRootView;
+
+			// Get the native window handle to apply WS_EX_LAYOUTRTL for dynamic RTL changes
+			IntPtr hwnd = IntPtr.Zero;
+			var window = handler.MauiContext?.Services?.GetService<Microsoft.UI.Xaml.Window>();
+			if (window != null)
+			{
+				hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
+			}
+			if (view.FlowDirection == FlowDirection.RightToLeft)
+			{
+				// RTL: Apply WS_EX_LAYOUTRTL to mirror the entire window including title bar buttons
+				if (hwnd != IntPtr.Zero)
+				{
+					int exStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+					if ((exStyle & WS_EX_LAYOUTRTL) == 0)
+					{
+						SetWindowLong(hwnd, GWL_EXSTYLE, exStyle | WS_EX_LAYOUTRTL);
+						SetWindowPos(hwnd, IntPtr.Zero, 0, 0, 0, 0,
+							SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+					}
+				}
+
+				// Set FlowDirection at the root level
+				if (windowRootView != null && windowRootView.FlowDirection != Microsoft.UI.Xaml.FlowDirection.RightToLeft)
+				{
+					windowRootView.FlowDirection = Microsoft.UI.Xaml.FlowDirection.RightToLeft;
+				}
+
+				// With WS_EX_LAYOUTRTL, the coordinate system is mirrored
+				// Window buttons are now on the physical left, but in mirrored coordinates they're on the "right"
+				// So we add RIGHT margin in the mirrored coordinate system, which creates space on the physical left
+				if (handler.PlatformView?.ButtonHolderGrid != null)
+				{
+					handler.PlatformView.NavigationViewButtonHolderGridMargin =
+						new Microsoft.UI.Xaml.Thickness(0, 0, WindowsSystemButtonsWidth, 0);
+				}
+
+				if (windowRootView != null)
+				{
+					windowRootView.SetApplicationResource("TopNavigationViewTopNavGridMargin",
+						new Microsoft.UI.Xaml.Thickness(4, 0, WindowsSystemButtonsWidth + 4, 0));
+				}
+
+				if (windowRootView != null)
+				{
+					var currentMargin = windowRootView.WindowTitleMargin;
+					windowRootView.WindowTitleMargin =
+						new Microsoft.UI.Xaml.Thickness(currentMargin.Left, currentMargin.Top,
+							WindowsSystemButtonsWidth, currentMargin.Bottom);
+				}
+				if (handler.PlatformView?.Content is Microsoft.UI.Xaml.FrameworkElement content)
+				{
+					content.FlowDirection = Microsoft.UI.Xaml.FlowDirection.RightToLeft;
+				}
+			}
+			else
+			{
+				// LTR: Remove WS_EX_LAYOUTRTL to restore normal layout
+				if (hwnd != IntPtr.Zero)
+				{
+					int exStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+					if ((exStyle & WS_EX_LAYOUTRTL) != 0)
+					{
+						SetWindowLong(hwnd, GWL_EXSTYLE, exStyle & ~WS_EX_LAYOUTRTL);
+						SetWindowPos(hwnd, IntPtr.Zero, 0, 0, 0, 0,
+							SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+					}
+				}
+
+				// Reset WindowRootView FlowDirection to LTR
+				if (windowRootView != null && windowRootView.FlowDirection != Microsoft.UI.Xaml.FlowDirection.LeftToRight)
+				{
+					windowRootView.FlowDirection = Microsoft.UI.Xaml.FlowDirection.LeftToRight;
+				}
+
+				// Reset margins
+				if (handler.PlatformView?.ButtonHolderGrid != null)
+				{
+					handler.PlatformView.NavigationViewButtonHolderGridMargin =
+						new Microsoft.UI.Xaml.Thickness(0, 0, 0, 0);
+				}
+
+				if (windowRootView != null)
+				{
+					windowRootView.SetApplicationResource("TopNavigationViewTopNavGridMargin",
+						new Microsoft.UI.Xaml.Thickness(4, 0, 0, 0));
+				}
+
+				if (windowRootView != null)
+				{
+					var currentMargin = windowRootView.WindowTitleMargin;
+					windowRootView.WindowTitleMargin =
+						new Microsoft.UI.Xaml.Thickness(currentMargin.Left, currentMargin.Top, 0, currentMargin.Bottom);
+				}
+
+				if (handler.PlatformView?.Content is Microsoft.UI.Xaml.FrameworkElement content)
+				{
+					content.FlowDirection = Microsoft.UI.Xaml.FlowDirection.LeftToRight;
+				}
+			}
+		}
 		public static void MapIsPresented(ShellHandler handler, IFlyoutView flyoutView)
 		{
 			// WinUI Will close the pane inside of the apply template code
