@@ -58,6 +58,7 @@ namespace Microsoft.Maui.Platform
 
 			if (!IsSquare)
 				return;
+
 			UpdateSquareShape();
 		}
 
