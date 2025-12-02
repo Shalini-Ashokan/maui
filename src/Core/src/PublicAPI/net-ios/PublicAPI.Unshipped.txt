@@ -1,3 +1,2 @@
 #nullable enable
 override Microsoft.Maui.Platform.MauiView.DidUpdateFocus(UIKit.UIFocusUpdateContext! context, UIKit.UIFocusAnimationCoordinator! coordinator) -> void
-static Microsoft.Maui.Handlers.IndicatorViewHandler.MapFlowDirection(Microsoft.Maui.Handlers.IIndicatorViewHandler! handler, Microsoft.Maui.IIndicatorView! indicator) -> void
