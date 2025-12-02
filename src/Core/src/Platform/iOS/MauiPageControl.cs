@@ -15,6 +15,7 @@ namespace Microsoft.Maui.Platform
 		bool _updatingPosition;
 		double _lastAppliedIndicatorSize = -1;
 
+		CGRect _lastTemplatedIndicatorViewFrame = CGRect.Empty;
 		public MauiPageControl()
 		{
 			ValueChanged += MauiPageControlValueChanged;
@@ -56,20 +57,10 @@ namespace Microsoft.Maui.Platform
 				return;
 
 			UpdateIndicatorSize();
-
-			if (_indicatorView?.TryGetTarget(out var indicatorView) == true && (indicatorView as ITemplatedIndicatorView)?.IndicatorsLayoutOverride is not null)
-			{
-				bool isRtl = SemanticContentAttribute == UISemanticContentAttribute.ForceRightToLeft ||
-				indicatorView.FlowDirection == FlowDirection.RightToLeft;
-				if (isRtl)
-				{
-					Subviews[0].Frame = Bounds;
-				}
-			}
+			UpdateTemplatedIndicatorFrame();
 
 			if (!IsSquare)
 				return;
-
 			UpdateSquareShape();
 		}
 
@@ -163,6 +154,29 @@ namespace Microsoft.Maui.Platform
 			if (IsSquare && !(OperatingSystem.IsIOSVersionAtLeast(14) || OperatingSystem.IsTvOSVersionAtLeast(14)))
 				LayoutSubviews();
 
+		}
+
+		void UpdateTemplatedIndicatorFrame()
+		{
+			if (_indicatorView?.TryGetTarget(out var indicatorView) == true &&
+				(indicatorView as ITemplatedIndicatorView)?.IndicatorsLayoutOverride is not null)
+			{
+				var indicatorsLayoutOverride = (indicatorView as ITemplatedIndicatorView)?.IndicatorsLayoutOverride;
+				UIView? handler = (UIView?)(indicatorsLayoutOverride?.Handler?.PlatformView);
+				if (handler is not null)
+				{
+					var size = handler.SizeThatFits(Bounds.Size);
+					var x = (Bounds.Width - size.Width) / 2;
+					var y = (Bounds.Height - size.Height) / 2;
+					var newFrame = new CGRect(x, y, size.Width, size.Height);
+
+					if (!newFrame.Equals(_lastTemplatedIndicatorViewFrame))
+					{
+						handler.Frame = newFrame;
+						_lastTemplatedIndicatorViewFrame = newFrame;
+					}
+				}
+			}
 		}
 
 		[UnconditionalSuppressMessage("Memory", "MEM0002", Justification = IUIViewLifeCycleEvents.UnconditionalSuppressMessage)]
