@@ -21,15 +21,8 @@ namespace Microsoft.Maui.Controls.Handlers
 		[DllImport("user32.dll", SetLastError = true)]
 		static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
 
-		[DllImport("user32.dll", SetLastError = true)]
-		static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
-
 		const int GWL_EXSTYLE = -20;
 		const int WS_EX_LAYOUTRTL = 0x00400000;
-		const uint SWP_NOSIZE = 0x0001;
-		const uint SWP_NOMOVE = 0x0002;
-		const uint SWP_NOZORDER = 0x0004;
-		const uint SWP_FRAMECHANGED = 0x0020;
 
 		ScrollViewer _scrollViewer;
 		double? _topAreaHeight = null;
@@ -185,59 +178,26 @@ namespace Microsoft.Maui.Controls.Handlers
 		{
 			handler.PlatformView.UpdateFlowDirection(view);
 
-			// Space required for Windows title bar system buttons: ~138px (46px * 3 buttons)
-			//const double WindowsSystemButtonsWidth = 138;
-
 			var windowRootView = handler.MauiContext?.GetNavigationRootManager()?.RootView as WindowRootView;
-
-			// Get the native window handle to apply WS_EX_LAYOUTRTL for dynamic RTL changes
-			IntPtr hwnd = IntPtr.Zero;
 			var window = handler.MauiContext?.Services?.GetService<Microsoft.UI.Xaml.Window>();
-			if (window != null)
-			{
-				hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
-			}
-			if (view.FlowDirection == FlowDirection.RightToLeft)
-			{
-				// RTL: Apply WS_EX_LAYOUTRTL to mirror the entire window including title bar buttons
-				if (hwnd != IntPtr.Zero)
-				{
-					int exStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
-					if ((exStyle & WS_EX_LAYOUTRTL) == 0)
-					{
-						SetWindowLong(hwnd, GWL_EXSTYLE, exStyle | WS_EX_LAYOUTRTL);
-						SetWindowPos(hwnd, IntPtr.Zero, 0, 0, 0, 0,
-							SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
-					}
-				}
 
-				// Set FlowDirection at the root level
-				if (windowRootView != null && windowRootView.FlowDirection != Microsoft.UI.Xaml.FlowDirection.RightToLeft)
-				{
-					windowRootView.FlowDirection = Microsoft.UI.Xaml.FlowDirection.RightToLeft;
-				}
-			}
-			else
-			{
-				// LTR: Remove WS_EX_LAYOUTRTL to restore normal layout
-				if (hwnd != IntPtr.Zero)
-				{
-					int exStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
-					if ((exStyle & WS_EX_LAYOUTRTL) != 0)
-					{
-						SetWindowLong(hwnd, GWL_EXSTYLE, exStyle & ~WS_EX_LAYOUTRTL);
-						SetWindowPos(hwnd, IntPtr.Zero, 0, 0, 0, 0,
-							SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
-					}
-				}
+			if (window == null)
+				return;
 
-				// Reset WindowRootView FlowDirection to LTR
-				if (windowRootView != null && windowRootView.FlowDirection != Microsoft.UI.Xaml.FlowDirection.LeftToRight)
-				{
-					windowRootView.FlowDirection = Microsoft.UI.Xaml.FlowDirection.LeftToRight;
-				}
-			}
+			var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
+			var isRtl = view.FlowDirection == FlowDirection.RightToLeft;
+			var exStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+
+			// Apply or remove WS_EX_LAYOUTRTL to mirror the window including title bar buttons
+			var newExStyle = isRtl ? (exStyle | WS_EX_LAYOUTRTL) : (exStyle & ~WS_EX_LAYOUTRTL);
+			if (exStyle != newExStyle)
+				SetWindowLong(hwnd, GWL_EXSTYLE, newExStyle);
+
+			// Set FlowDirection at the root level
+			if (windowRootView != null)
+				windowRootView.FlowDirection = isRtl ? Microsoft.UI.Xaml.FlowDirection.RightToLeft : Microsoft.UI.Xaml.FlowDirection.LeftToRight;
 		}
+
 		public static void MapIsPresented(ShellHandler handler, IFlyoutView flyoutView)
 		{
 			// WinUI Will close the pane inside of the apply template code
