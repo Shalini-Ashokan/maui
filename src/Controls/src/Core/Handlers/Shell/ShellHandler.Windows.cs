@@ -55,7 +55,6 @@ namespace Microsoft.Maui.Controls.Handlers
 			UpdateValue(nameof(Shell.FlyoutIcon));
 			UpdateValue(nameof(Shell.FlyoutBackground));
 			UpdateValue(nameof(Shell.FlyoutBackgroundImage));
-			UpdateValue(nameof(Shell.FlowDirection));
 		}
 
 		protected override void DisconnectHandler(ShellView platformView)
