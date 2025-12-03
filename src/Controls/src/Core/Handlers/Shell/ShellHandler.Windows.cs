@@ -186,7 +186,7 @@ namespace Microsoft.Maui.Controls.Handlers
 			handler.PlatformView.UpdateFlowDirection(view);
 
 			// Space required for Windows title bar system buttons: ~138px (46px * 3 buttons)
-			const double WindowsSystemButtonsWidth = 138;
+			//const double WindowsSystemButtonsWidth = 138;
 
 			var windowRootView = handler.MauiContext?.GetNavigationRootManager()?.RootView as WindowRootView;
 
@@ -216,33 +216,6 @@ namespace Microsoft.Maui.Controls.Handlers
 				{
 					windowRootView.FlowDirection = Microsoft.UI.Xaml.FlowDirection.RightToLeft;
 				}
-
-				// With WS_EX_LAYOUTRTL, the coordinate system is mirrored
-				// Window buttons are now on the physical left, but in mirrored coordinates they're on the "right"
-				// So we add RIGHT margin in the mirrored coordinate system, which creates space on the physical left
-				if (handler.PlatformView?.ButtonHolderGrid != null)
-				{
-					handler.PlatformView.NavigationViewButtonHolderGridMargin =
-						new Microsoft.UI.Xaml.Thickness(0, 0, WindowsSystemButtonsWidth, 0);
-				}
-
-				if (windowRootView != null)
-				{
-					windowRootView.SetApplicationResource("TopNavigationViewTopNavGridMargin",
-						new Microsoft.UI.Xaml.Thickness(4, 0, WindowsSystemButtonsWidth + 4, 0));
-				}
-
-				if (windowRootView != null)
-				{
-					var currentMargin = windowRootView.WindowTitleMargin;
-					windowRootView.WindowTitleMargin =
-						new Microsoft.UI.Xaml.Thickness(currentMargin.Left, currentMargin.Top,
-							WindowsSystemButtonsWidth, currentMargin.Bottom);
-				}
-				if (handler.PlatformView?.Content is Microsoft.UI.Xaml.FrameworkElement content)
-				{
-					content.FlowDirection = Microsoft.UI.Xaml.FlowDirection.RightToLeft;
-				}
 			}
 			else
 			{
@@ -262,31 +235,6 @@ namespace Microsoft.Maui.Controls.Handlers
 				if (windowRootView != null && windowRootView.FlowDirection != Microsoft.UI.Xaml.FlowDirection.LeftToRight)
 				{
 					windowRootView.FlowDirection = Microsoft.UI.Xaml.FlowDirection.LeftToRight;
-				}
-
-				// Reset margins
-				if (handler.PlatformView?.ButtonHolderGrid != null)
-				{
-					handler.PlatformView.NavigationViewButtonHolderGridMargin =
-						new Microsoft.UI.Xaml.Thickness(0, 0, 0, 0);
-				}
-
-				if (windowRootView != null)
-				{
-					windowRootView.SetApplicationResource("TopNavigationViewTopNavGridMargin",
-						new Microsoft.UI.Xaml.Thickness(4, 0, 0, 0));
-				}
-
-				if (windowRootView != null)
-				{
-					var currentMargin = windowRootView.WindowTitleMargin;
-					windowRootView.WindowTitleMargin =
-						new Microsoft.UI.Xaml.Thickness(currentMargin.Left, currentMargin.Top, 0, currentMargin.Bottom);
-				}
-
-				if (handler.PlatformView?.Content is Microsoft.UI.Xaml.FrameworkElement content)
-				{
-					content.FlowDirection = Microsoft.UI.Xaml.FlowDirection.LeftToRight;
 				}
 			}
 		}
