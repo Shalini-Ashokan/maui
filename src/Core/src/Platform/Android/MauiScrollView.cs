@@ -7,6 +7,7 @@ using Android.Hardware.Lights;
 using Android.Runtime;
 using Android.Util;
 using Android.Views;
+using Android.Webkit;
 using Android.Widget;
 using AndroidX.Core.View;
 using AndroidX.Core.Widget;
@@ -25,6 +26,7 @@ namespace Microsoft.Maui.Platform
 		ScrollBarVisibility _horizontalScrollVisibility;
 		bool _didSafeAreaEdgeConfigurationChange = true;
 		bool _isInsetListenerSet;
+		WebView? _touchWebView;
 
 		internal float LastX { get; set; }
 		internal float LastY { get; set; }
@@ -217,6 +219,31 @@ namespace Microsoft.Maui.Platform
 				LastX = ev.RawX;
 			}
 
+			// Check if touch is within a nested WebView that can scroll
+			if (ev.Action == MotionEventActions.Down)
+			{
+				_touchWebView = FindScrollableWebViewAtPoint(this, (int)ev.GetX(), (int)ev.GetY());
+			}
+
+			// If we have a WebView that can scroll, check if we should let it handle the event
+			if (_touchWebView != null)
+			{
+				// Check if the WebView can scroll vertically in the direction needed
+				if (ev.Action == MotionEventActions.Move)
+				{
+					// If WebView can scroll down (not at bottom) or can scroll up (not at top), don't intercept
+					if (_touchWebView.CanScrollVertically(1) || _touchWebView.CanScrollVertically(-1))
+					{
+						return false;
+					}
+				}
+			}
+
+			if (ev.Action == MotionEventActions.Up || ev.Action == MotionEventActions.Cancel)
+			{
+				_touchWebView = null;
+			}
+
 			return base.OnInterceptTouchEvent(ev);
 		}
 
@@ -262,6 +289,40 @@ namespace Microsoft.Maui.Platform
 		}
 
 		bool IScrollBarView.ScrollBarsInitialized { get; set; }
+
+		static WebView? FindScrollableWebViewAtPoint(ViewGroup viewGroup, int x, int y)
+		{
+			for (int i = 0; i < viewGroup.ChildCount; i++)
+			{
+				View? child = viewGroup.GetChildAt(i);
+				if (child == null || child.Visibility != ViewStates.Visible)
+					continue;
+
+				if (child is WebView webView && IsPointInsideView(webView, x, y))
+				{
+					return webView;
+				}
+
+				if (child is ViewGroup childGroup)
+				{
+					// Translate coordinates to child's coordinate space
+					int childX = x - child.Left;
+					int childY = y - child.Top;
+					WebView? nestedWebView = FindScrollableWebViewAtPoint(childGroup, childX, childY);
+					if (nestedWebView != null)
+					{
+						return nestedWebView;
+					}
+				}
+			}
+
+			return null;
+		}
+
+		static bool IsPointInsideView(View view, int x, int y)
+		{
+			return x >= view.Left && x < view.Right && y >= view.Top && y < view.Bottom;
+		}
 
 		protected override void OnMeasure(int widthMeasureSpec, int heightMeasureSpec)
 		{
