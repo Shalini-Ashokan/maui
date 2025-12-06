@@ -18,7 +18,8 @@ namespace Microsoft.Maui.Layouts
 
 		public static double ResolveConstraints(double externalConstraint, double explicitLength, double measuredLength, double min = Minimum, double max = Maximum)
 		{
-			var length = IsExplicitSet(explicitLength) ? explicitLength : measuredLength;
+			// Ensure layout is at least as large as children need, even when explicit dimensions are smaller
+			var length = IsExplicitSet(explicitLength) ? Math.Max(explicitLength, measuredLength) : measuredLength;
 
 			if (max < length)
 			{
