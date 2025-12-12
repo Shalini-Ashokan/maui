@@ -1,5 +1,6 @@
 ﻿using System;
 using Android.Content;
+using Android.Views;
 using Android.Webkit;
 
 namespace Microsoft.Maui.Platform
@@ -13,6 +14,15 @@ namespace Microsoft.Maui.Platform
 		public MauiWebView(WebViewHandler handler, Context context) : base(context)
 		{
 			_handler = handler ?? throw new ArgumentNullException(nameof(handler));
+		}
+
+		public override bool OnTouchEvent(MotionEvent? e)
+		{
+			// Block all touch events (including scrolling) when disabled
+			if (!Enabled)
+				return false;
+
+			return base.OnTouchEvent(e);
 		}
 
 		void IWebViewDelegate.LoadHtml(string? html, string? baseUrl)

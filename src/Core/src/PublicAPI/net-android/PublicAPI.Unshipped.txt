@@ -1,1 +1,4 @@
 #nullable enable
+override Microsoft.Maui.Platform.MauiWebView.OnTouchEvent(Android.Views.MotionEvent? e) -> bool
+static Microsoft.Maui.Handlers.WebViewHandler.MapIsEnabled(Microsoft.Maui.Handlers.IWebViewHandler! handler, Microsoft.Maui.IWebView! webView) -> void
+static Microsoft.Maui.Platform.WebViewExtensions.UpdateIsEnabled(this Android.Webkit.WebView! platformWebView, Microsoft.Maui.IWebView! webView) -> void

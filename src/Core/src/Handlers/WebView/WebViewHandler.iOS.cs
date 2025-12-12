@@ -98,6 +98,11 @@ namespace Microsoft.Maui.Handlers
 			handler.PlatformView?.Eval(webView, script);
 		}
 
+		public static void MapIsEnabled(IWebViewHandler handler, IWebView webView)
+		{
+			handler.PlatformView?.UpdateIsEnabled(webView);
+		}
+
 		public override Size GetDesiredSize(double widthConstraint, double heightConstraint)
 		{
 			var size = base.GetDesiredSize(widthConstraint, heightConstraint);

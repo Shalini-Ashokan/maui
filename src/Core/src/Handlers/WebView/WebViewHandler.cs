@@ -24,6 +24,7 @@ namespace Microsoft.Maui.Handlers
 		{
 			[nameof(IWebView.Source)] = MapSource,
 			[nameof(IWebView.UserAgent)] = MapUserAgent,
+			[nameof(IView.IsEnabled)] = MapIsEnabled,
 #if WINDOWS
 	[nameof(IView.FlowDirection)] = MapFlowDirection,
 #endif

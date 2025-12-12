@@ -91,5 +91,18 @@ namespace Microsoft.Maui.Platform
 				return false;
 			}
 		}
+
+		public static void UpdateIsEnabled(this WebView2 platformWebView, IWebView webView)
+		{
+			// Disable manipulation (including scrolling) when IsEnabled is false
+			if (!webView.IsEnabled)
+			{
+				platformWebView.ManipulationMode = Microsoft.UI.Xaml.Input.ManipulationModes.None;
+			}
+			else
+			{
+				platformWebView.ManipulationMode = Microsoft.UI.Xaml.Input.ManipulationModes.System;
+			}
+		}
 	}
 }

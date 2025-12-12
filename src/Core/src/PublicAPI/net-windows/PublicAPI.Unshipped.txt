@@ -1,1 +1,2 @@
 #nullable enable
+static Microsoft.Maui.Handlers.WebViewHandler.MapIsEnabled(Microsoft.Maui.Handlers.IWebViewHandler! handler, Microsoft.Maui.IWebView! webView) -> void

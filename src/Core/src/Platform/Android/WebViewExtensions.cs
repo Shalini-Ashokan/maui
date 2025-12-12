@@ -104,6 +104,13 @@ namespace Microsoft.Maui.Platform
 			}
 		}
 
+		public static void UpdateIsEnabled(this AWebView platformWebView, IWebView webView)
+		{
+			// The base UpdateIsEnabled sets Enabled property, which is handled by MauiWebView.OnTouchEvent
+			// to prevent scrolling and all touch interactions when disabled
+			platformWebView.Enabled = webView.IsEnabled;
+		}
+
 		class JavascriptResult : Java.Lang.Object, IValueCallback
 		{
 			readonly TaskCompletionSource<string> _source;

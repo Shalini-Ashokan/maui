@@ -1,2 +1,4 @@
 #nullable enable
 override Microsoft.Maui.Platform.MauiView.DidUpdateFocus(UIKit.UIFocusUpdateContext! context, UIKit.UIFocusAnimationCoordinator! coordinator) -> void
+static Microsoft.Maui.Handlers.WebViewHandler.MapIsEnabled(Microsoft.Maui.Handlers.IWebViewHandler! handler, Microsoft.Maui.IWebView! webView) -> void
+static Microsoft.Maui.Platform.WebViewExtensions.UpdateIsEnabled(this WebKit.WKWebView! platformWebView, Microsoft.Maui.IWebView! webView) -> void

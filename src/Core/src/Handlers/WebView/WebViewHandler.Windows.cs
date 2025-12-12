@@ -120,6 +120,11 @@ namespace Microsoft.Maui.Handlers
 			handler.PlatformView?.UpdateReload(webView);
 		}
 
+		public static void MapIsEnabled(IWebViewHandler handler, IWebView webView)
+		{
+			handler.PlatformView?.UpdateIsEnabled(webView);
+		}
+
 		public static void MapEval(IWebViewHandler handler, IWebView webView, object? arg)
 		{
 			if (arg is not string script)

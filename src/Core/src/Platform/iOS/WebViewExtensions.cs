@@ -118,5 +118,11 @@ namespace Microsoft.Maui.Platform
 
 			return result.ToString() ?? "null";
 		}
+
+		public static void UpdateIsEnabled(this WKWebView platformWebView, IWebView webView)
+		{
+			// Disable scrolling when IsEnabled is false
+			platformWebView.ScrollView.ScrollEnabled = webView.IsEnabled;
+		}
 	}
 }

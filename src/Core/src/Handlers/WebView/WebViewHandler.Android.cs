@@ -98,6 +98,11 @@ namespace Microsoft.Maui.Handlers
 			handler.PlatformView.UpdateSettings(webView, true, true);
 		}
 
+		public static void MapIsEnabled(IWebViewHandler handler, IWebView webView)
+		{
+			handler.PlatformView?.UpdateIsEnabled(webView);
+		}
+
 		public static void MapGoBack(IWebViewHandler handler, IWebView webView, object? arg)
 		{
 			if (handler.PlatformView.CanGoBack() && handler is WebViewHandler w)
