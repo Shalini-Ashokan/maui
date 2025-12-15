@@ -11,6 +11,18 @@ namespace Microsoft.Maui.Controls
 		{
 			_indicatorView = indicatorView;
 			Orientation = StackOrientation.Horizontal;
+			
+			// Default to Center unless explicitly set on the IndicatorView
+			// Center alignment should work regardless of flow direction
+			if (_indicatorView.HorizontalOptions == LayoutOptions.Fill)
+			{
+				HorizontalOptions = LayoutOptions.Center;
+			}
+			else
+			{
+				HorizontalOptions = _indicatorView.HorizontalOptions;
+			}
+			
 			_indicatorView.PropertyChanged += IndicatorViewPropertyChanged;
 		}
 
@@ -44,6 +56,18 @@ namespace Microsoft.Maui.Controls
 				|| e.PropertyName == IndicatorView.IndicatorSizeProperty.PropertyName)
 			{
 				ResetIndicatorStyles();
+			}
+			if (e.PropertyName == View.HorizontalOptionsProperty.PropertyName)
+			{
+				// Inherit HorizontalOptions from parent IndicatorView, but default to Center if Fill
+				if (_indicatorView.HorizontalOptions == LayoutOptions.Fill)
+				{
+					HorizontalOptions = LayoutOptions.Center;
+				}
+				else
+				{
+					HorizontalOptions = _indicatorView.HorizontalOptions;
+				}
 			}
 		}
 

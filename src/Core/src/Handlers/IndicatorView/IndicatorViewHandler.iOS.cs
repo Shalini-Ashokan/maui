@@ -73,7 +73,22 @@ namespace Microsoft.Maui.Handlers
 				{
 					ClearIndicators();
 					handler = indicatorsLayoutOverride.ToPlatform(MauiContext);
+					
+					// Disable autoresizing mask to use Auto Layout constraints
+					handler.TranslatesAutoresizingMaskIntoConstraints = false;
+					
 					PlatformView.AddSubview(handler);
+					
+					// Center the custom template view in the container
+					// This ensures indicators are centered regardless of flow direction
+					handler.CenterXAnchor.ConstraintEqualTo(PlatformView.CenterXAnchor).Active = true;
+					handler.CenterYAnchor.ConstraintEqualTo(PlatformView.CenterYAnchor).Active = true;
+					
+					// Allow the view to size itself
+					handler.TopAnchor.ConstraintGreaterThanOrEqualTo(PlatformView.TopAnchor).Active = true;
+					handler.BottomAnchor.ConstraintLessThanOrEqualTo(PlatformView.BottomAnchor).Active = true;
+					handler.LeadingAnchor.ConstraintGreaterThanOrEqualTo(PlatformView.LeadingAnchor).Active = true;
+					handler.TrailingAnchor.ConstraintLessThanOrEqualTo(PlatformView.TrailingAnchor).Active = true;
 				}
 			}
 
