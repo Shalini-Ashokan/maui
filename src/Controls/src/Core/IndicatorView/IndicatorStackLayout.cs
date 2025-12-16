@@ -1,6 +1,8 @@
+using System;
 using System.ComponentModel;
 using Microsoft.Maui.Controls.Shapes;
 using Microsoft.Maui.Graphics;
+using Microsoft.Maui.Layouts;
 
 namespace Microsoft.Maui.Controls
 {
@@ -24,6 +26,11 @@ namespace Microsoft.Maui.Controls
 			}
 			
 			_indicatorView.PropertyChanged += IndicatorViewPropertyChanged;
+		}
+
+		protected override ILayoutManager CreateLayoutManager()
+		{
+			return new CenteredHorizontalStackLayoutManager(this, _indicatorView);
 		}
 
 		protected override void OnChildAdded(Element child)
@@ -192,6 +199,88 @@ namespace Microsoft.Maui.Controls
 		public void Remove()
 		{
 			_indicatorView.PropertyChanged -= IndicatorViewPropertyChanged;
+		}
+	}
+
+	/// <summary>
+	/// Custom layout manager that centers indicator children horizontally.
+	/// </summary>
+	internal class CenteredHorizontalStackLayoutManager : HorizontalStackLayoutManager
+	{
+		readonly IndicatorView _indicatorView;
+
+		public CenteredHorizontalStackLayoutManager(IStackLayout stackLayout, IndicatorView indicatorView) : base(stackLayout)
+		{
+			_indicatorView = indicatorView;
+		}
+
+		public override Size ArrangeChildren(Rect bounds)
+		{
+			// Check if we should center the indicators
+			bool shouldCenter = _indicatorView.HorizontalOptions == LayoutOptions.Fill || 
+			                   _indicatorView.HorizontalOptions == LayoutOptions.Center;
+
+			if (!shouldCenter)
+			{
+				// Use default arrangement (start, end, etc.)
+				return base.ArrangeChildren(bounds);
+			}
+
+			var padding = Stack.Padding;
+			double spacing = Stack.Spacing;
+			var childCount = Stack.Count;
+
+			double top = padding.Top + bounds.Top;
+			var height = Math.Max(0, bounds.Height - padding.VerticalThickness);
+
+			// Calculate total width of all children including spacing
+			double totalChildrenWidth = 0;
+			int visibleChildCount = 0;
+
+			for (int n = 0; n < Stack.Count; n++)
+			{
+				var child = Stack[n];
+				if (child.Visibility == Visibility.Collapsed)
+					continue;
+
+				totalChildrenWidth += child.DesiredSize.Width;
+				visibleChildCount++;
+			}
+
+			// Add spacing between children
+			if (visibleChildCount > 1)
+			{
+				totalChildrenWidth += spacing * (visibleChildCount - 1);
+			}
+
+			// Calculate starting X position to center the children
+			double availableWidth = bounds.Width - padding.HorizontalThickness;
+			double startX = padding.Left + bounds.Left + ((availableWidth - totalChildrenWidth) / 2);
+
+			// Ensure we don't start before the left padding
+			startX = Math.Max(startX, padding.Left + bounds.Left);
+
+			double xPosition = startX;
+
+			for (int n = 0; n < Stack.Count; n++)
+			{
+				var child = Stack[n];
+
+				if (child.Visibility == Visibility.Collapsed)
+					continue;
+
+				var destination = new Rect(xPosition, top, child.DesiredSize.Width, height);
+				child.Arrange(destination);
+
+				xPosition += destination.Width;
+
+				if (n < childCount - 1)
+				{
+					xPosition += spacing;
+				}
+			}
+
+			return new Size(bounds.Width, bounds.Height);
 		}
 	}
 }
