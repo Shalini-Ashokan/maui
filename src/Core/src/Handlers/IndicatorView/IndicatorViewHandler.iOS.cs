@@ -79,17 +79,14 @@ namespace Microsoft.Maui.Handlers
 					
 					PlatformView.AddSubview(handler);
 					
-					// Center the custom template view in the container
-					// This ensures indicators are centered regardless of flow direction
+					// Center the custom template view horizontally in the container
+					// Don't set leading/trailing constraints - let the view size itself naturally
 					NSLayoutConstraint.ActivateConstraints(new[]
 					{
 						handler.CenterXAnchor.ConstraintEqualTo(PlatformView.CenterXAnchor),
 						handler.CenterYAnchor.ConstraintEqualTo(PlatformView.CenterYAnchor),
-						// Allow the view to size itself
 						handler.TopAnchor.ConstraintGreaterThanOrEqualTo(PlatformView.TopAnchor),
-						handler.BottomAnchor.ConstraintLessThanOrEqualTo(PlatformView.BottomAnchor),
-						handler.LeadingAnchor.ConstraintGreaterThanOrEqualTo(PlatformView.LeadingAnchor),
-						handler.TrailingAnchor.ConstraintLessThanOrEqualTo(PlatformView.TrailingAnchor)
+						handler.BottomAnchor.ConstraintLessThanOrEqualTo(PlatformView.BottomAnchor)
 					});
 				}
 			}
