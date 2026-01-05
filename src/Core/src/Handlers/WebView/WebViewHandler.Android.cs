@@ -84,13 +84,23 @@ namespace Microsoft.Maui.Handlers
 		public static void MapWebViewClient(IWebViewHandler handler, IWebView webView)
 		{
 			if (handler is WebViewHandler platformHandler)
+			{
+				if (platformHandler.GetType() != typeof(WebViewHandler))
+					return;
+
 				handler.PlatformView.SetWebViewClient(new MauiWebViewClient(platformHandler));
+			}
 		}
 
 		public static void MapWebChromeClient(IWebViewHandler handler, IWebView webView)
 		{
 			if (handler is WebViewHandler platformHandler)
+			{
+				if (platformHandler.GetType() != typeof(WebViewHandler))
+					return;
+
 				handler.PlatformView.SetWebChromeClient(new MauiWebChromeClient(platformHandler));
+			}
 		}
 
 		public static void MapWebViewSettings(IWebViewHandler handler, IWebView webView)
