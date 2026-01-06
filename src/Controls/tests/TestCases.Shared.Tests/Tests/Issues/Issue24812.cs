@@ -1,3 +1,4 @@
+#if ANDROID // The issue is specific to Android, so restricting other platforms
 using NUnit.Framework;
 using UITest.Appium;
 using UITest.Core;
@@ -19,3 +20,4 @@ public class Issue24812 : _IssuesUITest
         Assert.That(statusText, Is.EqualTo("Progress: 100"));
     }
 }
+#endif
