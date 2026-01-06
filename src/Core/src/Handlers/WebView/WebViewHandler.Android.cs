@@ -85,8 +85,14 @@ namespace Microsoft.Maui.Handlers
 		{
 			if (handler is WebViewHandler platformHandler)
 			{
-				if (platformHandler.GetType() != typeof(WebViewHandler))
-					return;
+				if (OperatingSystem.IsAndroidVersionAtLeast(26))
+				{
+					var currentClient = handler.PlatformView.WebViewClient;
+					if (currentClient != null && currentClient.GetType() != typeof(WebViewClient) && currentClient is not MauiWebViewClient)
+					{
+						return;
+					}
+				}
 
 				handler.PlatformView.SetWebViewClient(new MauiWebViewClient(platformHandler));
 			}
@@ -96,8 +102,14 @@ namespace Microsoft.Maui.Handlers
 		{
 			if (handler is WebViewHandler platformHandler)
 			{
-				if (platformHandler.GetType() != typeof(WebViewHandler))
-					return;
+				if (OperatingSystem.IsAndroidVersionAtLeast(26))
+				{
+					var currentClient = handler.PlatformView.WebChromeClient;
+					if (currentClient != null && currentClient.GetType() != typeof(WebChromeClient) && currentClient is not MauiWebChromeClient)
+					{
+						return;
+					}
+				}
 
 				handler.PlatformView.SetWebChromeClient(new MauiWebChromeClient(platformHandler));
 			}
