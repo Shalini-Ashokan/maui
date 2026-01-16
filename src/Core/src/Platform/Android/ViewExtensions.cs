@@ -337,15 +337,18 @@ namespace Microsoft.Maui.Platform
 
 		static ALayoutDirection GetParentLayoutDirection(IView view)
 		{
-			var parent = view.Parent?.Handler?.PlatformView as AView;
-			if (parent == null)
+			IElement? currentParent = view.Parent;
+			while (currentParent != null)
 			{
-				return ALayoutDirection.Inherit;
-			}
-			var parentLayoutDirection = parent.LayoutDirection;
-			if (parentLayoutDirection == ALayoutDirection.Ltr || parentLayoutDirection == ALayoutDirection.Rtl)
-			{
-				return parentLayoutDirection;
+				if (currentParent is IView parentView)
+				{
+					if (parentView.FlowDirection == FlowDirection.LeftToRight)
+						return ALayoutDirection.Ltr;
+					if (parentView.FlowDirection == FlowDirection.RightToLeft)
+						return ALayoutDirection.Rtl;
+				}
+
+				currentParent = currentParent.Parent;
 			}
 
 			return ALayoutDirection.Inherit;
