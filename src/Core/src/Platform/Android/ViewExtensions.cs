@@ -328,11 +328,27 @@ namespace Microsoft.Maui.Platform
 		{
 			return view.FlowDirection switch
 			{
-				FlowDirection.MatchParent => ALayoutDirection.Inherit,
+				FlowDirection.MatchParent => GetParentLayoutDirection(view),
 				FlowDirection.LeftToRight => ALayoutDirection.Ltr,
 				FlowDirection.RightToLeft => ALayoutDirection.Rtl,
 				_ => ALayoutDirection.Inherit,
 			};
+		}
+
+		static ALayoutDirection GetParentLayoutDirection(IView view)
+		{
+			var parent = view.Parent?.Handler?.PlatformView as AView;
+			if (parent == null)
+			{
+				return ALayoutDirection.Inherit;
+			}
+			var parentLayoutDirection = parent.LayoutDirection;
+			if (parentLayoutDirection == ALayoutDirection.Ltr || parentLayoutDirection == ALayoutDirection.Rtl)
+			{
+				return parentLayoutDirection;
+			}
+
+			return ALayoutDirection.Inherit;
 		}
 
 		public static bool GetClipToOutline(this AView view)
