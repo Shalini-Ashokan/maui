@@ -1,4 +1,6 @@
 ﻿#nullable disable
+using Microsoft.Maui.Controls.Internals;
+
 namespace Microsoft.Maui.Controls
 {
 	public partial class RadioButton
@@ -11,7 +13,20 @@ namespace Microsoft.Maui.Controls
 			if (radioButton.ResolveControlTemplate() == null)
 				radioButton.ControlTemplate = DefaultTemplate;
 
+			radioButton.EnsureTapGestureRecognizerForIOS();
 			RadioButtonHandler.MapContent(handler, radioButton);
+		}
+
+		void EnsureTapGestureRecognizerForIOS()
+		{
+			if (ResolveControlTemplate() == null || !IsEnabled)
+				return;
+
+			var compositeGestures = ((IGestureController)this).CompositeGestureRecognizers;
+			if (_tapGestureRecognizer != null && !compositeGestures.Contains(_tapGestureRecognizer))
+			{
+				compositeGestures.Add(_tapGestureRecognizer);
+			}
 		}
 	}
 }
