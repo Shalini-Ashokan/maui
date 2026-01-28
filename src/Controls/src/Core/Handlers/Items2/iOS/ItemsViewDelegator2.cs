@@ -1,5 +1,6 @@
 #nullable disable
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using CoreGraphics;
 using Foundation;
@@ -125,8 +126,8 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 
 			if (visibleItems)
 			{
-				firstVisibleItemIndex = GetIndexPathAtPoint(collectionView, isCenterItem: false);
-				centerItemIndex = GetIndexPathAtPoint(collectionView, isCenterItem: true);
+				firstVisibleItemIndex = GetFirstVisibleIndexPathUsingLayoutAttributes(collectionView, indexPathsForVisibleItems);
+				centerItemIndex = GetCenteredIndexPath(collectionView);
 				lastVisibleItemIndex = indexPathsForVisibleItems.Last();
 			}
 
@@ -163,29 +164,67 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 			return index;
 		}
 
-		static NSIndexPath GetIndexPathAtPoint(UICollectionView collectionView, bool isCenterItem)
+		static NSIndexPath GetFirstVisibleIndexPathUsingLayoutAttributes(UICollectionView collectionView, IEnumerable<NSIndexPath> indexPathsForVisibleItems)
 		{
-			NSIndexPath itemIndex = null;
-			CGPoint point;
+			if (!indexPathsForVisibleItems.Any())
+				return null;
+
+			var layout = collectionView.CollectionViewLayout;
+			if (layout == null)
+				return indexPathsForVisibleItems.First();
+
+			// Get the visible rect
+			var visibleRect = new CGRect(collectionView.ContentOffset, collectionView.Bounds.Size);
+
+			// Get layout attributes for all elements in the visible rect
+			var layoutAttributes = layout.LayoutAttributesForElementsInRect(visibleRect);
+			if (layoutAttributes == null || layoutAttributes.Length == 0)
+				return indexPathsForVisibleItems.First();
+
+			// Filter to only cell attributes (not headers/footers) that are actually visible
+			var cellAttributes = layoutAttributes
+				.Where(attr => attr.RepresentedElementCategory == UICollectionElementCategory.Cell)
+				.Where(attr => attr.Frame.IntersectsWith(visibleRect))
+				.ToList();
+
+			if (cellAttributes.Count == 0)
+				return indexPathsForVisibleItems.First();
+
+			// Determine scroll direction from layout
+			var flowLayout = layout as UICollectionViewFlowLayout;
+			bool isVertical = flowLayout?.ScrollDirection != UICollectionViewScrollDirection.Horizontal;
+
+			// Find the first visible item based on scroll direction
+			NSIndexPath firstVisibleIndexPath;
+			if (isVertical)
+			{
+				// For vertical scrolling, find the item with the smallest Y coordinate
+				firstVisibleIndexPath = cellAttributes.OrderBy(attr => attr.Frame.Y).First().IndexPath;
+			}
+			else
+			{
+				// For horizontal scrolling, find the item with the smallest X coordinate
+				firstVisibleIndexPath = cellAttributes.OrderBy(attr => attr.Frame.X).First().IndexPath;
+			}
+
+			return firstVisibleIndexPath;
+		}
+
+		static NSIndexPath GetCenteredIndexPath(UICollectionView collectionView)
+		{
+			NSIndexPath centerItemIndex = null;
 
 			var indexPathsForVisibleItems = collectionView.IndexPathsForVisibleItems.OrderBy(x => x.Row).ToList();
 
 			if (indexPathsForVisibleItems.Count == 0)
-				return itemIndex;
+				return centerItemIndex;
 
 			var firstVisibleItemIndex = indexPathsForVisibleItems.First();
-			if (isCenterItem)
-			{
-				point = new CGPoint(collectionView.Center.X + collectionView.ContentOffset.X, collectionView.Center.Y + collectionView.ContentOffset.Y);
-			}
-			else
-			{
-				point = new CGPoint(collectionView.ContentOffset.X + collectionView.ContentInset.Left, collectionView.ContentOffset.Y + collectionView.ContentInset.Top);
-			}
 
-			var indexPath = collectionView.IndexPathForItemAtPoint(point);
-			itemIndex = indexPath ?? firstVisibleItemIndex;
-			return itemIndex;
+			var centerPoint = new CGPoint(collectionView.Center.X + collectionView.ContentOffset.X, collectionView.Center.Y + collectionView.ContentOffset.Y);
+			var centerIndexPath = collectionView.IndexPathForItemAtPoint(centerPoint);
+			centerItemIndex = centerIndexPath ?? firstVisibleItemIndex;
+			return centerItemIndex;
 		}
 
 		// public override CGSize GetSizeForItem(UICollectionView collectionView, UICollectionViewLayout layout, NSIndexPath indexPath)
