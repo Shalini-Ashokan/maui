@@ -169,44 +169,40 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 				return null;
 
 			var layout = collectionView.CollectionViewLayout;
-			if (layout == null)
+			if (layout is null)
 				return indexPathsForVisibleItems.First();
 
-			// Get the visible rect
 			var visibleRect = new CGRect(collectionView.ContentOffset, collectionView.Bounds.Size);
-
-			// Get layout attributes for all elements in the visible rect
 			var layoutAttributes = layout.LayoutAttributesForElementsInRect(visibleRect);
-			if (layoutAttributes == null || layoutAttributes.Length == 0)
+			if (layoutAttributes is null || layoutAttributes.Length == 0)
 				return indexPathsForVisibleItems.First();
 
-			// Filter to only cell attributes (not headers/footers) that are actually visible
-			var cellAttributes = layoutAttributes
-				.Where(attr => attr.RepresentedElementCategory == UICollectionElementCategory.Cell)
-				.Where(attr => attr.Frame.IntersectsWith(visibleRect))
-				.ToList();
-
-			if (cellAttributes.Count == 0)
-				return indexPathsForVisibleItems.First();
-
-			// Determine scroll direction from layout
 			var flowLayout = layout as UICollectionViewFlowLayout;
 			bool isVertical = flowLayout?.ScrollDirection != UICollectionViewScrollDirection.Horizontal;
+			// Find the first visible cell (not headers/footers) based on scroll direction
+			NSIndexPath firstVisibleIndexPath = null;
+			nfloat minPosition = nfloat.MaxValue;
 
-			// Find the first visible item based on scroll direction
-			NSIndexPath firstVisibleIndexPath;
-			if (isVertical)
+			for (int i = 0; i < layoutAttributes.Length; i++)
 			{
-				// For vertical scrolling, find the item with the smallest Y coordinate
-				firstVisibleIndexPath = cellAttributes.OrderBy(attr => attr.Frame.Y).First().IndexPath;
-			}
-			else
-			{
-				// For horizontal scrolling, find the item with the smallest X coordinate
-				firstVisibleIndexPath = cellAttributes.OrderBy(attr => attr.Frame.X).First().IndexPath;
+				var attr = layoutAttributes[i];
+				// Skip non-cell elements (headers, footers, decorations)
+				if (attr.RepresentedElementCategory != UICollectionElementCategory.Cell)
+					continue;
+
+				// Skip items that don't intersect with visible rect
+				if (!attr.Frame.IntersectsWith(visibleRect))
+					continue;
+
+				nfloat position = isVertical ? attr.Frame.Y : attr.Frame.X;
+				if (position < minPosition)
+				{
+					minPosition = position;
+					firstVisibleIndexPath = attr.IndexPath;
+				}
 			}
 
-			return firstVisibleIndexPath;
+			return firstVisibleIndexPath ?? indexPathsForVisibleItems.First();
 		}
 
 		static NSIndexPath GetCenteredIndexPath(UICollectionView collectionView)
