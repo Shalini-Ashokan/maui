@@ -10,6 +10,7 @@ using PlatformView = Microsoft.Maui.Platform.MauiShapeView;
 using PlatformView = System.Object;
 #endif
 
+using Microsoft.Maui.Graphics;
 
 namespace Microsoft.Maui.Handlers
 {
@@ -60,7 +61,20 @@ namespace Microsoft.Maui.Handlers
 			if (shapeView.Background is not null && shapeView.Fill is not null)
 			{
 				handler.UpdateValue(nameof(IViewHandler.ContainerView));
+#if ANDROID
+				// Android: When BoxView has both Color and BackgroundColor with Opacity, both colors mix together.
+				// This happens because the shape draws on a transparent canvas, allowing BackgroundColor to show through.
+				if (handler.GetType().Name == "BoxViewHandler" && shapeView.Fill is SolidPaint solidPaint)
+				{
+					handler.PlatformView?.BackgroundColor = solidPaint.Color;
+				}
+				else
+				{
+					handler.ToPlatform().UpdateBackground(shapeView);
+				}
+#else
 				handler.ToPlatform().UpdateBackground(shapeView);
+#endif
 			}
 
 			if (shapeView.Background is not null || shapeView.Fill is not null)
