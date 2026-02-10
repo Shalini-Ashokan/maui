@@ -159,6 +159,15 @@ namespace Microsoft.Maui.Controls
 			if (_navigationFrame is not null)
 			{
 				_navigationFrame.Navigated -= OnNavigated;
+
+				// Clear ContentPresenter.Content before Frame.Content to prevent stale view references
+				// Wrap in try-catch because ContentPresenter may be in invalid state after tab switching
+				if (_navigationFrame.Content is WPage oldPage && oldPage.Content is WContentPresenter oldPresenter)
+				{
+					oldPresenter.Content = null;
+				}
+
+				_navigationFrame.Content = null;
 			}
 
 			Appearing -= OnTabbedPageAppearing;
@@ -169,7 +178,13 @@ namespace Microsoft.Maui.Controls
 			}
 			if (_navigationView != null)
 			{
-				_navigationView.SelectedItem = null;
+				// Only set SelectedItem = null when there are multiple children
+				// Setting it to null with single child causes crash on second navigation
+				if (Children.Count > 1)
+				{
+					_navigationView.SelectedItem = null;
+				}
+
 				_navigationView.SelectionChanged -= OnSelectedMenuItemChanged;
 			}
 
