@@ -4,12 +4,12 @@
     Posts or updates a PR finalize comment on a GitHub Pull Request.
 
 .DESCRIPTION
-    Creates ONE comment for PR finalization reviews with each review in a collapsible section.
+    Creates ONE comment for PR finalization with three collapsible sections: Title, Description, and Code Review.
     Uses HTML marker <!-- PR-FINALIZE-COMMENT --> for identification.
     
-    **NEW: Auto-loads from CustomAgentLogsTmp/PRState/{PRNumber}/pr-finalize/**
+    **Auto-loads from CustomAgentLogsTmp/PRState/{PRNumber}/pr-finalize/**
     
-    If an existing finalize comment exists, it will be EDITED with the new review added.
+    If an existing finalize comment exists, it will be REPLACED with the new content.
     Otherwise, a new comment will be created.
     
     Format:
@@ -17,15 +17,18 @@
     <!-- PR-FINALIZE-COMMENT -->
     
     <details>
-    <summary><b>Review 1: Title and description check ✅ Ready</b></summary>
-
-    ... review details ...
+    <summary><b>Title: ✅ Good</b></summary>
+    ... title details ...
     </details>
     
     <details>
-    <summary><b>Review 2: Updated after implementation change ⚠️ Needs Update</b></summary>
-
-    ... review details ...
+    <summary><b>Description: ⚠️ Needs Update</b></summary>
+    ... description details ...
+    </details>
+    
+    <details>
+    <summary><b>Code Review: ✅ Passed</b></summary>
+    ... code review findings ...
     </details>
 
 .PARAMETER PRNumber
@@ -33,12 +36,6 @@
 
 .PARAMETER SummaryFile
     Path to pr-finalize-summary.md file. If provided, auto-loads review data from this file.
-
-.PARAMETER ReviewNumber
-    The review number (1, 2, 3, etc.) - auto-detected from SummaryFile if not specified
-
-.PARAMETER ReviewDescription
-    Brief description of what was reviewed (required unless loading from SummaryFile)
 
 .PARAMETER TitleStatus
     Title assessment: "Good", "NeedsUpdate" (required unless loading from SummaryFile)
@@ -48,6 +45,9 @@
 
 .PARAMETER RecommendedTitle
     Recommended PR title (optional - only if TitleStatus is NeedsUpdate)
+
+.PARAMETER TitleIssues
+    List of issues with the current title (optional - only if TitleStatus is NeedsUpdate)
 
 .PARAMETER DescriptionStatus
     Description assessment: "Excellent", "Good", "NeedsUpdate", "NeedsRewrite" (required unless loading from SummaryFile)
@@ -61,6 +61,12 @@
 .PARAMETER RecommendedDescription
     Full recommended description (optional - only if needs rewrite)
 
+.PARAMETER CodeReviewStatus
+    Code review assessment: "Passed", "IssuesFound", "Skipped" (optional - defaults to "Skipped" if not provided)
+
+.PARAMETER CodeReviewFindings
+    Code review findings content (optional - markdown with critical issues, suggestions, and positive observations)
+
 .PARAMETER DryRun
     Print comment instead of posting
 
@@ -73,13 +79,14 @@
     ./post-pr-finalize-comment.ps1 -SummaryFile CustomAgentLogsTmp/PRState/27246/pr-finalize/pr-finalize-summary.md
 
 .EXAMPLE
-    # Manual parameters (legacy)
-    ./post-pr-finalize-comment.ps1 -PRNumber 25748 -ReviewNumber 1 `
-        -ReviewDescription "Initial finalization check" `
+    # Manual parameters
+    ./post-pr-finalize-comment.ps1 -PRNumber 25748 `
         -TitleStatus "Good" `
         -CurrentTitle "[iOS] Fix SafeArea padding calculation" `
         -DescriptionStatus "Good" `
-        -DescriptionAssessment "Clear structure, accurate technical details, matches implementation"
+        -DescriptionAssessment "Clear structure, accurate technical details, matches implementation" `
+        -CodeReviewStatus "Passed" `
+        -CodeReviewFindings "No critical issues found. Code follows best practices."
 #>
 
 param(
@@ -90,12 +97,6 @@ param(
     [string]$SummaryFile,
 
     [Parameter(Mandatory=$false)]
-    [int]$ReviewNumber,
-
-    [Parameter(Mandatory=$false)]
-    [string]$ReviewDescription,
-
-    [Parameter(Mandatory=$false)]
     [ValidateSet("Good", "NeedsUpdate", "")]
     [string]$TitleStatus,
 
@@ -104,6 +105,9 @@ param(
 
     [Parameter(Mandatory=$false)]
     [string]$RecommendedTitle,
+
+    [Parameter(Mandatory=$false)]
+    [string]$TitleIssues,
 
     [Parameter(Mandatory=$false)]
     [ValidateSet("Excellent", "Good", "NeedsUpdate", "NeedsRewrite", "")]
@@ -117,6 +121,13 @@ param(
 
     [Parameter(Mandatory=$false)]
     [string]$RecommendedDescription,
+
+    [Parameter(Mandatory=$false)]
+    [ValidateSet("Passed", "IssuesFound", "Skipped", "")]
+    [string]$CodeReviewStatus,
+
+    [Parameter(Mandatory=$false)]
+    [string]$CodeReviewFindings,
 
     [Parameter(Mandatory=$false)]
     [switch]$DryRun,
@@ -136,7 +147,7 @@ Write-Host "╚═════════════════════�
 # ============================================================================
 
 # If PRNumber provided but no SummaryFile, try to find it
-if ($PRNumber -gt 0 -and [string]::IsNullOrWhiteSpace($SummaryFile) -and [string]::IsNullOrWhiteSpace($ReviewDescription)) {
+if ($PRNumber -gt 0 -and [string]::IsNullOrWhiteSpace($SummaryFile)) {
     $summaryPath = "CustomAgentLogsTmp/PRState/$PRNumber/pr-finalize/pr-finalize-summary.md"
     if (-not (Test-Path $summaryPath)) {
         $repoRoot = git rev-parse --show-toplevel 2>$null
@@ -166,38 +177,42 @@ if (-not [string]::IsNullOrWhiteSpace($SummaryFile)) {
         Write-Host "ℹ️  Auto-detected PRNumber: $PRNumber from path" -ForegroundColor Cyan
     }
     
-    # Extract ReviewNumber (default to 1)
-    if ($ReviewNumber -eq 0) {
-        # Check if there's a review number in the content
-        if ($content -match 'Review (\d+)') {
-            $ReviewNumber = [int]$Matches[1]
-        } else {
-            $ReviewNumber = 1
+    # Extract Recommended Title FIRST (needed for TitleStatus detection)
+    if ([string]::IsNullOrWhiteSpace($RecommendedTitle)) {
+        # Try different patterns
+        if ($content -match '\*\*Recommended.*?Title.*?\*\*:?\s*[`"]?([^`"\n]+)[`"]?') {
+            $RecommendedTitle = $Matches[1].Trim()
+        } elseif ($content -match 'Recommended:\s*`([^`]+)`') {
+            $RecommendedTitle = $Matches[1].Trim()
+        } elseif ($content -match '(?s)\*\*Recommended:\*\*\s*```\s*([^\n]+)') {
+            # Code fence format
+            $RecommendedTitle = $Matches[1].Trim()
+        } elseif ($content -match '(?s)### 📋 Title Assessment.+?\*\*Recommended:\*\*\s*```\s*([^\n]+)') {
+            $RecommendedTitle = $Matches[1].Trim()
         }
-        Write-Host "ℹ️  Using ReviewNumber: $ReviewNumber" -ForegroundColor Cyan
-    }
-    
-    # Extract verdict for ReviewDescription
-    if ([string]::IsNullOrWhiteSpace($ReviewDescription)) {
-        if ($content -match '✅\s*No Changes Needed') {
-            $ReviewDescription = "Finalization check - Ready"
-        } elseif ($content -match '⚠️\s*Needs Updates') {
-            $ReviewDescription = "Finalization check - Needs Updates"
-        } else {
-            $ReviewDescription = "Finalization review"
+        if ($RecommendedTitle) {
+            Write-Host "ℹ️  Extracted RecommendedTitle: $RecommendedTitle" -ForegroundColor Cyan
         }
     }
     
-    # Extract Title assessment
+    # Extract Title assessment - if RecommendedTitle exists, title needs update
     if ([string]::IsNullOrWhiteSpace($TitleStatus)) {
-        # Check if there are title issues or a recommended title
-        $hasRecommendedTitle = $content -match '\*\*Recommended.*?Title'
-        $hasTitleIssues = $content -match '(?s)### 📋 Title Assessment.+?\*\*Issues:\*\*'
-        
-        if ($hasRecommendedTitle -or $hasTitleIssues) {
+        # If we have a recommended title, the title needs update
+        if (-not [string]::IsNullOrWhiteSpace($RecommendedTitle)) {
             $TitleStatus = "NeedsUpdate"
-        } elseif ($content -match '### Title.*?✅') {
-            $TitleStatus = "Good"
+        }
+        # Look for explicit status in Title Assessment section
+        elseif ($content -match '(?s)### 📋 Title Assessment.+?\*\*Status:\*\*\s*(✅|❌|⚠️)?\s*(Good|NeedsUpdate|Needs Update)') {
+            $statusMatch = $Matches[2] -replace '\s+', ''
+            if ($statusMatch -eq "Good") {
+                $TitleStatus = "Good"
+            } else {
+                $TitleStatus = "NeedsUpdate"
+            }
+        }
+        # Fallback: check for recommended title specifically in title section
+        elseif ($content -match '(?s)### 📋 Title Assessment.+?\*\*Recommended.*?Title') {
+            $TitleStatus = "NeedsUpdate"
         } else {
             $TitleStatus = "Good"
         }
@@ -213,24 +228,6 @@ if (-not [string]::IsNullOrWhiteSpace($SummaryFile)) {
         }
         if ($CurrentTitle) {
             Write-Host "ℹ️  Extracted CurrentTitle: $CurrentTitle" -ForegroundColor Cyan
-        }
-    }
-    
-    # Extract Recommended Title
-    if ([string]::IsNullOrWhiteSpace($RecommendedTitle)) {
-        # Try different patterns
-        if ($content -match '\*\*Recommended.*?Title.*?\*\*:?\s*[`"]?([^`"\n]+)[`"]?') {
-            $RecommendedTitle = $Matches[1].Trim()
-        } elseif ($content -match 'Recommended:\s*`([^`]+)`') {
-            $RecommendedTitle = $Matches[1].Trim()
-        } elseif ($content -match '(?s)\*\*Recommended:\*\*\s*```\s*([^\n]+)') {
-            # Code fence format
-            $RecommendedTitle = $Matches[1].Trim()
-        } elseif ($content -match '(?s)### 📋 Title Assessment.+?\*\*Recommended:\*\*\s*```\s*([^\n]+)') {
-            $RecommendedTitle = $Matches[1].Trim()
-        }
-        if ($RecommendedTitle) {
-            Write-Host "ℹ️  Extracted RecommendedTitle: $RecommendedTitle" -ForegroundColor Cyan
         }
     }
     
@@ -335,19 +332,62 @@ if (-not [string]::IsNullOrWhiteSpace($SummaryFile)) {
             $RecommendedDescription = $Matches[1].Trim()
         }
     }
+    
+    # Extract Code Review Status and Findings
+    if ([string]::IsNullOrWhiteSpace($CodeReviewStatus)) {
+        # First, try to find a separate code-review.md file in same directory
+        $summaryDir = Split-Path $SummaryFile -Parent
+        $codeReviewFile = Join-Path $summaryDir "code-review.md"
+        
+        if (Test-Path $codeReviewFile) {
+            Write-Host "ℹ️  Found code-review.md file, loading content..." -ForegroundColor Cyan
+            $codeReviewContent = Get-Content $codeReviewFile -Raw -Encoding UTF8
+            $CodeReviewFindings = $codeReviewContent.Trim()
+            
+            # Determine status from content
+            if ($codeReviewContent -match '🔴 Critical Issues') {
+                $CodeReviewStatus = "IssuesFound"
+            } elseif ($codeReviewContent -match '(✅ Looks Good|No.*?issues found|Code review passed)') {
+                $CodeReviewStatus = "Passed"
+            } else {
+                $CodeReviewStatus = "Passed"
+            }
+        }
+        # Try to extract from summary file - look for Code Review section
+        elseif ($content -match '(?s)## Code Review Findings(.+?)(?=## [A-Z]|---|\z)') {
+            Write-Host "ℹ️  Extracted code review from summary file..." -ForegroundColor Cyan
+            $CodeReviewFindings = $Matches[1].Trim()
+            
+            # Determine status from content
+            if ($CodeReviewFindings -match '🔴 Critical Issues') {
+                $CodeReviewStatus = "IssuesFound"
+            } else {
+                $CodeReviewStatus = "Passed"
+            }
+        }
+        # Also check for ### Code Review format
+        elseif ($content -match '(?s)### 🔍 Code Review(.+?)(?=### [A-Z]|---|\z)') {
+            $CodeReviewFindings = $Matches[1].Trim()
+            if ($CodeReviewFindings -match '🔴 Critical Issues') {
+                $CodeReviewStatus = "IssuesFound"
+            } else {
+                $CodeReviewStatus = "Passed"
+            }
+        }
+        else {
+            # Default to Skipped if no code review found
+            $CodeReviewStatus = "Skipped"
+        }
+        
+        if ($CodeReviewStatus -ne "Skipped") {
+            Write-Host "ℹ️  Detected CodeReviewStatus: $CodeReviewStatus" -ForegroundColor Cyan
+        }
+    }
 }
 
 # Validate required parameters
 if ($PRNumber -eq 0) {
     throw "PRNumber is required. Provide via -PRNumber or use -SummaryFile with path containing PR number"
-}
-
-if ($ReviewNumber -eq 0) {
-    $ReviewNumber = 1
-}
-
-if ([string]::IsNullOrWhiteSpace($ReviewDescription)) {
-    throw "ReviewDescription is required. Provide via -ReviewDescription or use -SummaryFile"
 }
 
 if ([string]::IsNullOrWhiteSpace($TitleStatus)) {
@@ -373,6 +413,29 @@ if ([string]::IsNullOrWhiteSpace($DescriptionAssessment)) {
     throw "DescriptionAssessment is required. Provide via -DescriptionAssessment or use -SummaryFile"
 }
 
+# Warn if description needs work but no recommended description is provided
+if (($DescriptionStatus -eq "NeedsUpdate" -or $DescriptionStatus -eq "NeedsRewrite") -and [string]::IsNullOrWhiteSpace($RecommendedDescription)) {
+    Write-Host "⚠️  Warning: DescriptionStatus is '$DescriptionStatus' but no RecommendedDescription provided." -ForegroundColor Yellow
+    Write-Host "   Consider providing -RecommendedDescription with a suggested PR description." -ForegroundColor Yellow
+}
+
+# Warn if title needs update but no recommended title is provided
+if ($TitleStatus -eq "NeedsUpdate" -and [string]::IsNullOrWhiteSpace($RecommendedTitle)) {
+    Write-Host "⚠️  Warning: TitleStatus is 'NeedsUpdate' but no RecommendedTitle provided." -ForegroundColor Yellow
+    Write-Host "   Consider providing -RecommendedTitle with a suggested title." -ForegroundColor Yellow
+}
+
+# Initialize $titleIssues from parameter if provided, otherwise set default based on status
+if (-not (Get-Variable -Name 'titleIssues' -ErrorAction SilentlyContinue) -or [string]::IsNullOrWhiteSpace($titleIssues)) {
+    if (-not [string]::IsNullOrWhiteSpace($TitleIssues)) {
+        $titleIssues = $TitleIssues
+    } elseif ($TitleStatus -eq "Good") {
+        $titleIssues = "Title is clear and follows conventions."
+    } else {
+        $titleIssues = ""
+    }
+}
+
 # Status emoji mapping
 $titleEmoji = switch ($TitleStatus) {
     "Good" { "✅" }
@@ -388,15 +451,6 @@ $descEmoji = switch ($DescriptionStatus) {
     default { "" }
 }
 
-# Overall status
-$overallStatus = if ($TitleStatus -eq "Good" -and ($DescriptionStatus -eq "Excellent" -or $DescriptionStatus -eq "Good")) {
-    "✅ Ready"
-} elseif ($DescriptionStatus -eq "NeedsRewrite") {
-    "❌ Needs Rewrite"
-} else {
-    "⚠️ Needs Update"
-}
-
 # Format status with spaces for display
 $titleStatusDisplay = switch ($TitleStatus) {
     "NeedsUpdate" { "Needs Update" }
@@ -409,45 +463,49 @@ $descStatusDisplay = switch ($DescriptionStatus) {
     default { $DescriptionStatus }
 }
 
-# Build the new review section (collapsible)
-$reviewSection = @"
+# Build Title section (collapsible)
+$titleSection = @"
 <details>
-<summary><b>Review $ReviewNumber`: $ReviewDescription $overallStatus</b></summary>
 
-### Title $titleEmoji $titleStatusDisplay
+<summary><b>Title: $titleEmoji $titleStatusDisplay</b></summary>
+
+<br>
 
 **Current:** ``$CurrentTitle``
 "@
 
 if (-not [string]::IsNullOrWhiteSpace($titleIssues) -and $TitleStatus -eq "NeedsUpdate") {
-    $reviewSection += "`n`n**Issues:**`n$titleIssues"
+    $titleSection += "`n`n**Issues:**`n$titleIssues"
 }
 
-if (-not [string]::IsNullOrWhiteSpace($RecommendedTitle)) {
-    $reviewSection += @"
+if (-not [string]::IsNullOrWhiteSpace($RecommendedTitle) -and $TitleStatus -eq "NeedsUpdate") {
+    $titleSection += @"
 
-<details>
-<summary>Click to see proposed title</summary>
 
-``$RecommendedTitle``
-
-</details>
+**Recommended:** ``$RecommendedTitle``
 "@
 }
 
-$reviewSection += @"
+$titleSection += @"
 
-<hr>
+</details>
+"@
 
-### Description $descEmoji $descStatusDisplay
+# Build Description section (collapsible)
+$descSection = @"
+<details>
+
+<summary><b>Description: $descEmoji $descStatusDisplay</b></summary>
+
+<br>
 
 $DescriptionAssessment
 
 "@
 
 if (-not [string]::IsNullOrWhiteSpace($MissingElements)) {
-    $reviewSection += @"
-### Missing Elements
+    $descSection += @"
+**Missing Elements:**
 
 $MissingElements
 
@@ -455,25 +513,64 @@ $MissingElements
 }
 
 if (-not [string]::IsNullOrWhiteSpace($RecommendedDescription)) {
-    # Format recommended description - don't wrap in code fence since content has code blocks
-    # Instead, put in a details section with clear copy instructions
-    $reviewSection += @"
-
+    $descSection += @"
 ### ✨ Suggested PR Description
 
-<details>
-<summary>Click to see proposed description</summary>
-
 $RecommendedDescription
-
-</details>
 
 "@
 }
 
-$reviewSection += @"
+$descSection += @"
 </details>
 "@
+
+# Code Review status emoji and display
+$codeReviewEmoji = switch ($CodeReviewStatus) {
+    "Passed" { "✅" }
+    "IssuesFound" { "⚠️" }
+    "Skipped" { "⏭️" }
+    default { "⏭️" }
+}
+
+$codeReviewStatusDisplay = switch ($CodeReviewStatus) {
+    "IssuesFound" { "Issues Found" }
+    default { $CodeReviewStatus }
+}
+
+# Build Code Review section (collapsible) - only if not skipped or if we have findings
+$codeReviewSection = ""
+if ($CodeReviewStatus -ne "Skipped" -or -not [string]::IsNullOrWhiteSpace($CodeReviewFindings)) {
+    # Default status to "Passed" if we have findings but no explicit status
+    if ([string]::IsNullOrWhiteSpace($CodeReviewStatus)) {
+        $CodeReviewStatus = "Passed"
+        $codeReviewEmoji = "✅"
+        $codeReviewStatusDisplay = "Passed"
+    }
+    
+    $codeReviewSection = @"
+
+<details>
+
+<summary><b>Code Review: $codeReviewEmoji $codeReviewStatusDisplay</b></summary>
+
+<br>
+
+"@
+
+    if (-not [string]::IsNullOrWhiteSpace($CodeReviewFindings)) {
+        # Trim the findings and ensure proper newline spacing
+        $trimmedFindings = $CodeReviewFindings.Trim()
+        $codeReviewSection += "`n$trimmedFindings"
+    } else {
+        $codeReviewSection += "`nNo significant issues found. Code follows best practices."
+    }
+
+    $codeReviewSection += @"
+
+</details>
+"@
+}
 
 # ============================================================================
 # STANDALONE COMMENT HANDLING
@@ -486,7 +583,7 @@ Write-Host "`nChecking for existing PR Finalization comment on #$PRNumber..." -F
 $existingComment = $null
 
 try {
-    $commentsJson = gh api "repos/dotnet/maui/issues/$PRNumber/comments" 2>$null
+    $commentsJson = gh api "repos/dotnet/maui/issues/$PRNumber/comments?per_page=100" 2>$null
     $comments = $commentsJson | ConvertFrom-Json
     
     foreach ($comment in $comments) {
@@ -504,34 +601,16 @@ try {
     Write-Host "✓ No existing PR Finalization comment found - will create new" -ForegroundColor Yellow
 }
 
-# Build the full comment body
+# Build the full comment body (always replaces existing comment entirely)
 $commentBody = @"
 ## 📋 PR Finalization Review
 $FINALIZE_MARKER
 
+$titleSection
+
+$descSection
+$codeReviewSection
 "@
-
-if ($existingComment) {
-    # Parse existing reviews
-    $existingReviews = @()
-    $pattern = '(?s)<details>\s*<summary><b>Review (\d+):.+?</details>'
-    $matches = [regex]::Matches($existingComment.body, $pattern)
-    
-    foreach ($match in $matches) {
-        $reviewNum = [int]$match.Groups[1].Value
-        if ($reviewNum -ne $ReviewNumber) {
-            $existingReviews += $match.Value
-        }
-    }
-    
-    # Add existing reviews first, then new review
-    if ($existingReviews.Count -gt 0) {
-        $commentBody += ($existingReviews -join "`n`n")
-        $commentBody += "`n`n"
-    }
-}
-
-$commentBody += $reviewSection
 
 if ($DryRun) {
     # File-based DryRun: uses separate preview file for finalize (separate comment from unified)

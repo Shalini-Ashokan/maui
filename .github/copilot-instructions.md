@@ -196,7 +196,7 @@ The repository includes specialized custom agents and reusable skills for specif
 
 ### Available Custom Agents
 
-1. **pr** - Sequential 5-phase workflow for reviewing and working on PRs
+1. **pr** - Sequential 4-phase workflow for reviewing and working on PRs
    - **Use when**: A PR already exists and needs review or work, OR an issue needs a fix
    - **Capabilities**: PR review, test verification, fix exploration, alternative comparison
    - **Trigger phrases**: "review PR #XXXXX", "work on PR #XXXXX", "fix issue #XXXXX", "continue PR #XXXXX"
@@ -238,10 +238,11 @@ Skills are modular capabilities that can be invoked directly or used by agents. 
    - **Categories**: P/0, milestoned, partner, community, recent, docs-maui
 
 3. **pr-finalize** (`.github/skills/pr-finalize/SKILL.md`)
-   - **Purpose**: Verifies PR title and description match actual implementation. Works on any PR. Optionally updates agent session markdown if present.
+   - **Purpose**: Verifies PR title and description match actual implementation, AND performs code review for best practices before merge.
    - **Trigger phrases**: "finalize PR #XXXXX", "check PR description for #XXXXX", "review commit message"
    - **Used by**: Before merging any PR, when description may be stale
    - **Note**: Does NOT require agent involvement or session markdown - works on any PR
+   - **🚨 CRITICAL**: NEVER use `--approve` or `--request-changes` - only post comments. Approval is a human decision.
 
 4. **learn-from-pr** (`.github/skills/learn-from-pr/SKILL.md`)
    - **Purpose**: Analyzes completed PR to identify repository improvements (analysis only, no changes applied)
@@ -270,9 +271,15 @@ Skills are modular capabilities that can be invoked directly or used by agents. 
    - **Trigger phrases**: "check build for PR #XXXXX", "why did PR build fail", "get build status"
    - **Used by**: When investigating CI failures
 
+8. **run-integration-tests** (`.github/skills/run-integration-tests/SKILL.md`)
+   - **Purpose**: Build, pack, and run .NET MAUI integration tests locally
+   - **Trigger phrases**: "run integration tests", "test templates locally", "run macOSTemplates tests", "run RunOniOS tests"
+   - **Categories**: Build, WindowsTemplates, macOSTemplates, Blazor, MultiProject, Samples, AOT, RunOnAndroid, RunOniOS
+   - **Note**: **ALWAYS use this skill** instead of manual `dotnet test` commands for integration tests
+
 #### Internal Skills (Used by Agents)
 
-8. **try-fix** (`.github/skills/try-fix/SKILL.md`)
+9. **try-fix** (`.github/skills/try-fix/SKILL.md`)
    - **Purpose**: Proposes ONE independent fix approach, applies it, tests, records result with failure analysis, then reverts
    - **Used by**: pr agent Phase 3 (Fix phase) - rarely invoked directly by users
    - **Behavior**: Reads prior attempts to learn from failures. Max 5 attempts per session.

@@ -13,7 +13,7 @@
     Format:
     ## 🤖 AI Summary — ✅ APPROVE
     <details><summary>📊 Expand Full Review</summary>
-      Status table + all 5 phases as nested details
+      Status table + all 4 phases as nested details
     </details>
 
 .PARAMETER PRNumber
@@ -192,11 +192,6 @@ function Test-PhaseContentComplete {
                 $validationWarnings += "Pre-Flight missing 'Platforms Affected' section (non-critical)"
             }
         }
-        "Tests" {
-            if ($PhaseContent -notmatch '(HostApp:|Test Files:)') {
-                $validationWarnings += "Tests phase missing test file paths (non-critical)"
-            }
-        }
         "Gate" {
             if ($PhaseContent -notmatch 'Result:') {
                 $validationWarnings += "Gate phase missing 'Result' field (non-critical)"
@@ -255,7 +250,6 @@ if ($Content -match '##\s+✅\s+Final Recommendation:\s+APPROVE') {
 # Extract phase statuses from state file
 $phaseStatuses = @{
     "Pre-Flight" = "⏳ PENDING"
-    "Tests" = "⏳ PENDING"
     "Gate" = "⏳ PENDING"
     "Fix" = "⏳ PENDING"
     "Report" = "⏳ PENDING"
@@ -289,7 +283,8 @@ function Extract-AllSections {
     $sections = @{}
     
     # Pattern to find all <details><summary><strong>TITLE</strong></summary>...content...</details> blocks
-    $pattern = '(?s)<details>\s*<summary><strong>([^<]+)</strong></summary>(.*?)</details>'
+    # Note: [^>]* handles optional attributes like "open" in <details open>
+    $pattern = '(?s)<details[^>]*>\s*<summary><strong>([^<]+)</strong></summary>(.*?)</details>'
     $matches = [regex]::Matches($StateContent, $pattern)
     
     if ($Debug) {
@@ -350,11 +345,6 @@ $preFlightContent = Get-SectionByPattern -Sections $allSections -Patterns @(
     '🔍.*Pre-Flight'
 ) -Debug:$debugMode
 
-$testsContent = Get-SectionByPattern -Sections $allSections -Patterns @(
-    '🧪.*Tests',
-    '📋.*Tests'
-) -Debug:$debugMode
-
 $gateContent = Get-SectionByPattern -Sections $allSections -Patterns @(
     '🚦.*Gate',
     '📋.*Gate'
@@ -367,7 +357,7 @@ $fixContent = Get-SectionByPattern -Sections $allSections -Patterns @(
 
 $reportContent = Get-SectionByPattern -Sections $allSections -Patterns @(
     '📋.*Report',
-    'Phase 5.*Report',
+    'Phase 4.*Report',
     'Final Report'
 ) -Debug:$debugMode
 
@@ -399,9 +389,9 @@ if (-not $SkipValidation) {
             Write-Host "  ✅ $($phase.Name): Valid" -ForegroundColor Green
         } else {
             Write-Host "  ❌ $($phase.Name): INVALID" -ForegroundColor Red
-            foreach ($error in $result.Errors) {
-                Write-Host "     - $error" -ForegroundColor Red
-                $allValidationErrors += "$($phase.Name): $error"
+            foreach ($err in $result.Errors) {
+                Write-Host "     - $err" -ForegroundColor Red
+                $allValidationErrors += "$($phase.Name): $err"
             }
         }
         
@@ -435,8 +425,8 @@ if (-not $SkipValidation) {
         Write-Host "╚═══════════════════════════════════════════════════════════╝" -ForegroundColor Red
         Write-Host ""
         Write-Host "Found $($allValidationErrors.Count) validation error(s):" -ForegroundColor Red
-        foreach ($error in $allValidationErrors) {
-            Write-Host "  - $error" -ForegroundColor Red
+        foreach ($err in $allValidationErrors) {
+            Write-Host "  - $err" -ForegroundColor Red
         }
         Write-Host ""
         Write-Host "💡 Fix these issues in the state file before posting the review comment." -ForegroundColor Cyan
@@ -583,9 +573,6 @@ if ($existingComment) {
     $preFlightMatch = Extract-PhaseFromComment -CommentBody $existingComment.body -Emoji "🔍" -PhaseName "Pre-Flight"
     if ($preFlightMatch) { $existingPreFlightSessions = Get-ExistingReviewSessions -PhaseContent $preFlightMatch }
     
-    $testsMatch = Extract-PhaseFromComment -CommentBody $existingComment.body -Emoji "🧪" -PhaseName "Tests"
-    if ($testsMatch) { $existingTestsSessions = Get-ExistingReviewSessions -PhaseContent $testsMatch }
-    
     $gateMatch = Extract-PhaseFromComment -CommentBody $existingComment.body -Emoji "🚦" -PhaseName "Gate"
     if ($gateMatch) { $existingGateSessions = Get-ExistingReviewSessions -PhaseContent $gateMatch }
     
@@ -600,14 +587,12 @@ if ($existingComment) {
 
 # Create NEW review sessions from current state file
 $newPreFlightSession = New-ReviewSession -PhaseContent $preFlightContent -CommitTitle $latestCommitTitle -CommitSha $latestCommitSha -CommitUrl $latestCommitUrl
-$newTestsSession = New-ReviewSession -PhaseContent $testsContent -CommitTitle $latestCommitTitle -CommitSha $latestCommitSha -CommitUrl $latestCommitUrl
 $newGateSession = New-ReviewSession -PhaseContent $gateContent -CommitTitle $latestCommitTitle -CommitSha $latestCommitSha -CommitUrl $latestCommitUrl
 $newFixSession = New-ReviewSession -PhaseContent $fixContent -CommitTitle $latestCommitTitle -CommitSha $latestCommitSha -CommitUrl $latestCommitUrl
 $newReportSession = New-ReviewSession -PhaseContent $reportContent -CommitTitle $latestCommitTitle -CommitSha $latestCommitSha -CommitUrl $latestCommitUrl
 
 # Merge existing sessions with new session (if new content exists)
 $allPreFlightSessions = if ($newPreFlightSession) { Merge-ReviewSessions -ExistingSessions $existingPreFlightSessions -NewSession $newPreFlightSession -NewCommitSha $latestCommitSha } else { $existingPreFlightSessions -join "`n`n---`n`n" }
-$allTestsSessions = if ($newTestsSession) { Merge-ReviewSessions -ExistingSessions $existingTestsSessions -NewSession $newTestsSession -NewCommitSha $latestCommitSha } else { $existingTestsSessions -join "`n`n---`n`n" }
 $allGateSessions = if ($newGateSession) { Merge-ReviewSessions -ExistingSessions $existingGateSessions -NewSession $newGateSession -NewCommitSha $latestCommitSha } else { $existingGateSessions -join "`n`n---`n`n" }
 $allFixSessions = if ($newFixSession) { Merge-ReviewSessions -ExistingSessions $existingFixSessions -NewSession $newFixSession -NewCommitSha $latestCommitSha } else { $existingFixSessions -join "`n`n---`n`n" }
 $allReportSessions = if ($newReportSession) { Merge-ReviewSessions -ExistingSessions $existingReportSessions -NewSession $newReportSession -NewCommitSha $latestCommitSha } else { $existingReportSessions -join "`n`n---`n`n" }
@@ -644,14 +629,12 @@ $Content
 
 # Build phase sections (only non-empty ones)
 $preFlightSection = New-PhaseSection -Icon "🔍" -PhaseName "Pre-Flight" -Subtitle "Context & Validation" -Content $allPreFlightSessions -Status $phaseStatuses['Pre-Flight']
-$testsSection = New-PhaseSection -Icon "🧪" -PhaseName "Tests" -Subtitle "Verification" -Content $allTestsSessions -Status $phaseStatuses['Tests']
 $gateSection = New-PhaseSection -Icon "🚦" -PhaseName "Gate" -Subtitle "Test Verification" -Content $allGateSessions -Status $phaseStatuses['Gate']
 $fixSection = New-PhaseSection -Icon "🔧" -PhaseName "Fix" -Subtitle "Analysis & Comparison" -Content $allFixSessions -Status $phaseStatuses['Fix']
 $reportSection = New-PhaseSection -Icon "📋" -PhaseName "Report" -Subtitle "Final Recommendation" -Content $allReportSessions -Status $phaseStatuses['Report']
 
 # Collect non-null sections
 if ($preFlightSection) { $phaseSections += $preFlightSection }
-if ($testsSection) { $phaseSections += $testsSection }
 if ($gateSection) { $phaseSections += $gateSection }
 if ($fixSection) { $phaseSections += $fixSection }
 if ($reportSection) { $phaseSections += $reportSection }
