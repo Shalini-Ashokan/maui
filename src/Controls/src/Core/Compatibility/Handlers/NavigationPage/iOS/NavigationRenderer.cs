@@ -947,38 +947,25 @@ namespace Microsoft.Maui.Controls.Handlers.Compatibility
 				? UINavigationBar.Appearance.TintColor
 				: iconColor.ToPlatform();
 
-			// On iOS 26+, the Liquid Glass navigation bar does not apply TintColor
-			// to the back button. Set the color via UINavigationBarAppearance instead.
+			// iOS 26+ Liquid Glass ignores TintColor for the back button; apply via appearance instead.
 			if (OperatingSystem.IsIOSVersionAtLeast(26) || OperatingSystem.IsMacCatalystVersionAtLeast(26))
 			{
-				var backButtonColor = iconColor?.ToPlatform();
-				if (backButtonColor is not null)
+				var backColor = iconColor?.ToPlatform();
+				if (backColor is not null)
 				{
-					var buttonAppearance = new UIBarButtonItemAppearance(UIBarButtonItemStyle.Plain);
-					buttonAppearance.Normal.TitleTextAttributes = NSDictionary<NSString, NSObject>.FromObjectsAndKeys(
-						new NSObject[] { backButtonColor },
-						new NSString[] { UIStringAttributeKey.ForegroundColor });
+					var appearance = new UIBarButtonItemAppearance(UIBarButtonItemStyle.Plain);
+					appearance.Normal.TitleTextAttributes = NSDictionary<NSString, NSObject>.FromObjectsAndKeys(
+						new NSObject[] { backColor }, new NSString[] { UIStringAttributeKey.ForegroundColor });
+					NavigationBar.CompactAppearance.BackButtonAppearance = appearance;
+					NavigationBar.StandardAppearance.BackButtonAppearance = appearance;
+					NavigationBar.ScrollEdgeAppearance.BackButtonAppearance = appearance;
 
-					NavigationBar.CompactAppearance.BackButtonAppearance = buttonAppearance;
-					NavigationBar.StandardAppearance.BackButtonAppearance = buttonAppearance;
-					NavigationBar.ScrollEdgeAppearance.BackButtonAppearance = buttonAppearance;
-
-					// Tint the back indicator image with the desired color.
-					// BackIndicatorImage is null when using the system default chevron,
-					// so fall back to the matching SF Symbol (same icon iOS renders).
-					var backImage = NavigationBar.BackIndicatorImage ?? UIImage.GetSystemImage("chevron.backward");
-					if (backImage is not null)
+					var backimage = NavigationBar.BackIndicatorImage ?? UIImage.GetSystemImage("chevron.backward");
+					if (backimage is not null)
 					{
-						var renderer = new UIGraphicsImageRenderer(backImage.Size);
-						var tintedImage = renderer.CreateImage((context) =>
-						{
-							backButtonColor.SetColor();
-							backImage.Draw(CoreGraphics.CGPoint.Empty, CGBlendMode.Normal, 1.0f);
-							context.FillRect(new CoreGraphics.CGRect(CoreGraphics.CGPoint.Empty, backImage.Size), CGBlendMode.SourceIn);
-						});
-						tintedImage = tintedImage.ImageWithRenderingMode(UIImageRenderingMode.AlwaysOriginal);
-						NavigationBar.BackIndicatorImage = tintedImage;
-						NavigationBar.BackIndicatorTransitionMaskImage = tintedImage;
+						var tinted = backimage.ApplyTintColor(backColor).ImageWithRenderingMode(UIImageRenderingMode.AlwaysOriginal);
+						NavigationBar.BackIndicatorImage = tinted;
+						NavigationBar.BackIndicatorTransitionMaskImage = tinted;
 					}
 				}
 			}
