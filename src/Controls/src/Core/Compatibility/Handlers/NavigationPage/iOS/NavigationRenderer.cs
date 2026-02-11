@@ -946,6 +946,42 @@ namespace Microsoft.Maui.Controls.Handlers.Compatibility
 			NavigationBar.TintColor = iconColor == null || NavPage.OnThisPlatform().GetStatusBarTextColorMode() == StatusBarTextColorMode.DoNotAdjust
 				? UINavigationBar.Appearance.TintColor
 				: iconColor.ToPlatform();
+
+			// On iOS 26+, the Liquid Glass navigation bar does not apply TintColor
+			// to the back button. Set the color via UINavigationBarAppearance instead.
+			if (OperatingSystem.IsIOSVersionAtLeast(26) || OperatingSystem.IsMacCatalystVersionAtLeast(26))
+			{
+				var backButtonColor = iconColor?.ToPlatform();
+				if (backButtonColor is not null)
+				{
+					var buttonAppearance = new UIBarButtonItemAppearance(UIBarButtonItemStyle.Plain);
+					buttonAppearance.Normal.TitleTextAttributes = NSDictionary<NSString, NSObject>.FromObjectsAndKeys(
+						new NSObject[] { backButtonColor },
+						new NSString[] { UIStringAttributeKey.ForegroundColor });
+
+					NavigationBar.CompactAppearance.BackButtonAppearance = buttonAppearance;
+					NavigationBar.StandardAppearance.BackButtonAppearance = buttonAppearance;
+					NavigationBar.ScrollEdgeAppearance.BackButtonAppearance = buttonAppearance;
+
+					// Tint the back indicator image with the desired color.
+					// BackIndicatorImage is null when using the system default chevron,
+					// so fall back to the matching SF Symbol (same icon iOS renders).
+					var backImage = NavigationBar.BackIndicatorImage ?? UIImage.GetSystemImage("chevron.backward");
+					if (backImage is not null)
+					{
+						var renderer = new UIGraphicsImageRenderer(backImage.Size);
+						var tintedImage = renderer.CreateImage((context) =>
+						{
+							backButtonColor.SetColor();
+							backImage.Draw(CoreGraphics.CGPoint.Empty, CGBlendMode.Normal, 1.0f);
+							context.FillRect(new CoreGraphics.CGRect(CoreGraphics.CGPoint.Empty, backImage.Size), CGBlendMode.SourceIn);
+						});
+						tintedImage = tintedImage.ImageWithRenderingMode(UIImageRenderingMode.AlwaysOriginal);
+						NavigationBar.BackIndicatorImage = tintedImage;
+						NavigationBar.BackIndicatorTransitionMaskImage = tintedImage;
+					}
+				}
+			}
 		}
 
 		void SetStatusBarStyle()
@@ -1064,7 +1100,7 @@ namespace Microsoft.Maui.Controls.Handlers.Compatibility
 				// We only check height because the navigation bar constrains vertical space (44pt height),
 				// but allows horizontal flexibility. Width can vary based on icon design and content,
 				// while height must fit within the fixed navigation bar bounds to avoid clipping.
-				
+
 				// if the image is bigger than the default available size, resize it
 				if (icon is not null)
 				{
