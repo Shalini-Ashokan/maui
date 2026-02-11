@@ -968,14 +968,6 @@ namespace Microsoft.Maui.Controls.Handlers.Compatibility
 						NavigationBar.BackIndicatorTransitionMaskImage = tinted;
 					}
 				}
-				else
-				{
-					NavigationBar.CompactAppearance.BackButtonAppearance = null;
-					NavigationBar.StandardAppearance.BackButtonAppearance = null;
-					NavigationBar.ScrollEdgeAppearance.BackButtonAppearance = null;
-					NavigationBar.BackIndicatorImage = null;
-					NavigationBar.BackIndicatorTransitionMaskImage = null;
-				}
 			}
 		}
 
