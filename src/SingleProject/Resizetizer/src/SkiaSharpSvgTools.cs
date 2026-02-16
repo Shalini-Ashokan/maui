@@ -9,8 +9,6 @@ namespace Microsoft.Maui.Resizetizer
 {
 	internal class SkiaSharpSvgTools : SkiaSharpTools, IDisposable
 	{
-		// CSS relative length units that require a rendering context (font metrics
-		// or viewport size) and cannot be resolved at build time.
 		static readonly string[] RelativeUnits = { "em", "ex", "rem", "ch", "vw", "vh", "vmin", "vmax" };
 
 		SKSvg svg;
@@ -28,8 +26,6 @@ namespace Microsoft.Maui.Resizetizer
 
 			svg = new SKSvg();
 
-			// Strip width/height with relative CSS units (em, rem, etc.) before loading,
-			// as Svg.Skia cannot resolve them at build time and produces wrong dimensions.
 			using var sanitized = SanitizeSvgRelativeUnits(filename);
 			var pic = sanitized != null
 				? svg.Load(sanitized)
@@ -42,18 +38,10 @@ namespace Microsoft.Maui.Resizetizer
 				Logger?.Log($"SVG picture did not have a size and will fail to generate. ({Filename})");
 		}
 
-		/// <summary>
-		/// If the root &lt;svg&gt; element has width/height with relative CSS units
-		/// (em, rem, etc.) and a viewBox is present, returns a stream with those
-		/// attributes removed. Returns <c>null</c> when no changes are needed.
-		/// </summary>
+
 		internal static MemoryStream SanitizeSvgRelativeUnits(string filename)
 		{
-			// Read the file once as text for both the quick pre-check and XML parsing.
 			var svgContent = File.ReadAllText(filename);
-
-			// Quick text scan: skip XML parsing entirely if no relative unit
-			// string appears anywhere in the file (covers the vast majority of SVGs).
 			bool mayHaveRelativeUnits = false;
 			foreach (var unit in RelativeUnits)
 			{
@@ -67,28 +55,27 @@ namespace Microsoft.Maui.Resizetizer
 			if (!mayHaveRelativeUnits)
 				return null;
 
-			// Only parse XML when we suspect relative units are present.
 			var doc = XDocument.Parse(svgContent);
 			var root = doc.Root;
 
-			if (root == null || root.Name.LocalName != "svg")
+			if (root is null || root.Name.LocalName != "svg")
 				return null;
 
 			var widthAttr = root.Attribute("width");
 			var heightAttr = root.Attribute("height");
 
-			if (widthAttr == null && heightAttr == null)
+			if (widthAttr is null && heightAttr is null)
 				return null;
 
-			bool widthIsRelative = widthAttr != null && HasRelativeUnit(widthAttr.Value);
-			bool heightIsRelative = heightAttr != null && HasRelativeUnit(heightAttr.Value);
+			bool widthIsRelative = widthAttr is not null && HasRelativeUnit(widthAttr.Value);
+			bool heightIsRelative = heightAttr is not null && HasRelativeUnit(heightAttr.Value);
 
 			if (!widthIsRelative && !heightIsRelative)
 				return null;
 
 			// A viewBox must exist as fallback for dimensions
 			var viewBoxAttr = root.Attribute("viewBox");
-			if (viewBoxAttr == null || string.IsNullOrWhiteSpace(viewBoxAttr.Value))
+			if (viewBoxAttr is null || string.IsNullOrWhiteSpace(viewBoxAttr.Value))
 				return null;
 
 			if (widthIsRelative)
