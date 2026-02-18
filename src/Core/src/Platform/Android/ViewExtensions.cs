@@ -26,8 +26,9 @@ namespace Microsoft.Maui.Platform
 	{
 		public static void Initialize(this AView platformView, IView view)
 		{
-			var pivotX = (float)(view.AnchorX * platformView.ToPixels(view.Frame.Width));
-			var pivotY = (float)(view.AnchorY * platformView.ToPixels(view.Frame.Height));
+			// Clamp negative frame dimensions to 0 to avoid incorrect pivot values.
+			var pivotX = (float)(view.AnchorX * platformView.ToPixels(Math.Max(0, view.Frame.Width)));
+			var pivotY = (float)(view.AnchorY * platformView.ToPixels(Math.Max(0, view.Frame.Height)));
 			int visibility;
 
 			if (view is IActivityIndicator a)
