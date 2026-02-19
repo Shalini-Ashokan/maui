@@ -85,11 +85,6 @@ namespace Microsoft.Maui.Handlers
 						if (PlatformView is not null)
 						{
 							UpdateTrackOffColor(PlatformView);
-							// MacCatalyst 26+ resets ThumbColor when window becomes active
-							if (OperatingSystem.IsMacCatalystVersionAtLeast(26))
-							{
-								UpdateThumbColor(PlatformView);
-							}
 						}
 					});
 #elif IOS
@@ -115,6 +110,9 @@ namespace Microsoft.Maui.Handlers
 								UpdateThumbColor(uiSwitch);
 							}
 						});
+
+					// iOS 26+ resets ThumbTintColor after initial layout, so re-apply the custom ThumbColor here.
+					UpdateThumbColor(platformView);
 				}
 			}
 
