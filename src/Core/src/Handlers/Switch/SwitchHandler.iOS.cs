@@ -102,6 +102,11 @@ namespace Microsoft.Maui.Handlers
 				// Register for trait changes to re-apply ThumbColor after UIKit completes its styling.
 				if (OperatingSystem.IsIOSVersionAtLeast(26) || OperatingSystem.IsMacCatalystVersionAtLeast(26))
 				{
+					if (_traitChangeRegistration is not null)
+					{
+						platformView.UnregisterForTraitChanges(_traitChangeRegistration);
+					}
+
 					_traitChangeRegistration = platformView.RegisterForTraitChanges<UITraitUserInterfaceStyle>(
 						(IUITraitEnvironment view, UITraitCollection _) =>
 						{
@@ -137,10 +142,12 @@ namespace Microsoft.Maui.Handlers
 
 			void UpdateThumbColor(UISwitch platformView)
 			{
-				DispatchQueue.MainQueue.DispatchAsync(() =>
+				DispatchQueue.MainQueue.DispatchAsync(async () =>
 				{
 					if (VirtualView is null || PlatformView is null)
 						return;
+
+					await Task.Delay(10); // Small delay, necessary to allow UIKit to complete its internal layout and styling processes before re-applying the custom color
 
 					if (VirtualView is ISwitch view && view.ThumbColor is not null)
 					{
