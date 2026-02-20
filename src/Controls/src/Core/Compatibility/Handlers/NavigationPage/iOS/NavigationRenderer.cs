@@ -943,16 +943,19 @@ namespace Microsoft.Maui.Controls.Handlers.Compatibility
 			if (iconColor == null)
 				iconColor = barTextColor;
 
-			NavigationBar.TintColor = iconColor == null || NavPage.OnThisPlatform().GetStatusBarTextColorMode() == StatusBarTextColorMode.DoNotAdjust
-				? UINavigationBar.Appearance.TintColor
-				: iconColor.ToPlatform();
+			var useCustomColor = iconColor != null && NavPage.OnThisPlatform().GetStatusBarTextColorMode() != StatusBarTextColorMode.DoNotAdjust;
+
+			NavigationBar.TintColor = useCustomColor
+				? iconColor.ToPlatform()
+				: UINavigationBar.Appearance.TintColor;
+
 
 			// iOS 26+ Liquid Glass ignores TintColor for the back button; apply via appearance instead.
 			if (OperatingSystem.IsIOSVersionAtLeast(26) || OperatingSystem.IsMacCatalystVersionAtLeast(26))
 			{
-				var backColor = iconColor?.ToPlatform();
-				if (backColor is not null)
+				if (useCustomColor)
 				{
+					var backColor = iconColor?.ToPlatform();
 					var appearance = new UIBarButtonItemAppearance(UIBarButtonItemStyle.Plain);
 					appearance.Normal.TitleTextAttributes = NSDictionary<NSString, NSObject>.FromObjectsAndKeys(
 						new NSObject[] { backColor }, new NSString[] { UIStringAttributeKey.ForegroundColor });
@@ -960,7 +963,7 @@ namespace Microsoft.Maui.Controls.Handlers.Compatibility
 					NavigationBar.StandardAppearance.BackButtonAppearance = appearance;
 					NavigationBar.ScrollEdgeAppearance.BackButtonAppearance = appearance;
 
-					var backimage = NavigationBar.BackIndicatorImage ?? UIImage.GetSystemImage("chevron.backward");
+					var backimage = UIImage.GetSystemImage("chevron.backward") ?? new UIImage();
 					if (backimage is not null)
 					{
 						var tinted = backimage.ApplyTintColor(backColor).ImageWithRenderingMode(UIImageRenderingMode.AlwaysOriginal);
