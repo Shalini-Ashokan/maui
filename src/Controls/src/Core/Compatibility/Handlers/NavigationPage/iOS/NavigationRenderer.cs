@@ -955,15 +955,18 @@ namespace Microsoft.Maui.Controls.Handlers.Compatibility
 			{
 				if (useCustomColor)
 				{
-					var backColor = iconColor?.ToPlatform();
-					var appearance = new UIBarButtonItemAppearance(UIBarButtonItemStyle.Plain);
-					appearance.Normal.TitleTextAttributes = NSDictionary<NSString, NSObject>.FromObjectsAndKeys(
+					var backColor = iconColor.ToPlatform();
+					var colorAttributes = NSDictionary<NSString, NSObject>.FromObjectsAndKeys(
 						new NSObject[] { backColor }, new NSString[] { UIStringAttributeKey.ForegroundColor });
+					var appearance = new UIBarButtonItemAppearance(UIBarButtonItemStyle.Plain);
+					appearance.Normal.TitleTextAttributes = colorAttributes;
+					appearance.Highlighted.TitleTextAttributes = colorAttributes;
+					appearance.Selected.TitleTextAttributes = colorAttributes;
 					NavigationBar.CompactAppearance.BackButtonAppearance = appearance;
 					NavigationBar.StandardAppearance.BackButtonAppearance = appearance;
 					NavigationBar.ScrollEdgeAppearance.BackButtonAppearance = appearance;
 
-					var backimage = UIImage.GetSystemImage("chevron.backward") ?? new UIImage();
+					var backimage = UIImage.GetSystemImage("chevron.backward");
 					if (backimage is not null)
 					{
 						var tinted = backimage.ApplyTintColor(backColor).ImageWithRenderingMode(UIImageRenderingMode.AlwaysOriginal);
