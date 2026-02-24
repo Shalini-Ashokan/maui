@@ -961,7 +961,6 @@ namespace Microsoft.Maui.Controls.Handlers.Compatibility
 					var appearance = new UIBarButtonItemAppearance(UIBarButtonItemStyle.Plain);
 					appearance.Normal.TitleTextAttributes = colorAttributes;
 					appearance.Highlighted.TitleTextAttributes = colorAttributes;
-					appearance.Selected.TitleTextAttributes = colorAttributes;
 					NavigationBar.CompactAppearance.BackButtonAppearance = appearance;
 					NavigationBar.StandardAppearance.BackButtonAppearance = appearance;
 					NavigationBar.ScrollEdgeAppearance.BackButtonAppearance = appearance;
