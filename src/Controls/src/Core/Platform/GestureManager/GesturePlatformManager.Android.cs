@@ -25,6 +25,11 @@ namespace Microsoft.Maui.Controls.Platform
 		bool _inputTransparent;
 		bool _isEnabled;
 		bool? _focusableDefaultValue;
+		bool? _clickableDefaultValue;
+		// Tracks whether the gesture detector already fired a tap in the current touch dispatch cycle,
+		// used to prevent double-firing when an OnClickListener is also set for TalkBack support.
+		bool _tapFiredViaGestureDetector;
+		TapGestureClickListener? _tapClickListener;
 		protected virtual VisualElement? Element => _handler?.VirtualView as VisualElement;
 
 		View? View => Element as View;
@@ -230,12 +235,33 @@ namespace Microsoft.Maui.Controls.Platform
 				{
 					platformView.KeyPress += OnKeyPress;
 					_focusableDefaultValue ??= platformView.Focusable;
+					_clickableDefaultValue ??= platformView.Clickable;
 					platformView.Focusable = true;
+					// Setting Clickable = true ensures Android's onTouchEvent returns true for ACTION_DOWN.
+					// This is necessary so that if any Touch handler (including user code) sets e.Handled = false,
+					// Android still routes the full touch sequence (ACTION_MOVE/UP) to this view, allowing
+					// the gesture detector to confirm the tap.
+					platformView.Clickable = true;
+
+					// Set an OnClickListener to handle TalkBack activation.
+					// When Clickable = true, TalkBack calls performClick() (via ACTION_CLICK) instead of
+					// synthesizing raw MotionEvents. The listener fires the tap gesture only if the gesture
+					// detector hasn't already handled it this cycle, preventing double-firing.
+					if (_tapClickListener is null)
+						_tapClickListener = new TapGestureClickListener(this);
+
+					platformView.SetOnClickListener(_tapClickListener);
+				}
+				else
+				{
+					ClearTapClickListener(platformView);
 				}
 			}
 			else
 			{
 				_focusableDefaultValue = null;
+				_clickableDefaultValue = null;
+				ClearTapClickListener(platformView);
 			}
 		}
 
@@ -282,7 +308,19 @@ namespace Microsoft.Maui.Controls.Platform
 			}
 
 			if (e.Event != null)
+			{
 				e.Handled = OnTouchEvent(e.Event);
+
+				// When the gesture detector handles ACTION_UP, it may have fired a tap.
+				// Set a flag so the OnClickListener skips (preventing double-firing) if
+				// onTouchEvent also calls performClick() because a Touch handler returned false.
+				// Post the reset so it runs after the current dispatchTouchEvent completes.
+				if (e.Handled && e.Event.Action == MotionEventActions.Up)
+				{
+					_tapFiredViaGestureDetector = true;
+					Control?.Post(() => _tapFiredViaGestureDetector = false);
+				}
+			}
 		}
 
 		void SetupElement(VisualElement? oldElement, VisualElement? newElement)
@@ -291,9 +329,12 @@ namespace Microsoft.Maui.Controls.Platform
 			if (platformView is not null)
 			{
 				platformView.Focusable = _focusableDefaultValue ?? platformView.Focusable;
+				platformView.Clickable = _clickableDefaultValue ?? platformView.Clickable;
 				_focusableDefaultValue = null;
+				_clickableDefaultValue = null;
 				platformView.Touch -= OnPlatformViewTouched;
 				platformView.KeyPress -= OnKeyPress;
+				ClearTapClickListener(platformView);
 			}
 
 			_handler = null;
@@ -405,6 +446,46 @@ namespace Microsoft.Maui.Controls.Platform
 			}
 
 			_isEnabled = Element.IsEnabled;
+		}
+
+		void ClearTapClickListener(AView platformView)
+		{
+			if (_tapClickListener is not null)
+			{
+				platformView.SetOnClickListener(null);
+				_tapClickListener.Dispose();
+				_tapClickListener = null;
+			}
+		}
+
+		// Handles TalkBack activation when Clickable = true.
+		// TalkBack calls performClick() (via ACTION_CLICK) instead of synthesizing MotionEvents,
+		// so we need a click listener to forward the tap to the gesture pipeline.
+		// The _tapFiredViaGestureDetector flag prevents double-firing when a Touch handler
+		// has set e.Handled = false (causing both the gesture detector and performClick to run).
+		class TapGestureClickListener : Java.Lang.Object, AView.IOnClickListener
+		{
+			readonly GesturePlatformManager _manager;
+
+			public TapGestureClickListener(GesturePlatformManager manager)
+			{
+				_manager = manager;
+			}
+
+			public void OnClick(AView? v)
+			{
+				// If the gesture detector already fired a tap in this touch dispatch cycle,
+				// skip to avoid double-firing (the Post in OnPlatformViewTouched will clear the flag).
+				if (_manager._tapFiredViaGestureDetector)
+					return;
+
+				// Fire the tap gesture for TalkBack (or keyboard/switch access) activation.
+				if (v?.Enabled == true &&
+					_manager.View?.HasAccessibleTapGesture(out var tapGestureRecognizer) == true)
+				{
+					tapGestureRecognizer.SendTapped(_manager.View, _ => Point.Zero);
+				}
+			}
 		}
 	}
 }
