@@ -22,6 +22,7 @@ namespace Microsoft.Maui.Handlers
 			[nameof(ILabel.Opacity)] = MapOpacity,
 #elif WINDOWS
 			[nameof(ILabel.Background)] = MapBackground,
+			[nameof(IView.Clip)] = MapClip,
 			[nameof(ILabel.Height)] = MapHeight,
 			[nameof(ILabel.Opacity)] = MapOpacity,
 #endif

@@ -39,6 +39,44 @@ namespace Microsoft.Maui.Handlers
 			handler.UpdateValue(nameof(IViewHandler.ContainerView));
 
 			handler.ToPlatform().UpdateBackground(label);
+
+			if (label.Clip is not null)
+				handler.UpdateValue(nameof(IView.Clip));
+		}
+
+		public static void MapClip(ILabelHandler handler, ILabel label)
+		{
+			ViewHandler.MapClip(handler, label);
+
+			// The base MapClip only clips the child (TextBlock), so we also need to
+			// clip the WrapperView to ensure the label background is clipped.
+			if (handler.ContainerView is WrapperView wrapper)
+			{
+				if (label.Clip is not null && wrapper.Child is not null)
+				{
+					double width = wrapper.Child.ActualWidth;
+					double height = wrapper.Child.ActualHeight;
+
+					if (width > 0 && height > 0)
+					{
+						var visual = ElementCompositionPreview.GetElementVisual(wrapper);
+						var compositor = visual.Compositor;
+						var pathSize = new Graphics.Rect(0, 0, width, height);
+						var clipPath = label.Clip.PathForBounds(pathSize);
+						var device = Microsoft.Graphics.Canvas.CanvasDevice.GetSharedDevice();
+						var geometry = clipPath.AsPath(device);
+						var path = new Microsoft.UI.Composition.CompositionPath(geometry);
+						var pathGeometry = compositor.CreatePathGeometry(path);
+						var geometricClip = compositor.CreateGeometricClip(pathGeometry);
+						visual.Clip = geometricClip;
+					}
+				}
+				else
+				{
+					var visual = ElementCompositionPreview.GetElementVisual(wrapper);
+					visual.Clip = null;
+				}
+			}
 		}
 
 		public static void MapOpacity(ILabelHandler handler, ILabel label)
