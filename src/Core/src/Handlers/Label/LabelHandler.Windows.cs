@@ -1,5 +1,11 @@
 #nullable enable
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Hosting;
+#if MAUI_GRAPHICS_WIN2D
+using Microsoft.Maui.Graphics.Win2D;
+#else
+using Microsoft.Maui.Graphics.Platform;
+#endif
 
 namespace Microsoft.Maui.Handlers
 {
@@ -59,16 +65,20 @@ namespace Microsoft.Maui.Handlers
 
 					if (width > 0 && height > 0)
 					{
-						var visual = ElementCompositionPreview.GetElementVisual(wrapper);
-						var compositor = visual.Compositor;
-						var pathSize = new Graphics.Rect(0, 0, width, height);
-						var clipPath = label.Clip.PathForBounds(pathSize);
-						var device = Microsoft.Graphics.Canvas.CanvasDevice.GetSharedDevice();
-						var geometry = clipPath.AsPath(device);
-						var path = new Microsoft.UI.Composition.CompositionPath(geometry);
-						var pathGeometry = compositor.CreatePathGeometry(path);
-						var geometricClip = compositor.CreateGeometricClip(pathGeometry);
-						visual.Clip = geometricClip;
+						ApplyWrapperViewClip(wrapper, label.Clip, width, height);
+					}
+					else
+					{
+						// Child not sized yet, defer clip until layout completes
+						void onChildSizeChanged(object sender, SizeChangedEventArgs e)
+						{
+							wrapper.Child.SizeChanged -= onChildSizeChanged;
+							if (e.NewSize.Width > 0 && e.NewSize.Height > 0 && label.Clip is not null)
+							{
+								ApplyWrapperViewClip(wrapper, label.Clip, e.NewSize.Width, e.NewSize.Height);
+							}
+						}
+						wrapper.Child.SizeChanged += onChildSizeChanged;
 					}
 				}
 				else
@@ -77,6 +87,20 @@ namespace Microsoft.Maui.Handlers
 					visual.Clip = null;
 				}
 			}
+		}
+
+		static void ApplyWrapperViewClip(WrapperView wrapper, IShape clip, double width, double height)
+		{
+			var visual = ElementCompositionPreview.GetElementVisual(wrapper);
+			var compositor = visual.Compositor;
+			var pathSize = new Graphics.Rect(0, 0, width, height);
+			var clipPath = clip.PathForBounds(pathSize);
+			var device = Microsoft.Graphics.Canvas.CanvasDevice.GetSharedDevice();
+			var geometry = clipPath.AsPath(device);
+			var path = new Microsoft.UI.Composition.CompositionPath(geometry);
+			var pathGeometry = compositor.CreatePathGeometry(path);
+			var geometricClip = compositor.CreateGeometricClip(pathGeometry);
+			visual.Clip = geometricClip;
 		}
 
 		public static void MapOpacity(ILabelHandler handler, ILabel label)

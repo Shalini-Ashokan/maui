@@ -15,14 +15,14 @@ public class Issue34114 : ContentPage
 			BackgroundColor = Colors.Red,
 			HorizontalTextAlignment = TextAlignment.Center,
 			VerticalTextAlignment = TextAlignment.Center,
-			WidthRequest = 200,
-			HeightRequest = 200,
+			WidthRequest = 300,
+			HeightRequest = 300,
 			AutomationId = "ClippedLabel",
 			Clip = new EllipseGeometry
 			{
-				Center = new Point(100, 100),
-				RadiusX = 100,
-				RadiusY = 100
+				Center = new Point(150, 150),
+				RadiusX = 150,
+				RadiusY = 150
 			}
 		};
 
@@ -34,10 +34,7 @@ public class Issue34114 : ContentPage
 
 		_changeClipButton.Clicked += (s, e) =>
 		{
-			_clipTestLabel.Clip = new RectangleGeometry
-			{
-				Rect = new Rect(0, 0, 200, 100)
-			};
+			_clipTestLabel.Clip = new RoundRectangleGeometry(new CornerRadius(50), new Rect(75, 100, 150, 100));
 		};
 
 		Content = new VerticalStackLayout
