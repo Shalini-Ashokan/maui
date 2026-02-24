@@ -1,11 +1,5 @@
 #nullable enable
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Hosting;
-#if MAUI_GRAPHICS_WIN2D
-using Microsoft.Maui.Graphics.Win2D;
-#else
-using Microsoft.Maui.Graphics.Platform;
-#endif
 
 namespace Microsoft.Maui.Handlers
 {
@@ -57,50 +51,7 @@ namespace Microsoft.Maui.Handlers
 			// The base MapClip only clips the child (TextBlock), so we also need to
 			// clip the WrapperView to ensure the label background is clipped.
 			if (handler.ContainerView is WrapperView wrapper)
-			{
-				if (label.Clip is not null && wrapper.Child is not null)
-				{
-					double width = wrapper.Child.ActualWidth;
-					double height = wrapper.Child.ActualHeight;
-
-					if (width > 0 && height > 0)
-					{
-						ApplyWrapperViewClip(wrapper, label.Clip, width, height);
-					}
-					else
-					{
-						// Child not sized yet, defer clip until layout completes
-						void onChildSizeChanged(object sender, SizeChangedEventArgs e)
-						{
-							wrapper.Child.SizeChanged -= onChildSizeChanged;
-							if (e.NewSize.Width > 0 && e.NewSize.Height > 0 && label.Clip is not null)
-							{
-								ApplyWrapperViewClip(wrapper, label.Clip, e.NewSize.Width, e.NewSize.Height);
-							}
-						}
-						wrapper.Child.SizeChanged += onChildSizeChanged;
-					}
-				}
-				else
-				{
-					var visual = ElementCompositionPreview.GetElementVisual(wrapper);
-					visual.Clip = null;
-				}
-			}
-		}
-
-		static void ApplyWrapperViewClip(WrapperView wrapper, IShape clip, double width, double height)
-		{
-			var visual = ElementCompositionPreview.GetElementVisual(wrapper);
-			var compositor = visual.Compositor;
-			var pathSize = new Graphics.Rect(0, 0, width, height);
-			var clipPath = clip.PathForBounds(pathSize);
-			var device = Microsoft.Graphics.Canvas.CanvasDevice.GetSharedDevice();
-			var geometry = clipPath.AsPath(device);
-			var path = new Microsoft.UI.Composition.CompositionPath(geometry);
-			var pathGeometry = compositor.CreatePathGeometry(path);
-			var geometricClip = compositor.CreateGeometricClip(pathGeometry);
-			visual.Clip = geometricClip;
+				wrapper.ClipSelf = label.Clip is not null;
 		}
 
 		public static void MapOpacity(ILabelHandler handler, ILabel label)

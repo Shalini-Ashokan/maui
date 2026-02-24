@@ -75,6 +75,9 @@ namespace Microsoft.Maui.Platform
 
 		internal bool HasShadow => _dropShadow != null;
 
+		// When true, also clip the WrapperView's own visual to prevent background from leaking outside the clip boundary.
+		internal bool ClipSelf { get; set; }
+
 		public void Dispose()
 		{
 			DisposeClip();
@@ -124,6 +127,14 @@ namespace Microsoft.Maui.Platform
 			// The clip needs to consider the child's offset in case it is in a different position because of a different alignment.
 			geometricClip.Offset = new Vector2(-Child.ActualOffset.X, -Child.ActualOffset.Y);
 			visual.Clip = geometricClip;
+
+			if (ClipSelf)
+			{
+				var wrapperVisual = ElementCompositionPreview.GetElementVisual(this);
+				var wrapperPathGeometry = compositor.CreatePathGeometry(new CompositionPath(geometry));
+				wrapperVisual.Clip = compositor.CreateGeometricClip(wrapperPathGeometry);
+			}
+
 			//When the clip is updated, the shadow must be updated as well
 			UpdateShadowAsync().FireAndForget(IPlatformApplication.Current?.Services?.CreateLogger(nameof(WrapperView)));
 		}
@@ -132,6 +143,12 @@ namespace Microsoft.Maui.Platform
 		{
 			var visual = ElementCompositionPreview.GetElementVisual(Child);
 			visual.Clip = null;
+
+			if (ClipSelf)
+			{
+				var wrapperVisual = ElementCompositionPreview.GetElementVisual(this);
+				wrapperVisual.Clip = null;
+			}
 		}
 
 		void DisposeBorder()
