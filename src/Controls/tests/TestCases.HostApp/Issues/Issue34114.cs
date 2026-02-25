@@ -11,7 +11,7 @@ public class Issue34114 : ContentPage
 	{
 		_clipTestLabel = new Label
 		{
-			Text = "Sample Text for Clipping Test Multiple Lines To Show Clip Effect",
+			Text = "Clipped Label",
 			BackgroundColor = Colors.Red,
 			HorizontalTextAlignment = TextAlignment.Center,
 			VerticalTextAlignment = TextAlignment.Center,
