@@ -276,7 +276,7 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 				ViewController.AutomaticallyAdjustsScrollViewInsets = false;
 			}
 		}
-		
+
 		internal void UpdateTitleViewInternal()
 		{
 			UpdateTitleView();
