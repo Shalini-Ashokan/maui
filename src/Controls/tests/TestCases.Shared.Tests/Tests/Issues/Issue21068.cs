@@ -12,7 +12,7 @@ public class Issue21068 : _IssuesUITest
 
     public override string Issue => "[Android] IView with initial Rotation has incorrect offsets of PivotX and PivotY";
 
-    [Test, Order(1)]
+    [Test]
     [Category(UITestCategories.Image)]
     public void InitialBoundRotationShouldRotateAroundCenter()
     {
@@ -20,7 +20,7 @@ public class Issue21068 : _IssuesUITest
         VerifyScreenshot();
     }
 
-    [Test, Order(2)]
+    [Test]
     [Category(UITestCategories.Image)]
     public void ChangingRotationViaBindingShouldRotateCorrectly()
     {
