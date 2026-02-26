@@ -1929,6 +1929,9 @@ namespace Microsoft.Maui.Controls.Handlers.Compatibility
 						AccessibilityIdentifier = "SecondaryToolbarMenuButton"
 					};
 
+					if (OperatingSystem.IsIOSVersionAtLeast(26) || OperatingSystem.IsMacCatalystVersionAtLeast(26))
+						menuButton.HidesSharedBackground = true;
+
 					// Since we are adding secondary items under a primary button,
 					// make sure that primaries is initialized
 					primaries ??= [];

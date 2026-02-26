@@ -113,6 +113,9 @@ namespace Microsoft.Maui.Controls.Compatibility.Platform.iOS
 				this.SetAccessibilityHint(item);
 				this.SetAccessibilityLabel(item);
 #pragma warning restore CS0618 // Type or member is obsolete
+
+				if (OperatingSystem.IsIOSVersionAtLeast(26) || OperatingSystem.IsMacCatalystVersionAtLeast(26))
+					HidesSharedBackground = true;
 			}
 
 			void OnClicked(object sender, EventArgs e)

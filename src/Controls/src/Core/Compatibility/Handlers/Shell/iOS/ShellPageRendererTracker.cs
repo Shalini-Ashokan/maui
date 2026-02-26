@@ -446,6 +446,9 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 					AccessibilityIdentifier = "SecondaryToolbarMenuButton"
 				};
 
+				if (OperatingSystem.IsIOSVersionAtLeast(26) || OperatingSystem.IsMacCatalystVersionAtLeast(26))
+					menuButton.HidesSharedBackground = true;
+
 				// Since we are adding secondary items under a primary button,
 				// make sure that primaries is initialized
 				primaries ??= [];
@@ -542,6 +545,9 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 				{
 					NavigationItem.LeftBarButtonItem =
 						new UIBarButtonItem(icon, UIBarButtonItemStyle.Plain, (s, e) => LeftBarButtonItemHandler(ViewController, IsRootPage)) { Enabled = enabled };
+
+					if (OperatingSystem.IsIOSVersionAtLeast(26) || OperatingSystem.IsMacCatalystVersionAtLeast(26))
+						NavigationItem.LeftBarButtonItem.HidesSharedBackground = true;
 				}
 				else
 				{
