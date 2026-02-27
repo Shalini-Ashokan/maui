@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Maui.Controls.Sample.Issues.IssueIndicatorViewCenterTemplate"
+             Title="IndicatorView Custom Template Centering">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="30">
+            
+            <!-- Test 1: Default (should be centered) -->
+            <VerticalStackLayout Spacing="10">
+                <Label Text="Test 1: Default (No HorizontalOptions)" 
+                       FontSize="16" 
+                       FontAttributes="Bold"/>
+                <Label Text="Expected: Indicators centered"
+                       FontSize="12"
+                       TextColor="Gray"/>
+                
+                <CarouselView HeightRequest="150"
+                              IndicatorView="{x:Reference Indicator1}"
+                              BackgroundColor="LightGray">
+                    <CarouselView.ItemsSource>
+                        <x:Array Type="{x:Type x:String}">
+                            <x:String>Item 1</x:String>
+                            <x:String>Item 2</x:String>
+                            <x:String>Item 3</x:String>
+                        </x:Array>
+                    </CarouselView.ItemsSource>
+                    <CarouselView.ItemTemplate>
+                        <DataTemplate>
+                            <Label Text="{Binding}"
+                                   FontSize="30"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center"/>
+                        </DataTemplate>
+                    </CarouselView.ItemTemplate>
+                </CarouselView>
+
+                <IndicatorView x:Name="Indicator1"
+                               IndicatorColor="Coral"
+                               SelectedIndicatorColor="Blue"
+                               BackgroundColor="LightYellow"
+                               AutomationId="DefaultIndicator">
+                    <IndicatorView.IndicatorTemplate>
+                        <DataTemplate>
+                            <Border WidthRequest="20"
+                                    HeightRequest="20"
+                                    StrokeThickness="2"
+                                    Stroke="Gray"
+                                    BackgroundColor="White">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="4"/>
+                                </Border.StrokeShape>
+                            </Border>
+                        </DataTemplate>
+                    </IndicatorView.IndicatorTemplate>
+                </IndicatorView>
+            </VerticalStackLayout>
+
+            <!-- Test 2: Explicit Center -->
+            <VerticalStackLayout Spacing="10">
+                <Label Text="Test 2: HorizontalOptions=Center" 
+                       FontSize="16" 
+                       FontAttributes="Bold"/>
+                <Label Text="Expected: Indicators centered"
+                       FontSize="12"
+                       TextColor="Gray"/>
+                
+                <CarouselView HeightRequest="150"
+                              IndicatorView="{x:Reference Indicator2}"
+                              BackgroundColor="LightGray">
+                    <CarouselView.ItemsSource>
+                        <x:Array Type="{x:Type x:String}">
+                            <x:String>Item 1</x:String>
+                            <x:String>Item 2</x:String>
+                            <x:String>Item 3</x:String>
+                        </x:Array>
+                    </CarouselView.ItemsSource>
+                    <CarouselView.ItemTemplate>
+                        <DataTemplate>
+                            <Label Text="{Binding}"
+                                   FontSize="30"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center"/>
+                        </DataTemplate>
+                    </CarouselView.ItemTemplate>
+                </CarouselView>
+
+                <IndicatorView x:Name="Indicator2"
+                               HorizontalOptions="Center"
+                               IndicatorColor="Coral"
+                               SelectedIndicatorColor="Blue"
+                               BackgroundColor="LightYellow"
+                               AutomationId="CenterIndicator">
+                    <IndicatorView.IndicatorTemplate>
+                        <DataTemplate>
+                            <Border WidthRequest="20"
+                                    HeightRequest="20"
+                                    StrokeThickness="2"
+                                    Stroke="Gray"
+                                    BackgroundColor="White">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="4"/>
+                                </Border.StrokeShape>
+                            </Border>
+                        </DataTemplate>
+                    </IndicatorView.IndicatorTemplate>
+                </IndicatorView>
+            </VerticalStackLayout>
+
+            <!-- Test 3: Start alignment -->
+            <VerticalStackLayout Spacing="10">
+                <Label Text="Test 3: HorizontalOptions=Start" 
+                       FontSize="16" 
+                       FontAttributes="Bold"/>
+                <Label Text="Expected: Indicators at start"
+                       FontSize="12"
+                       TextColor="Gray"/>
+                
+                <CarouselView HeightRequest="150"
+                              IndicatorView="{x:Reference Indicator3}"
+                              BackgroundColor="LightGray">
+                    <CarouselView.ItemsSource>
+                        <x:Array Type="{x:Type x:String}">
+                            <x:String>Item 1</x:String>
+                            <x:String>Item 2</x:String>
+                            <x:String>Item 3</x:String>
+                        </x:Array>
+                    </CarouselView.ItemsSource>
+                    <CarouselView.ItemTemplate>
+                        <DataTemplate>
+                            <Label Text="{Binding}"
+                                   FontSize="30"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center"/>
+                        </DataTemplate>
+                    </CarouselView.ItemTemplate>
+                </CarouselView>
+
+                <IndicatorView x:Name="Indicator3"
+                               HorizontalOptions="Start"
+                               IndicatorColor="Coral"
+                               SelectedIndicatorColor="Blue"
+                               BackgroundColor="LightYellow"
+                               AutomationId="StartIndicator">
+                    <IndicatorView.IndicatorTemplate>
+                        <DataTemplate>
+                            <Border WidthRequest="20"
+                                    HeightRequest="20"
+                                    StrokeThickness="2"
+                                    Stroke="Gray"
+                                    BackgroundColor="White">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="4"/>
+                                </Border.StrokeShape>
+                            </Border>
+                        </DataTemplate>
+                    </IndicatorView.IndicatorTemplate>
+                </IndicatorView>
+            </VerticalStackLayout>
+
+            <!-- Test 4: RTL with Center -->
+            <VerticalStackLayout Spacing="10">
+                <Label Text="Test 4: RTL + HorizontalOptions=Center" 
+                       FontSize="16" 
+                       FontAttributes="Bold"/>
+                <Label Text="Expected: Indicators centered (RTL shouldn't affect)"
+                       FontSize="12"
+                       TextColor="Gray"/>
+                
+                <CarouselView HeightRequest="150"
+                              IndicatorView="{x:Reference Indicator4}"
+                              BackgroundColor="LightGray"
+                              FlowDirection="RightToLeft">
+                    <CarouselView.ItemsSource>
+                        <x:Array Type="{x:Type x:String}">
+                            <x:String>Item 1</x:String>
+                            <x:String>Item 2</x:String>
+                            <x:String>Item 3</x:String>
+                        </x:Array>
+                    </CarouselView.ItemsSource>
+                    <CarouselView.ItemTemplate>
+                        <DataTemplate>
+                            <Label Text="{Binding}"
+                                   FontSize="30"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center"/>
+                        </DataTemplate>
+                    </CarouselView.ItemTemplate>
+                </CarouselView>
+
+                <IndicatorView x:Name="Indicator4"
+                               HorizontalOptions="Center"
+                               FlowDirection="RightToLeft"
+                               IndicatorColor="Coral"
+                               SelectedIndicatorColor="Blue"
+                               BackgroundColor="LightYellow"
+                               AutomationId="RTLCenterIndicator">
+                    <IndicatorView.IndicatorTemplate>
+                        <DataTemplate>
+                            <Border WidthRequest="20"
+                                    HeightRequest="20"
+                                    StrokeThickness="2"
+                                    Stroke="Gray"
+                                    BackgroundColor="White">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="4"/>
+                                </Border.StrokeShape>
+                            </Border>
+                        </DataTemplate>
+                    </IndicatorView.IndicatorTemplate>
+                </IndicatorView>
+            </VerticalStackLayout>
+
+            <!-- Test 5: Using Label template (from original issue) -->
+            <VerticalStackLayout Spacing="10">
+                <Label Text="Test 5: Label Template (Original Issue)" 
+                       FontSize="16" 
+                       FontAttributes="Bold"/>
+                <Label Text="Expected: Indicators centered"
+                       FontSize="12"
+                       TextColor="Gray"/>
+                
+                <CarouselView HeightRequest="150"
+                              IndicatorView="{x:Reference Indicator5}"
+                              BackgroundColor="LightGray">
+                    <CarouselView.ItemsSource>
+                        <x:Array Type="{x:Type x:String}">
+                            <x:String>Item 1</x:String>
+                            <x:String>Item 2</x:String>
+                            <x:String>Item 3</x:String>
+                        </x:Array>
+                    </CarouselView.ItemsSource>
+                    <CarouselView.ItemTemplate>
+                        <DataTemplate>
+                            <Label Text="{Binding}"
+                                   FontSize="30"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center"/>
+                        </DataTemplate>
+                    </CarouselView.ItemTemplate>
+                </CarouselView>
+
+                <IndicatorView x:Name="Indicator5"
+                               IndicatorColor="Coral"
+                               SelectedIndicatorColor="Blue"
+                               BackgroundColor="LightYellow"
+                               AutomationId="LabelTemplateIndicator">
+                    <IndicatorView.IndicatorTemplate>
+                        <DataTemplate>
+                            <Label Text="●"
+                                   WidthRequest="20"
+                                   HeightRequest="20"
+                                   FontSize="16"
+                                   HorizontalTextAlignment="Center"
+                                   VerticalTextAlignment="Center"/>
+                        </DataTemplate>
+                    </IndicatorView.IndicatorTemplate>
+                </IndicatorView>
+            </VerticalStackLayout>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
