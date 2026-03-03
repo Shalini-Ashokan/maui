@@ -31,6 +31,10 @@ namespace Microsoft.Maui.Controls
 
 		static void VisualStateGroupsPropertyChanged(BindableObject bindable, object oldValue, object newValue)
 		{
+			// Capture the current state names before unapplying, so we can restore them after ChangeVisualState.
+			// This prevents resource propagation from resetting explicitly-set states (e.g., "Selected") back to "Normal".
+			var previousStateNames = new System.Collections.Generic.List<string>();
+
 			if (oldValue is VisualStateGroupList { VisualElement: { } oldElement } oldVisualStateGroupList)
 			{
 				var vsgSpecificity = oldVisualStateGroupList.Specificity;
@@ -39,8 +43,11 @@ namespace Microsoft.Maui.Controls
 				foreach (var group in oldVisualStateGroupList)
 				{
 					if (group.CurrentState is { } state)
+					{
+						previousStateNames.Add(state.Name);
 						foreach (var setter in state.Setters)
 							setter.UnApply(oldElement, specificity);
+					}
 				}
 				oldVisualStateGroupList.VisualElement = null;
 			}
@@ -51,6 +58,10 @@ namespace Microsoft.Maui.Controls
 				((VisualStateGroupList)newValue).VisualElement = visualElement;
 
 			visualElement.ChangeVisualState();
+
+			// Restore any states that ChangeVisualState may have overridden (e.g., "Selected" reset to "Normal").
+			foreach (var stateName in previousStateNames)
+				GoToState(visualElement, stateName);
 
 			UpdateStateTriggers(visualElement);
 		}
@@ -751,7 +762,7 @@ namespace Microsoft.Maui.Controls
 				group.VisualElement = clone.VisualElement;
 				clone.Add(group.Clone());
 			}
-			
+
 			// Preserve specificity when cloning (issue #27202)
 			if (groups is VisualStateGroupList sourceList)
 			{

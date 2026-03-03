@@ -49,7 +49,10 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 			BindingContext = context;
 
 			if (BindingContext is BaseShellItem bsi)
+			{
 				bsi.AddLogicalChild(View);
+				UpdateVisualState();
+			}
 			else
 				shell?.AddLogicalChild(View);
 		}

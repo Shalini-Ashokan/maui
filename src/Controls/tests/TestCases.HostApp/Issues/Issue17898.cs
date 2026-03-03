@@ -16,14 +16,14 @@ public class Issue17898 : TestShell
 		var normalState = new VisualState { Name = "Normal" };
 		normalState.Setters.Add(new Setter
 		{
-			Property = VisualElement.BackgroundProperty,
+			Property = VisualElement.BackgroundColorProperty,
 			Value = new AppThemeBinding { Light = normalLight, Dark = normalDark }
 		});
 
 		var selectedState = new VisualState { Name = "Selected" };
 		selectedState.Setters.Add(new Setter
 		{
-			Property = VisualElement.BackgroundProperty,
+			Property = VisualElement.BackgroundColorProperty,
 			Value = selectedRed
 		});
 
