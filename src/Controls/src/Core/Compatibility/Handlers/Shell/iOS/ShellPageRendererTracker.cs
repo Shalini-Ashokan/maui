@@ -505,8 +505,8 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 				{
 					icon = result?.Value;
 
-					var foregroundColor = _context?.Shell.CurrentPage?.GetValue(Shell.ForegroundColorProperty) ??
-					_context?.Shell.GetValue(Shell.ForegroundColorProperty);
+					var foregroundColor = _context?.Shell.CurrentPage?.GetValue(Shell.ForegroundColorProperty) as Color ??
+					_context?.Shell.GetValue(Shell.ForegroundColorProperty) as Color;
 
 					if (foregroundColor is null)
 					{
