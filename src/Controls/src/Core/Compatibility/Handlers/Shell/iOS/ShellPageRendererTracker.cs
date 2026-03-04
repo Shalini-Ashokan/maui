@@ -7,7 +7,6 @@ using System.Runtime.Versioning;
 using System.Windows.Input;
 using CoreGraphics;
 using Foundation;
-using Microsoft.Maui.Graphics;
 using Microsoft.Maui.Graphics.Platform;
 using UIKit;
 using static Microsoft.Maui.Controls.Compatibility.Platform.iOS.AccessibilityExtensions;
@@ -505,6 +504,9 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 				if (image is not null)
 				{
 					icon = result?.Value;
+
+					var foregroundColor = _context?.Shell.CurrentPage?.GetValue(Shell.ForegroundColorProperty) ??
+					_context?.Shell.GetValue(Shell.ForegroundColorProperty);
 
 					if (foregroundColor is null)
 					{
