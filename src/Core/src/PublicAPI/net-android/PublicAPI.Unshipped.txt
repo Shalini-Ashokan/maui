@@ -1,2 +1,4 @@
-#nullable enable
+﻿#nullable enable
 override Microsoft.Maui.Handlers.LabelHandler.GetDesiredSize(double widthConstraint, double heightConstraint) -> Microsoft.Maui.Graphics.Size
+override Microsoft.Maui.Handlers.WebViewHandler.GetDesiredSize(double widthConstraint, double heightConstraint) -> Microsoft.Maui.Graphics.Size
+virtual Microsoft.Maui.Handlers.WebViewHandler.MinimumSize.get -> float

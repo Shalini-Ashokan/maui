@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net;
 using Android.Webkit;
+using Microsoft.Maui.Graphics;
 using static Android.Views.ViewGroup;
 using AWebView = Android.Webkit.WebView;
 
@@ -10,6 +11,8 @@ namespace Microsoft.Maui.Handlers
 	public partial class WebViewHandler : ViewHandler<IWebView, AWebView>
 	{
 		internal const string AssetBaseUrl = "file:///android_asset/";
+
+		protected virtual float MinimumSize => 44f;
 
 		bool _firstRun = true;
 		readonly HashSet<string> _loadedCookies = new HashSet<string>();
@@ -35,6 +38,57 @@ namespace Microsoft.Maui.Handlers
 			}
 
 			return platformView;
+		}
+
+		public override Size GetDesiredSize(double widthConstraint, double heightConstraint)
+		{
+			var size = base.GetDesiredSize(widthConstraint, heightConstraint);
+
+			var set = false;
+
+			var width = size.Width;
+			var height = size.Height;
+
+			// Android's native WebView (which extends AbsoluteLayout) measures its HTML content
+			// height during onMeasure, and can report a size that varies between layout passes or
+			// exceeds the constraint. This causes continuous height growth when the WebView is
+			// nested in containers like Border or Grid (issue #32422).
+			// Cap the measured size to the constraint to prevent layout oscillation.
+			if (!double.IsInfinity(widthConstraint) && widthConstraint > 0 && width > widthConstraint)
+			{
+				width = widthConstraint;
+				set = true;
+			}
+
+			if (!double.IsInfinity(heightConstraint) && heightConstraint > 0 && height > heightConstraint)
+			{
+				height = heightConstraint;
+				set = true;
+			}
+
+			// Apply minimum size when unconstrained and measured as zero, matching iOS behavior
+			if (width == 0)
+			{
+				if (widthConstraint <= 0 || double.IsInfinity(widthConstraint))
+				{
+					width = MinimumSize;
+					set = true;
+				}
+			}
+
+			if (height == 0)
+			{
+				if (heightConstraint <= 0 || double.IsInfinity(heightConstraint))
+				{
+					height = MinimumSize;
+					set = true;
+				}
+			}
+
+			if (set)
+				size = new Size(width, height);
+
+			return size;
 		}
 
 		internal WebNavigationEvent CurrentNavigationEvent
