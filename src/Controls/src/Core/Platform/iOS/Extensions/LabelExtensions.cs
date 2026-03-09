@@ -16,7 +16,31 @@ namespace Microsoft.Maui.Controls.Platform
 			switch (label.TextType)
 			{
 				case TextType.Html:
-					platformLabel.UpdateTextHtml(text);
+					if (Foundation.NSThread.IsMain)
+					{
+						// We are already on the main thread: set HTML text synchronously so that
+						// the first Measure() call returns the correct height.
+						// https://github.com/dotnet/maui/issues/31674
+						platformLabel.UpdateTextHtml(text);
+						// MapFormatting will be applied by the caller (Label.MapText) once we return.
+					}
+					else
+					{
+						// NSAttributedString with HTML cannot be created on a background thread.
+						// https://github.com/dotnet/maui/issues/25946
+						// Dispatch to the main thread asynchronously.
+						CoreFoundation.DispatchQueue.MainQueue.DispatchAsync(() =>
+						{
+							platformLabel.UpdateTextHtml(text);
+
+							if (label.Handler is LabelHandler labelHandler)
+								Label.MapFormatting(labelHandler, label);
+
+							// NOTE: Because we are updating text outside the normal layout
+							// pass, we need to invalidate the measure for the next pass.
+							label.InvalidateMeasure();
+						});
+					}
 					break;
 
 				default:
