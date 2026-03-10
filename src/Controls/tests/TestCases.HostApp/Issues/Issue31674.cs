@@ -2,16 +2,11 @@ using Microsoft.Maui.Layouts;
 
 namespace Maui.Controls.Sample.Issues;
 
-[Issue(IssueTracker.Github, 31674, "[iOS,Mac] Label with TextType Html is measured as height 0", PlatformAffected.iOS | PlatformAffected.macOS)]
+[Issue(IssueTracker.Github, 31674, "Label with TextType Html is measured as height 0", PlatformAffected.iOS | PlatformAffected.macOS)]
 public class Issue31674 : ContentPage
 {
 	public Issue31674()
 	{
-		// Reproduces the exact customer scenario from the issue:
-		// A CustomLayout that skips re-measuring children once isEnsured=true.
-		// On iOS/Mac, an HTML Label needs two measure passes to get a non-zero height,
-		// but isEnsured blocks the second pass, leaving the label invisible (height=0).
-
 		var htmlLabel = new Label
 		{
 			Text = "Hello",
@@ -27,8 +22,6 @@ public class Issue31674 : ContentPage
 		var layout = new Issue31674CustomLayout();
 		layout.Add(contentView);
 
-		// "PageLoaded" label is always visible — used by the test to confirm page render
-		// before checking the HTML label (which may have height=0 and not be accessible).
 		var indicator = new Label
 		{
 			Text = "Loaded",
@@ -42,11 +35,6 @@ public class Issue31674 : ContentPage
 	}
 }
 
-/// <summary>
-/// Custom layout from the customer's repro: skips measuring children once isEnsured=true.
-/// This prevents the second measure pass that iOS/Mac requires for HTML labels.
-/// Matches sandbox MainPage.xaml.cs exactly.
-/// </summary>
 public class Issue31674CustomLayout : Layout
 {
 	public Size ArrangeChildren(Rect bounds)
@@ -86,26 +74,18 @@ public class Issue31674CustomLayout : Layout
 public class Issue31674CustomLayoutManager : LayoutManager
 {
 	readonly Issue31674CustomLayout _layout;
-
 	public Issue31674CustomLayoutManager(Issue31674CustomLayout layout) : base(layout)
 	{
 		_layout = layout;
 	}
 
 	public override Size ArrangeChildren(Rect bounds) => _layout.ArrangeChildren(bounds);
-
 	public override Size Measure(double widthConstraint, double heightConstraint) =>
 		_layout.Measure(widthConstraint, heightConstraint);
 }
-
-/// <summary>
-/// Custom ContentView that sets isEnsured=true after first measure, mirroring the customer's repro.
-/// Matches sandbox MainPage.xaml.cs exactly (public bool field, DesiredSize read before Measure).
-/// </summary>
 public class Issue31674CustomContentView : ContentView
 {
 	public bool isEnsured;
-
 	protected override Size MeasureOverride(double widthConstraint, double heightConstraint)
 	{
 		Size size = Content.DesiredSize;
