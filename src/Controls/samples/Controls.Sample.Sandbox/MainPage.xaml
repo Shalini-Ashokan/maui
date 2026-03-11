@@ -2,4 +2,52 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="Maui.Controls.Sample.MainPage"
              xmlns:local="clr-namespace:Maui.Controls.Sample">
+    <!-- Repro for https://github.com/dotnet/maui/issues/14046
+         CarouselView LinearItemsLayout ItemsSpacing not working on MacCatalyst.
+         On MacCatalyst the items ignore ItemSpacing and text aligns to the far left.
+         On iOS and Android the spacing and alignment work correctly. -->
+    <VerticalStackLayout Padding="10" Spacing="10">
+        <Label Text="CarouselView – LinearItemsLayout ItemSpacing (Issue #14046)"
+               FontAttributes="Bold"
+               HorizontalOptions="Center" />
+        <Label Text="ItemSpacing=60. On MacCatalyst items may ignore spacing and left-align incorrectly."
+               HorizontalOptions="Center"
+               HorizontalTextAlignment="Center" />
+        <CarouselView x:Name="TheCarouselView"
+                      HeightRequest="300"
+                      Loop="False"
+                      ItemsSource="{Binding Items}">
+            <CarouselView.ItemsLayout>
+                <LinearItemsLayout Orientation="Horizontal"
+                                   ItemSpacing="60"
+                                   SnapPointsType="MandatorySingle"
+                                   SnapPointsAlignment="Center" />
+            </CarouselView.ItemsLayout>
+            <CarouselView.ItemTemplate>
+                <DataTemplate>
+                    <VerticalStackLayout Padding="10"
+                                        HorizontalOptions="Center"
+                                        VerticalOptions="Center"
+                                        Spacing="8">
+                        <Image Source="dotnet_bot.svg"
+                               HeightRequest="150"
+                               WidthRequest="150"
+                               HorizontalOptions="Center" />
+                        <Label Text="{Binding Name}"
+                               HorizontalOptions="Center"
+                               HorizontalTextAlignment="Center"
+                               FontSize="18" />
+                        <Label Text="{Binding Description}"
+                               HorizontalOptions="Center"
+                               HorizontalTextAlignment="Center"
+                               FontSize="14" />
+                    </VerticalStackLayout>
+                </DataTemplate>
+            </CarouselView.ItemTemplate>
+        </CarouselView>
+        <IndicatorView x:Name="TheIndicatorView"
+                       HorizontalOptions="Center"
+                       IndicatorColor="LightGray"
+                       SelectedIndicatorColor="DarkGray" />
+    </VerticalStackLayout>
 </ContentPage>
