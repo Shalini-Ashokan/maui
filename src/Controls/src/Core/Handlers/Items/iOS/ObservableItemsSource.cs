@@ -1,7 +1,9 @@
 #nullable disable
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using Foundation;
 using ObjCRuntime;
 using UIKit;
@@ -14,6 +16,7 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 		readonly bool _grouped;
 		readonly int _section;
 		readonly IEnumerable _itemsSource;
+		readonly Dictionary<INotifyPropertyChanged, PropertyChangedEventHandler> _itemPropertyChangedHandlers = [];
 		bool _disposed;
 
 		public ObservableItemsSource(IEnumerable itemSource, UICollectionViewController collectionViewController, int group = -1)
@@ -28,6 +31,7 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			Count = ItemsCount();
 
 			((INotifyCollectionChanged)itemSource).CollectionChanged += CollectionChanged;
+			SubscribeToItemsPropertyChanged(itemSource);
 		}
 
 		internal event NotifyCollectionChangedEventHandler CollectionViewUpdating;
@@ -53,6 +57,7 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 				if (disposing)
 				{
 					((INotifyCollectionChanged)_itemsSource).CollectionChanged -= CollectionChanged;
+					UnsubscribeFromAllItemsPropertyChanged();
 				}
 
 				_disposed = true;
@@ -148,6 +153,8 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 					Move(args);
 					break;
 				case NotifyCollectionChangedAction.Reset:
+					UnsubscribeFromAllItemsPropertyChanged();
+					SubscribeToItemsPropertyChanged(_itemsSource);
 					Reload();
 					break;
 				default:
@@ -171,6 +178,23 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			collectionView.CollectionViewLayout.InvalidateLayout();
 
 			OnCollectionViewUpdated(args);
+		}
+
+		void ReloadItem(object item)
+		{
+			if (!_collectionViewController.TryGetTarget(out var controller))
+				return;
+
+			var indexPath = GetIndexForItem(item);
+			if (indexPath.Section < 0 || indexPath.Item < 0)
+				return;
+
+			var collectionView = controller.CollectionView;
+			if (collectionView.Hidden)
+				return;
+
+			collectionView.ReloadItems([indexPath]);
+			collectionView.CollectionViewLayout.InvalidateLayout();
 		}
 
 		protected virtual NSIndexPath[] CreateIndexesFrom(int startIndex, int count)
@@ -197,6 +221,7 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 		{
 			if (ShouldReload(args))
 			{
+				SubscribeToItemsPropertyChanged(args.NewItems);
 				Reload();
 				return;
 			}
@@ -204,6 +229,7 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			var count = args.NewItems.Count;
 			Count += count;
 			var startIndex = args.NewStartingIndex > -1 ? args.NewStartingIndex : IndexOf(args.NewItems[0]);
+			SubscribeToItemsPropertyChanged(args.NewItems);
 
 			// Queue up the updates to the UICollectionView
 			Update(c => c.InsertItems(CreateIndexesFrom(startIndex, count)), args);
@@ -215,6 +241,7 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 
 			if (ShouldReload(args))
 			{
+				UnsubscribeFromItemsPropertyChanged(args.OldItems);
 				Reload();
 				return;
 			}
@@ -222,6 +249,7 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			// If we have a start index, we can be more clever about removing the item(s) (and get the nifty animations)
 			var count = args.OldItems.Count;
 			Count -= count;
+			UnsubscribeFromItemsPropertyChanged(args.OldItems);
 
 			Update(c => c.DeleteItems(CreateIndexesFrom(startIndex, count)), args);
 		}
@@ -229,6 +257,8 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 		void Replace(NotifyCollectionChangedEventArgs args)
 		{
 			var newCount = args.NewItems.Count;
+			UnsubscribeFromItemsPropertyChanged(args.OldItems);
+			SubscribeToItemsPropertyChanged(args.NewItems);
 
 			if (newCount == args.OldItems.Count)
 			{
@@ -263,6 +293,75 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			var end = Math.Max(args.OldStartingIndex, args.NewStartingIndex) + count;
 
 			Update(c => c.ReloadItems(CreateIndexesFrom(start, end)), args);
+		}
+
+		void SubscribeToItemsPropertyChanged(IEnumerable items)
+		{
+			if (items is null)
+				return;
+
+			foreach (var item in items)
+			{
+				SubscribeToItemPropertyChanged(item);
+			}
+		}
+
+		void UnsubscribeFromItemsPropertyChanged(IEnumerable items)
+		{
+			if (items is null)
+				return;
+
+			foreach (var item in items)
+			{
+				UnsubscribeFromItemPropertyChanged(item);
+			}
+		}
+
+		void SubscribeToItemPropertyChanged(object item)
+		{
+			if (item is not INotifyPropertyChanged notifyPropertyChanged || _itemPropertyChangedHandlers.ContainsKey(notifyPropertyChanged))
+				return;
+
+			PropertyChangedEventHandler handler = ItemPropertyChanged;
+			_itemPropertyChangedHandlers[notifyPropertyChanged] = handler;
+			notifyPropertyChanged.PropertyChanged += handler;
+		}
+
+		void UnsubscribeFromItemPropertyChanged(object item)
+		{
+			if (item is not INotifyPropertyChanged notifyPropertyChanged)
+				return;
+
+			if (_itemPropertyChangedHandlers.TryGetValue(notifyPropertyChanged, out var handler))
+			{
+				notifyPropertyChanged.PropertyChanged -= handler;
+				_itemPropertyChangedHandlers.Remove(notifyPropertyChanged);
+			}
+		}
+
+		void UnsubscribeFromAllItemsPropertyChanged()
+		{
+			foreach (var itemPropertyChangedHandler in _itemPropertyChangedHandlers)
+			{
+				itemPropertyChangedHandler.Key.PropertyChanged -= itemPropertyChangedHandler.Value;
+			}
+
+			_itemPropertyChangedHandlers.Clear();
+		}
+
+		void ItemPropertyChanged(object sender, PropertyChangedEventArgs args)
+		{
+			if (!ObserveChanges || _disposed)
+				return;
+
+			if (!ApplicationModel.MainThread.IsMainThread)
+			{
+				ApplicationModel.MainThread.BeginInvokeOnMainThread(() => ReloadItem(sender));
+			}
+			else
+			{
+				ReloadItem(sender);
+			}
 		}
 
 		internal int ItemsCount()
