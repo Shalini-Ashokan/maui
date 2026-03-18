@@ -28,6 +28,7 @@ namespace Microsoft.Maui.Platform
 		DropShadow? _dropShadow;
 		Rectangle? _shadowHost;
 		WSize _shadowHostSize;
+		CompositionVisualSurface? _shadowMaskVisualSurface;
 		Path? _borderPath;
 
 		FrameworkElement? _child;
@@ -224,6 +225,9 @@ namespace Microsoft.Maui.Platform
 			_shadowVisual?.Dispose();
 			_shadowVisual = null;
 
+			_shadowMaskVisualSurface?.Dispose();
+			_shadowMaskVisualSurface = null;
+
 			_dropShadow?.Dispose();
 			_dropShadow = null;
 
@@ -358,7 +362,40 @@ namespace Microsoft.Maui.Platform
 			}
 
 			dropShadow.Offset = new Vector3((float)offset.X, (float)offset.Y, 0);
-			dropShadow.Mask = await Child.GetAlphaMaskAsync();
+			dropShadow.Mask = GetClipShadowMask() ?? await Child.GetAlphaMaskAsync();
+		}
+
+		/// <summary>
+		/// When a Clip geometry is present and the child visual already has a geometric clip
+		/// applied via UpdateClip(), capture the child visual's composited output using a
+		/// CompositionVisualSurface. The captured surface's alpha channel reflects the exact
+		/// clipped shape - 1.0 inside the clip geometry, 0.0 outside - giving the DropShadow
+		/// the correct silhouette without any Win2D bitmap rasterization.
+		/// </summary>
+		CompositionSurfaceBrush? GetClipShadowMask()
+		{
+			if (Child is null || Clip is null)
+				return null;
+
+			var childVisual = ElementCompositionPreview.GetElementVisual(Child);
+
+			if (childVisual.Clip is null)
+				return null;
+
+			double width = Child.ActualWidth;
+			double height = Child.ActualHeight;
+
+			if (width <= 0 || height <= 0)
+				return null;
+
+			var compositor = childVisual.Compositor;
+
+			_shadowMaskVisualSurface?.Dispose();
+			_shadowMaskVisualSurface = compositor.CreateVisualSurface();
+			_shadowMaskVisualSurface.SourceVisual = childVisual;
+			_shadowMaskVisualSurface.SourceSize = new Vector2((float)width, (float)height);
+
+			return compositor.CreateSurfaceBrush(_shadowMaskVisualSurface);
 		}
 	}
 }
