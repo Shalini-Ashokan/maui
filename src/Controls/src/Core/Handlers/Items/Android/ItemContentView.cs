@@ -2,7 +2,6 @@
 using System;
 using Android.Content;
 using Android.Views;
-using AndroidX.RecyclerView.Widget;
 using Microsoft.Maui.Graphics;
 using AView = Android.Views.View;
 
@@ -213,18 +212,6 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			if (this.IsAlive())
 			{
 				PlatformInterop.RequestLayoutIfNeeded(this);
-
-				if (Parent is RecyclerView recyclerView)
-				{
-					recyclerView.Post(() =>
-					{
-						var position = recyclerView.GetChildAdapterPosition(this);
-						if (position != RecyclerView.NoPosition)
-						{
-							recyclerView.GetAdapter()?.NotifyItemChanged(position);
-						}
-					});
-				}
 			}
 			else if (sender is VisualElement ve)
 			{

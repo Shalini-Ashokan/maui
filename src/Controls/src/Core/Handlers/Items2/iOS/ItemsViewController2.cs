@@ -225,31 +225,9 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 
 			if (invalidatedCells is not null)
 			{
-				if (ItemsView is GroupableItemsView { IsGrouped: true })
-				{
-					ClearCachedFirstItemSize();
-					collectionView.CollectionViewLayout.InvalidateLayout();
-					return;
-				}
-
 				var layoutInvalidationContext = new UICollectionViewLayoutInvalidationContext();
 				layoutInvalidationContext.InvalidateItems(invalidatedCells.Select(CollectionView.IndexPathForCell).ToArray());
 				collectionView.CollectionViewLayout.InvalidateLayout(layoutInvalidationContext);
-			}
-			else if (ItemsView is GroupableItemsView { IsGrouped: true })
-			{
-				// Zero-height grouped cells can drop out of VisibleCells, so a grouped expand path
-				// still needs a full invalidation even when no visible templated cell reports it.
-				ClearCachedFirstItemSize();
-				collectionView.CollectionViewLayout.InvalidateLayout();
-			}
-		}
-
-		void ClearCachedFirstItemSize()
-		{
-			if (ItemsView?.Handler is CollectionViewHandler2 handler)
-			{
-				handler.SetCachedFirstItemSize(CGSize.Empty);
 			}
 		}
 
@@ -347,7 +325,7 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 						}
 					}
 				}
-	
+        
 				CollectionView.UpdateFlowDirection(ItemsView);
 			}
 
