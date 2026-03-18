@@ -28,7 +28,6 @@ namespace Microsoft.Maui.Platform
 		DropShadow? _dropShadow;
 		Rectangle? _shadowHost;
 		WSize _shadowHostSize;
-		CompositionImageBrush? _shadowMaskBrush;
 		Path? _borderPath;
 
 		FrameworkElement? _child;
@@ -225,9 +224,6 @@ namespace Microsoft.Maui.Platform
 			_shadowVisual?.Dispose();
 			_shadowVisual = null;
 
-			_shadowMaskBrush?.Dispose();
-			_shadowMaskBrush = null;
-
 			_dropShadow?.Dispose();
 			_dropShadow = null;
 
@@ -249,9 +245,8 @@ namespace Microsoft.Maui.Platform
 				return;
 			}
 
-			var effectiveSize = GetEffectiveShadowSize();
-			double width = effectiveSize.Width;
-			double height = effectiveSize.Height;
+			double width = _shadowHostSize.Width;
+			double height = _shadowHostSize.Height;
 
 			if (_shadowCanvas is null)
 			{
@@ -299,27 +294,23 @@ namespace Microsoft.Maui.Platform
 			if (_dropShadow != null)
 			{
 				await SetShadowPropertiesAsync(_dropShadow, Shadow);
-				UpdateShadowSize();
 			}
-			else if (Shadow?.Paint is not null)
-			{
-				// Shadow was not yet created (e.g. due to clip not being ready during initial creation).
-				await CreateShadowAsync();
-			}
+
+			UpdateShadowSize();
 		}
 
 		void UpdateShadowSize()
 		{
 			if (Child is FrameworkElement frameworkElement)
 			{
-				var effectiveSize = GetEffectiveShadowSize();
-				float width = (float)effectiveSize.Width;
-				float height = (float)effectiveSize.Height;
+				float width = (float)_shadowHostSize.Width;
 
 				if (width <= 0)
 				{
 					width = (float)frameworkElement.ActualWidth;
 				}
+
+				float height = (float)_shadowHostSize.Height;
 
 				if (height <= 0)
 				{
@@ -367,83 +358,7 @@ namespace Microsoft.Maui.Platform
 			}
 
 			dropShadow.Offset = new Vector3((float)offset.X, (float)offset.Y, 0);
-			dropShadow.Mask = await GetShadowMaskAsync();
-		}
-
-		async Task<CompositionBrush?> GetShadowMaskAsync()
-		{
-			if (Child is null)
-			{
-				return null;
-			}
-
-			var effectiveSize = GetEffectiveShadowSize();
-			double width = effectiveSize.Width;
-			double height = effectiveSize.Height;
-
-			if (width <= 0)
-			{
-				width = Child.ActualWidth;
-			}
-
-			if (height <= 0)
-			{
-				height = Child.ActualHeight;
-			}
-
-			var clipPath = GetClipPath(width, height);
-
-			if (clipPath is null)
-			{
-				return await Child.GetAlphaMaskAsync();
-			}
-
-			var visual = ElementCompositionPreview.GetElementVisual(Child);
-			var device = CanvasDevice.GetSharedDevice();
-			using var geometry = clipPath.AsPath(device);
-
-			_shadowMaskBrush?.Dispose();
-			_shadowMaskBrush = CompositionImageBrush.FromGeometry(
-				visual.Compositor,
-				geometry,
-				new WSize(width, height));
-
-			return _shadowMaskBrush.Brush;
-		}
-
-		PathF? GetClipPath(double width, double height)
-		{
-			if (Clip is null || width <= 0 || height <= 0)
-			{
-				return null;
-			}
-
-			return Clip.PathForBounds(new Graphics.Rect(0, 0, width, height));
-		}
-
-		/// <summary>
-		/// Returns the effective shadow size. When a Clip is present, this uses the clip path's
-		/// bounding box so the shadow covers the full clip area (which may be larger than the child).
-		/// Without a Clip, falls back to the child's actual size.
-		/// </summary>
-		WSize GetEffectiveShadowSize()
-		{
-			double width = _shadowHostSize.Width;
-			double height = _shadowHostSize.Height;
-
-			if (Clip is not null)
-			{
-				var clipPath = GetClipPath(width > 0 ? width : Child?.ActualWidth ?? 0, height > 0 ? height : Child?.ActualHeight ?? 0);
-				if (clipPath is not null)
-				{
-					var bounds = clipPath.Bounds;
-					// Use the larger of the child size and clip bounding box
-					width = Math.Max(width, bounds.Right);
-					height = Math.Max(height, bounds.Bottom);
-				}
-			}
-
-			return new WSize(width, height);
+			dropShadow.Mask = await Child.GetAlphaMaskAsync();
 		}
 	}
 }

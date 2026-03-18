@@ -2,10 +2,8 @@
 
 using System;
 using Microsoft.Graphics.Canvas;
-using Microsoft.Graphics.Canvas.Geometry;
 using Microsoft.Graphics.Canvas.UI.Composition;
 using Microsoft.Graphics.DirectX;
-using Microsoft.UI;
 using Microsoft.UI.Composition;
 using Windows.Foundation;
 using Windows.Graphics.Imaging;
@@ -59,21 +57,6 @@ namespace Microsoft.Maui.Platform
 			return (brush);
 		}
 
-		public static CompositionImageBrush FromGeometry(
-			Compositor compositor,
-			CanvasGeometry geometry,
-			Size outputSize)
-		{
-			CompositionImageBrush brush = new CompositionImageBrush();
-
-			brush.CreateDevice(compositor);
-			brush.CreateDrawingSurface(outputSize);
-			brush.DrawGeometry(geometry);
-			brush.CreateSurfaceBrush(compositor);
-
-			return brush;
-		}
-
 		void DrawSoftwareBitmap(SoftwareBitmap softwareBitmap, Size renderSize)
 		{
 			using (var drawingSession = CanvasComposition.CreateDrawingSession(_drawingSurface))
@@ -81,15 +64,6 @@ namespace Microsoft.Maui.Platform
 			{
 				drawingSession.DrawImage(bitmap,
 					new Rect(0, 0, renderSize.Width, renderSize.Height));
-			}
-		}
-
-		void DrawGeometry(CanvasGeometry geometry)
-		{
-			using (var drawingSession = CanvasComposition.CreateDrawingSession(_drawingSurface))
-			{
-				drawingSession.Clear(Colors.Transparent);
-				drawingSession.FillGeometry(geometry, Colors.Black);
 			}
 		}
 
