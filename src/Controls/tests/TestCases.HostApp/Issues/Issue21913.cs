@@ -10,7 +10,6 @@ public class Issue21913 : ContentPage
 {
 	const double CollapsedSize = 0;
 	const double ExpandedSize = 30;
-
 	public ObservableCollection<Issue21913Group> Groups { get; } = new();
 
 	public Issue21913()
@@ -91,9 +90,7 @@ public class Issue21913 : ContentPage
 	public class Issue21913Group : ObservableCollection<Issue21913Item>
 	{
 		public string Name { get; set; }
-
 		public string AutomationId { get; set; }
-
 		public ICommand Toggle => new Command(parameter =>
 		{
 			if (parameter is Issue21913Group group)
@@ -107,7 +104,6 @@ public class Issue21913 : ContentPage
 	public class Issue21913Item : INotifyPropertyChanged
 	{
 		double _size;
-
 		public Issue21913Item(string name, string automationId, double size)
 		{
 			Name = name;
@@ -116,9 +112,7 @@ public class Issue21913 : ContentPage
 		}
 
 		public string Name { get; }
-
 		public string AutomationId { get; }
-
 		public double Size
 		{
 			get => _size;
@@ -126,7 +120,6 @@ public class Issue21913 : ContentPage
 		}
 
 		public event PropertyChangedEventHandler PropertyChanged;
-
 		bool SetProperty<T>(ref T storage, T value, [CallerMemberName] string propertyName = null)
 		{
 			if (Equals(storage, value))

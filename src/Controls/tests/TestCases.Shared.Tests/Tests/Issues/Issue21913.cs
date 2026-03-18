@@ -21,7 +21,7 @@ public class Issue21913 : _IssuesUITest
 	   App.WaitForElement("SecondGroupButton");
 		
 		App.Tap("FirstGroupButton");
-		Task.Delay(500).Wait(); // Allow time for the UI to update after collapsing the first group
+		Task.Delay(500).Wait();
 
 		App.Tap("FirstGroupButton");
 		VerifyScreenshot(retryTimeout: TimeSpan.FromSeconds(2));
@@ -35,10 +35,10 @@ public class Issue21913 : _IssuesUITest
 	{
 		App.WaitForElement("ThirdGroupButton");
 		App.Tap("ThirdGroupButton");
-		Task.Delay(500).Wait(); // Allow time for the UI to update after collapsing the second group
+		Task.Delay(500).Wait();
         
 		App.Tap("ThirdGroupButton");
-		Task.Delay(500).Wait(); // Allow time for the UI to update after expanding the second group
+		Task.Delay(500).Wait();
 		VerifyScreenshot();
 
 	}
