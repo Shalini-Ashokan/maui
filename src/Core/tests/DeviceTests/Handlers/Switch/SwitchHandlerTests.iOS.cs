@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.Maui.DeviceTests.Stubs;
 using Microsoft.Maui.Graphics;
 using Microsoft.Maui.Handlers;
+using Microsoft.Maui.Platform;
 using ObjCRuntime;
 using UIKit;
 using Xunit;
@@ -86,6 +87,26 @@ namespace Microsoft.Maui.DeviceTests
 			Assert.NotNull(uIView);
 		}
 
+		static void AssertEqual(UIColor? actualColor, UIColor? expectedColor)
+		{
+			if (actualColor is null || expectedColor is null)
+			{
+				Assert.Equal(expectedColor, actualColor);
+				return;
+			}
+
+			actualColor.GetRGBA(out var actualRed, out var actualGreen, out var actualBlue, out var actualAlpha);
+			expectedColor.GetRGBA(out var expectedRed, out var expectedGreen, out var expectedBlue, out var expectedAlpha);
+
+			Assert.True(actualRed == expectedRed);
+			Assert.True(actualGreen == expectedGreen);
+			Assert.True(actualBlue == expectedBlue);
+			Assert.True(actualAlpha == expectedAlpha);
+		}
+
+		static bool UsesLiquidGlassSwitchRendering() =>
+			OperatingSystem.IsIOSVersionAtLeast(26) || OperatingSystem.IsMacCatalystVersionAtLeast(26);
+
 		/// <summary>
 		/// If a UISwitch grows beyond 101 pixels it's no longer
 		/// clickable via Voice Over
@@ -125,6 +146,113 @@ namespace Microsoft.Maui.DeviceTests
 
 				await ValidateVisualTrackColor(switchStub, UIColor.Red);
 			});
+		}
+
+		[Fact(DisplayName = "Default switch keeps native track styling for liquid glass rendering")]
+		public void DefaultSwitchKeepsNativeTrackStylingForLiquidGlassRendering()
+		{
+			Assert.True(SwitchExtensions.ShouldPreserveNativeTrackAppearance(new SwitchStub
+			{
+				IsOn = true,
+			}, usesNativeLiquidGlassRendering: true));
+		}
+
+		[Fact(DisplayName = "Explicit track color still uses custom track styling")]
+		public void ExplicitTrackColorStillUsesCustomTrackStyling()
+		{
+			Assert.False(SwitchExtensions.ShouldPreserveNativeTrackAppearance(new SwitchStub
+			{
+				TrackColor = Colors.Red,
+			}, usesNativeLiquidGlassRendering: true));
+		}
+
+		[Fact(DisplayName = "Liquid glass on-state uses public switch color properties")]
+		public void LiquidGlassOnStateUsesPublicSwitchColorProperties()
+		{
+			var nativeSwitch = new UISwitch();
+			var color = UIColor.Red;
+
+			SwitchExtensions.UpdateTrackColorForNativeLiquidGlass(nativeSwitch, new SwitchStub
+			{
+				IsOn = true,
+				TrackColor = Colors.Red,
+			});
+
+			AssertEqual(nativeSwitch.OnTintColor, color);
+			Assert.Null(nativeSwitch.BackgroundColor);
+			Assert.Null(nativeSwitch.TintColor);
+			Assert.True(nativeSwitch.ClipsToBounds);
+			Assert.True(nativeSwitch.Layer.CornerRadius > 0);
+		}
+
+		[Fact(DisplayName = "Liquid glass off-state uses public switch color properties")]
+		public void LiquidGlassOffStateUsesPublicSwitchColorProperties()
+		{
+			var nativeSwitch = new UISwitch();
+			var color = UIColor.Red;
+
+			SwitchExtensions.UpdateTrackColorForNativeLiquidGlass(nativeSwitch, new SwitchStub
+			{
+				IsOn = false,
+				TrackColor = Colors.Red,
+			});
+
+			AssertEqual(nativeSwitch.OnTintColor, color);
+			AssertEqual(nativeSwitch.BackgroundColor, color);
+			AssertEqual(nativeSwitch.TintColor, color);
+			Assert.True(nativeSwitch.ClipsToBounds);
+			Assert.True(nativeSwitch.Layer.CornerRadius > 0);
+		}
+
+		[Fact(DisplayName = "Liquid glass reset clears public switch color properties")]
+		public void LiquidGlassResetClearsPublicSwitchColorProperties()
+		{
+			var nativeSwitch = new UISwitch
+			{
+				OnTintColor = UIColor.Red,
+				BackgroundColor = UIColor.Red,
+				TintColor = UIColor.Red,
+				ClipsToBounds = true,
+			};
+
+			nativeSwitch.Layer.CornerRadius = 12;
+
+			SwitchExtensions.ResetNativeLiquidGlassTrackAppearance(nativeSwitch);
+
+			Assert.Null(nativeSwitch.OnTintColor);
+			Assert.Null(nativeSwitch.BackgroundColor);
+			Assert.Null(nativeSwitch.TintColor);
+			Assert.False(nativeSwitch.ClipsToBounds);
+			Assert.True(nativeSwitch.Layer.CornerRadius == 0);
+		}
+
+		[Fact(DisplayName = "Default on-state switch preserves native iOS 26 track rendering")]
+		public async Task DefaultOnTrackRenderingMatchesNativeSwitch()
+		{
+			if (!UsesLiquidGlassSwitchRendering())
+			{
+				return;
+			}
+
+			var expectedTrackColor = await InvokeOnMainThreadAsync(() =>
+			{
+				var nativeSwitch = new UISwitch();
+				nativeSwitch.SetState(true, false);
+				nativeSwitch.LayoutIfNeeded();
+				return nativeSwitch.GetTrackSubview()?.BackgroundColor;
+			});
+
+			var actualTrackColor = await GetValueAsync(new SwitchStub()
+			{
+				IsOn = true,
+			}, handler =>
+			{
+				var nativeSwitch = GetNativeSwitch(handler);
+				nativeSwitch.LayoutIfNeeded();
+				return nativeSwitch.GetTrackSubview()?.BackgroundColor;
+			});
+
+			AssertEqual(actualTrackColor, expectedTrackColor);
 		}
 
 		[Fact(DisplayName = "Track Color's view is default color when toggled off")]
