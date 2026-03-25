@@ -16,6 +16,7 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 		int _span = 1;
 
 		ItemsLayoutOrientation _orientation;
+		bool _removeOuterEdgeSpacing;
 
 		public SpacingItemDecoration(Context context, IItemsLayout itemsLayout)
 		{
@@ -41,6 +42,7 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 					verticalOffset = gridItemsLayout.VerticalItemSpacing / 2.0;
 					_span = gridItemsLayout.Span;
 					_orientation = gridItemsLayout.Orientation;
+					_removeOuterEdgeSpacing = true;
 					break;
 				case LinearItemsLayout listItemsLayout:
 					if (listItemsLayout.Orientation == ItemsLayoutOrientation.Horizontal)
@@ -70,6 +72,16 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 		{
 			base.GetItemOffsets(outRect, view, parent, state);
 
+			outRect.Left = HorizontalOffset;
+			outRect.Right = HorizontalOffset;
+			outRect.Bottom = VerticalOffset;
+			outRect.Top = VerticalOffset;
+
+			if (!_removeOuterEdgeSpacing)
+			{
+				return;
+			}
+
 			int position = parent.GetChildAdapterPosition(view);
 			if (position == RecyclerView.NoPosition)
 				return;
@@ -77,11 +89,6 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			int itemCount = state.ItemCount;
 			if (itemCount <= 0)
 				return;
-
-			outRect.Left = HorizontalOffset;
-			outRect.Right = HorizontalOffset;
-			outRect.Bottom = VerticalOffset;
-			outRect.Top = VerticalOffset;
 
 			// Remove spacing on the outer edges so spacing only appears between items.
 			// A linear layout is effectively span=1, so the same math works for both.
