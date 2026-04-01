@@ -306,6 +306,28 @@ namespace Microsoft.Maui.Resizetizer.Tests
 			}
 
 			[Fact]
+			public void SvgWithEmUnitWidthAndHeightIsNotEmpty_26869()
+			{
+				var info = new ResizeImageInfo();
+				info.Filename = "images/em_units.svg";
+				var tools = new SkiaSharpSvgTools(info, Logger);
+				var dpiPath = new DpiPath("", 1);
+
+				tools.Resize(dpiPath, DestinationFilename);
+				using var resultImage = SKBitmap.Decode(DestinationFilename);
+
+				// The image must have non-zero dimensions — em unit parsing must yield a valid size.
+				Assert.True(resultImage.Width > 0, "Expected rasterized image width to be > 0 for SVG with em units.");
+				Assert.True(resultImage.Height > 0, "Expected rasterized image height to be > 0 for SVG with em units.");
+
+				using var pixmap = resultImage.PeekPixels();
+				var topLeft = pixmap.GetPixelColor(5, 5);
+				Assert.NotEqual(SKColors.Empty, topLeft);
+				var centerPixel = pixmap.GetPixelColor(resultImage.Width / 2, resultImage.Height / 2);
+				Assert.NotEqual(SKColors.Empty, centerPixel);
+			}
+
+			[Fact]
 			public void SvgImageWithDecodingIssue_12109()
 			{
 				var info = new ResizeImageInfo();
