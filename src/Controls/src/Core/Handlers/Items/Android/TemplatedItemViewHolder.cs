@@ -43,13 +43,11 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 
 			itemsView.RemoveLogicalChild(View);
 
-			// Disconnect and clear the handler via ItemContentView.Recycle(), which calls
-			// DisconnectHandlers() before releasing Content. Reset _selectedTemplate so the
-			// next Bind() call always goes through the templateChanging path and recreates
-			// the handler (since we just disconnected it).
+			// Disconnect the platform handler so it can be reclaimed, without discarding the
+			// MAUI View itself.  Nulling View/_selectedTemplate (as done in #34534) forced
+			// templateChanging=true on every rebind, which created a brand-new View from the
+			// DataTemplate and lost any runtime property changes (e.g. HeightRequest).
 			_itemContentView.Recycle();
-			View = null; // clear reference to the disconnected view
-			_selectedTemplate = null; // force templateChanging=true on next Bind() to recreate the view
 		}
 
 		public void Bind(object itemBindingContext, ItemsView itemsView,
@@ -90,8 +88,18 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 
 			if (!templateChanging)
 			{
-				// Same template, new data
+				// Same template, new data — update BindingContext first so the handler
+				// is (re)created with the correct data already available.
 				View.BindingContext = itemBindingContext;
+
+				// If Recycle() disconnected the handler, reconnect it to the existing View
+				// without creating a new one from the template.  This preserves any runtime
+				// property changes (e.g. HeightRequest) that were applied after inflation.
+				if (View.Handler == null)
+				{
+					PropertyPropagationExtensions.PropagatePropertyChanged(null, View, itemsView);
+					_itemContentView.RealizeContent(View, itemsView);
+				}
 			}
 
 			itemsView.AddLogicalChild(View);
