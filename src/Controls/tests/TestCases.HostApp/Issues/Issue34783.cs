@@ -1,5 +1,4 @@
 using System.Linq;
-
 namespace Maui.Controls.Sample.Issues;
 
 [Issue(IssueTracker.Github, 34783, "CollectionView dynamic item sizing resets after scrolling on Android", PlatformAffected.Android)]
@@ -7,10 +6,8 @@ public class Issue34783 : ContentPage
 {
 	const int DefaultSize = 60;
 	const int ExpandedSize = 120;
-
 	public Issue34783()
 	{
-		// 25 items — enough to require scrolling on a typical device
 		var items = Enumerable.Range(0, 25).Select(i => $"CV_Item_{i}").ToList();
 
 		var collectionView = new CollectionView
@@ -26,9 +23,7 @@ public class Issue34783 : ContentPage
 					BackgroundColor = Colors.SteelBlue
 				};
 
-				// AutomationId is bound to the item string ("CV_Item_0", "CV_Item_1", …)
 				boxView.SetBinding(AutomationIdProperty, ".");
-
 				var tap = new TapGestureRecognizer();
 				tap.Tapped += (s, e) =>
 				{
