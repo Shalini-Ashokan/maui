@@ -110,7 +110,10 @@ namespace Microsoft.Maui.Platform
 					(float)(contentLayerTransform.M21 * contentLayerTransform.M21 +
 							contentLayerTransform.M22 * contentLayerTransform.M22));
 
-				if (scaleX > 0.001f && scaleY > 0.001f)
+				// Only compensate when actual scaling is present. Pure translation or rotation
+				// without scale should use the standard mask placement to avoid behavior changes.
+				bool hasScale = MathF.Abs(scaleX - 1.0f) > 0.001f || MathF.Abs(scaleY - 1.0f) > 0.001f;
+				if (hasScale && scaleX > 0.001f && scaleY > 0.001f)
 				{
 					// Map clip-bounds-space coordinates into content layer pre-transform coordinates:
 					//   contentLayer = (clipPt + strokeThickness - layerPos) / scale + anchorInLayer
