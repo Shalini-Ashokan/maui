@@ -41,21 +41,7 @@ namespace Microsoft.Maui.Resizetizer
 
 		internal static MemoryStream SanitizeSvgRelativeUnits(string filename)
 		{
-			var svgContent = File.ReadAllText(filename);
-			bool mayHaveRelativeUnits = false;
-			foreach (var unit in RelativeUnits)
-			{
-				if (svgContent.IndexOf(unit, StringComparison.OrdinalIgnoreCase) >= 0)
-				{
-					mayHaveRelativeUnits = true;
-					break;
-				}
-			}
-
-			if (!mayHaveRelativeUnits)
-				return null;
-
-			var doc = XDocument.Parse(svgContent);
+			var doc = XDocument.Load(filename);
 			var root = doc.Root;
 
 			if (root is null || root.Name.LocalName != "svg")
@@ -63,9 +49,6 @@ namespace Microsoft.Maui.Resizetizer
 
 			var widthAttr = root.Attribute("width");
 			var heightAttr = root.Attribute("height");
-
-			if (widthAttr is null && heightAttr is null)
-				return null;
 
 			bool widthIsRelative = widthAttr is not null && HasRelativeUnit(widthAttr.Value);
 			bool heightIsRelative = heightAttr is not null && HasRelativeUnit(heightAttr.Value);
@@ -89,9 +72,9 @@ namespace Microsoft.Maui.Resizetizer
 			return ms;
 		}
 
-		static bool HasRelativeUnit(string value)
+		static bool HasRelativeUnit(ReadOnlySpan<char> value)
 		{
-			var trimmed = value.AsSpan().Trim();
+			var trimmed = value.Trim();
 			foreach (var unit in RelativeUnits)
 			{
 				if (trimmed.EndsWith(unit.AsSpan(), StringComparison.OrdinalIgnoreCase))
