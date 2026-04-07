@@ -90,109 +90,77 @@ namespace Microsoft.Maui.Platform
 			var clipHeight = (float)bounds.Height - strokeInset;
 
 			var clipBounds = new RectF(0, 0, clipWidth, clipHeight);
+			var clipPath = GetClipPath(clipBounds, strokeThickness);
 
 			// When content has a scale transform (e.g., the MAUI Scale property), the mask on
 			// content.Layer lives in the layer's pre-transform coordinate space. Core Animation
 			// then applies the content's transform to the masked result, making the effective clip
-			// region appear too large (or too small) in screen space.
-			//
-			// Fix: Instead of changing the mask layer's bounds or transform, apply a CGAffineTransform
-			// directly to the clip PATH so it is expressed in content layer pre-transform coordinates.
-			// The mask then covers the full content layer while the transformed path defines the
-			// precise opaque region. After the content's transform is applied by Core Animation, the
-			// visible region aligns exactly with the Border's visible bounds in screen space.
+			// region appear shifted or incorrectly sized in screen space.
+			// Fix: apply an inverse-scale transform to the clip path so it maps correctly in
+			// the content layer's pre-transform coordinates.
 			var contentLayerTransform = content.Layer.Transform;
 			if (!contentLayerTransform.IsIdentity)
 			{
-				// Extract scale factors from the 3×3 upper-left submatrix row magnitudes.
-				// This is correct for pure scale and for combined scale+rotation transforms.
+				// Extract scale factors from the transform matrix row magnitudes.
+				// This handles both pure scale and combined scale+rotation transforms.
 				float scaleX = MathF.Sqrt(
 					(float)(contentLayerTransform.M11 * contentLayerTransform.M11 +
-							contentLayerTransform.M12 * contentLayerTransform.M12 +
-							contentLayerTransform.M13 * contentLayerTransform.M13));
+							contentLayerTransform.M12 * contentLayerTransform.M12));
 				float scaleY = MathF.Sqrt(
 					(float)(contentLayerTransform.M21 * contentLayerTransform.M21 +
-							contentLayerTransform.M22 * contentLayerTransform.M22 +
-							contentLayerTransform.M23 * contentLayerTransform.M23));
+							contentLayerTransform.M22 * contentLayerTransform.M22));
 
 				if (scaleX > 0.001f && scaleY > 0.001f)
 				{
-					// Build a CGAffineTransform that maps clip-bounds-space coordinates into
-					// content layer pre-transform coordinates. For a point (x, y) in clip-bounds:
-					//
-					//   cv = (x + strokeThickness, y + strokeThickness)          [ContentView coords]
-					//   contentLayer = (cv - layerPos) / scale + anchorInLayer   [content layer coords]
-					//
-					// Combining: contentLayer_x = x / scaleX + (strokeThickness − layerPos.X) / scaleX + anchorInLayerX
-					//            contentLayer_y = y / scaleY + (strokeThickness − layerPos.Y) / scaleY + anchorInLayerY
+					// Map clip-bounds-space coordinates into content layer pre-transform coordinates:
+					//   contentLayer = (clipPt + strokeThickness - layerPos) / scale + anchorInLayer
 					var layerPos = content.Layer.Position;
 					var layerBounds = content.Layer.Bounds;
 					var layerAnchor = content.Layer.AnchorPoint;
 
-					var anchorInLayerX = (float)(layerAnchor.X * layerBounds.Width);
-					var anchorInLayerY = (float)(layerAnchor.Y * layerBounds.Height);
+					float anchorInLayerX = (float)(layerAnchor.X * layerBounds.Width);
+					float anchorInLayerY = (float)(layerAnchor.Y * layerBounds.Height);
 
 					float tx = (strokeThickness - (float)layerPos.X) / scaleX + anchorInLayerX;
 					float ty = (strokeThickness - (float)layerPos.Y) / scaleY + anchorInLayerY;
 
-					// CGAffineTransform: | a  b  0 |   transforms: x' = a*x + c*y + tx
-					//                    | c  d  0 |               y' = b*x + d*y + ty
-					//                    | tx ty 1 |
 					var pathTransform = new CGAffineTransform(
 						(nfloat)(1.0f / scaleX), 0,
 						0, (nfloat)(1.0f / scaleY),
 						(nfloat)tx, (nfloat)ty);
 
-					// Apply the affine transform to the path so it is positioned correctly in
-					// content layer pre-transform coords. Use UIBezierPath for the transform API.
-					var clipPath = GetClipPath(clipBounds, strokeThickness);
-					if (clipPath is not null)
-					{
-						var bezier = UIBezierPath.FromPath(clipPath);
-						bezier.ApplyTransform(pathTransform);
-						_contentMask.Path = bezier.CGPath;
-					}
-					else
-					{
-						_contentMask.Path = null;
-					}
+					_contentMask.Path = clipPath?.CopyByTransformingPath(pathTransform);
 
-					// Position the mask to cover the full content layer. The path already encodes
-					// the correct clip position in content layer pre-transform coords.
+					// Size the mask to cover the full content layer; the transformed path
+					// already encodes the correct clip region in pre-transform coords.
 					_contentMask.Bounds = new CGRect(0, 0, layerBounds.Width, layerBounds.Height);
-					_contentMask.AnchorPoint = new CGPoint(0.5, 0.5);
 					_contentMask.Position = new CGPoint(layerBounds.Width / 2, layerBounds.Height / 2);
 
-					if (content.Layer.Mask != _contentMask)
-					{
-						content.Layer.Mask = _contentMask;
-					}
-
+					SetContentMask(content);
 					return;
 				}
 			}
 
-			// No scale transform (or degenerate): use the original straightforward mask placement.
-			_contentMask.Path = GetClipPath(clipBounds, strokeThickness);
+			// No scale transform (or degenerate scale): use straightforward mask placement.
+			_contentMask.Path = clipPath;
 
 			// Since the mask is on the content's CALayer, it's anchored to the content. But we need it to be
 			// relative to _this_ container. So we need to compute an adjusted position for it.
-
 			var contentFrame = content.Frame;
-			var contentOffsetX = contentFrame.X;
-			var contentOffsetY = contentFrame.Y;
-
 			var clipBoundsCenter = clipBounds.Center;
-			var clipCenterX = clipBoundsCenter.X + (strokeThickness);
-			var clipCenterY = clipBoundsCenter.Y + (strokeThickness);
 
-			CGPoint adjustedMaskPosition = new(clipCenterX - contentOffsetX, clipCenterY - contentOffsetY);
+			CGPoint adjustedMaskPosition = new(
+				clipBoundsCenter.X + strokeThickness - contentFrame.X,
+				clipBoundsCenter.Y + strokeThickness - contentFrame.Y);
 
 			_contentMask.Bounds = clipBounds;
-			_contentMask.AnchorPoint = new CGPoint(0.5, 0.5);
 			_contentMask.Position = adjustedMaskPosition;
 
-			// Set the mask on the content, if it isn't already
+			SetContentMask(content);
+		}
+
+		void SetContentMask(UIView content)
+		{
 			if (content.Layer.Mask != _contentMask)
 			{
 				content.Layer.Mask = _contentMask;
