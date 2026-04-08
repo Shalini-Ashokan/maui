@@ -7,6 +7,7 @@ using AColor = Android.Graphics.Color;
 using AShapeDrawable = Android.Graphics.Drawables.ShapeDrawable;
 using AShapes = Android.Graphics.Drawables.Shapes;
 using AView = Android.Views.View;
+using AGravityFlags = Android.Views.GravityFlags;
 using Color = Microsoft.Maui.Graphics.Color;
 
 namespace Microsoft.Maui.Platform
@@ -113,7 +114,17 @@ namespace Microsoft.Maui.Platform
 			_isTemplateIndicator = true;
 
 			RemoveAllViews();
-			AddView(handler);
+			
+			// Set gravity to center the custom template view
+			// This ensures indicators are centered regardless of flow direction (RTL/LTR)
+			var layoutParams = new LinearLayout.LayoutParams(
+				LinearLayout.LayoutParams.WrapContent,
+				LinearLayout.LayoutParams.WrapContent)
+			{
+				Gravity = AGravityFlags.Center
+			};
+			
+			AddView(handler, layoutParams);
 		}
 
 		void UpdateShapes()
