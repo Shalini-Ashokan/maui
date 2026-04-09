@@ -10,10 +10,10 @@ namespace Microsoft.Maui.Resizetizer
 {
 	internal class SkiaSharpSvgTools : SkiaSharpTools, IDisposable
 	{
-		// Precise match for relative units (same as v1)
-		static readonly Regex NonAbsoluteUnitPattern = new Regex(
-		 @"^\s*[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?\s*(em|ex|rem|ch|vw|vh|vmin|vmax|cap|ic|lh|rlh|%)\s*$",
-		 RegexOptions.IgnoreCase | RegexOptions.Compiled);
+		// Matches commonly used relative units in SVG width/height: em, ex, rem, %, vw, vh
+		static readonly Regex RelativeUnitPattern = new Regex(
+			@"^\s*[-+]?\d*\.?\d+\s*(em|ex|rem|%|vw|vh)\s*$",
+			RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
 		SKSvg svg;
 
@@ -42,10 +42,9 @@ namespace Microsoft.Maui.Resizetizer
 		}
 
 		/// <summary>
-		/// Hybrid preprocessing:
-		/// - Uses Regex for accurate detection
-		/// - Uses MemoryStream (no temp files)
-		/// - Only parses XML when necessary
+		/// If the SVG width or height uses a common relative unit (em, ex, rem, %, vw, vh),
+		/// strips those attributes so SkiaSharp can render correctly.
+		/// Returns null when no preprocessing is needed.
 		/// </summary>
 		MemoryStream PreprocessSvgToStream(string filename)
 		{
@@ -55,44 +54,22 @@ namespace Microsoft.Maui.Resizetizer
 				var root = doc.Root;
 
 				if (root == null)
-				{
 					return null;
-				}
 
 				var widthAttr = root.Attribute("width");
 				var heightAttr = root.Attribute("height");
 
-				if (widthAttr == null && heightAttr == null)
-				{
+				bool widthHasEm = widthAttr != null && RelativeUnitPattern.IsMatch(widthAttr.Value);
+				bool heightHasEm = heightAttr != null && RelativeUnitPattern.IsMatch(heightAttr.Value);
+
+				if (!widthHasEm && !heightHasEm)
 					return null;
-				}
 
-				bool widthHasRelativeUnit = widthAttr != null && NonAbsoluteUnitPattern.IsMatch(widthAttr.Value);
-				bool heightHasRelativeUnit = heightAttr != null && NonAbsoluteUnitPattern.IsMatch(heightAttr.Value);
-
-				if (!widthHasRelativeUnit && !heightHasRelativeUnit)
-				{
-					return null;
-				}
-
-				var viewBox = root.Attribute("viewBox");
-				if (viewBox == null || string.IsNullOrWhiteSpace(viewBox.Value))
-				{
-					Logger?.Log($"SVG has relative units but no viewBox — cannot preprocess. ({filename})");
-					return null;
-				}
-
-				Logger?.Log($"SVG has relative width/height (e.g. 'em'); stripping in favour of viewBox. ({filename})");
-
-				if (widthHasRelativeUnit)
-				{
+				if (widthHasEm)
 					widthAttr.Remove();
-				}
 
-				if (heightHasRelativeUnit)
-				{
+				if (heightHasEm)
 					heightAttr.Remove();
-				}
 
 				var ms = new MemoryStream();
 				doc.Save(ms);
