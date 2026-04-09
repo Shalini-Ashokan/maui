@@ -96,51 +96,73 @@ namespace Microsoft.Maui.Platform
 			// content.Layer lives in the layer's pre-transform coordinate space. Core Animation
 			// then applies the content's transform to the masked result, making the effective clip
 			// region appear shifted or incorrectly sized in screen space.
-			// Fix: apply an inverse-scale transform to the clip path so it maps correctly in
-			// the content layer's pre-transform coordinates.
+			// Fix: apply the full 2×2 inverse of the content's transform to the clip path so it
+			// maps correctly into the content layer's pre-transform coordinates.
 			var contentLayerTransform = content.Layer.Transform;
 			if (!contentLayerTransform.IsIdentity)
 			{
-				// Extract scale factors from the transform matrix row magnitudes.
-				// This handles both pure scale and combined scale+rotation transforms.
-				float scaleX = MathF.Sqrt(
-					(float)(contentLayerTransform.M11 * contentLayerTransform.M11 +
-							contentLayerTransform.M12 * contentLayerTransform.M12));
-				float scaleY = MathF.Sqrt(
-					(float)(contentLayerTransform.M21 * contentLayerTransform.M21 +
-							contentLayerTransform.M22 * contentLayerTransform.M22));
+				float a = (float)contentLayerTransform.M11;
+				float b = (float)contentLayerTransform.M12;
+				float c = (float)contentLayerTransform.M21;
+				float d = (float)contentLayerTransform.M22;
+
+				// MAUI builds its transforms as Rotate-then-Scale (R*S). The column norms of
+				// the resulting matrix — sqrt(M11²+M21²) and sqrt(M12²+M22²) — correctly
+				// extract the actual sx/sy regardless of rotation angle. Row norms blend sx
+				// and sy when rotation is non-zero, so they cannot be used for scale detection.
+				float scaleX = MathF.Sqrt(a * a + c * c);
+				float scaleY = MathF.Sqrt(b * b + d * d);
 
 				// Only compensate when actual scaling is present. Pure translation or rotation
 				// without scale should use the standard mask placement to avoid behavior changes.
 				bool hasScale = MathF.Abs(scaleX - 1.0f) > 0.001f || MathF.Abs(scaleY - 1.0f) > 0.001f;
-				if (hasScale && scaleX > 0.001f && scaleY > 0.001f)
+				if (hasScale)
 				{
-					// Map clip-bounds-space coordinates into content layer pre-transform coordinates:
-					//   contentLayer = (clipPt + strokeThickness - layerPos) / scale + anchorInLayer
-					var layerPos = content.Layer.Position;
-					var layerBounds = content.Layer.Bounds;
-					var layerAnchor = content.Layer.AnchorPoint;
+					float det = a * d - b * c;
+					if (MathF.Abs(det) > 0.001f)
+					{
+						// Full 2×2 inverse: correctly handles any combination of scale,
+						// rotation, and shear — not just diagonal (pure-scale) transforms.
+						float invA = d / det;
+						float invB = -b / det;
+						float invC = -c / det;
+						float invD = a / det;
 
-					float anchorInLayerX = (float)(layerAnchor.X * layerBounds.Width);
-					float anchorInLayerY = (float)(layerAnchor.Y * layerBounds.Height);
+						var layerPos = content.Layer.Position;
+						var layerBounds = content.Layer.Bounds;
+						var layerAnchor = content.Layer.AnchorPoint;
 
-					float tx = (strokeThickness - (float)layerPos.X) / scaleX + anchorInLayerX;
-					float ty = (strokeThickness - (float)layerPos.Y) / scaleY + anchorInLayerY;
+						float anchorInLayerX = (float)(layerAnchor.X * layerBounds.Width);
+						float anchorInLayerY = (float)(layerAnchor.Y * layerBounds.Height);
 
-					var pathTransform = new CGAffineTransform(
-						(nfloat)(1.0f / scaleX), 0,
-						0, (nfloat)(1.0f / scaleY),
-						(nfloat)tx, (nfloat)ty);
+						// The clip-path origin sits at (strokeThickness, strokeThickness) in
+						// superlayer (container) space. To map it into the content layer's
+						// pre-transform space we subtract:
+						//   - M41/M42: the affine translation component of the layer transform,
+						//              which is where MAUI's TranslationX/Y lands after the
+						//              Rotate-then-Scale accumulation.
+						//   - Layer.Position: the anchor-point position in the superlayer.
+						float kx = strokeThickness - (float)contentLayerTransform.M41 - (float)layerPos.X;
+						float ky = strokeThickness - (float)contentLayerTransform.M42 - (float)layerPos.Y;
 
-					_contentMask.Path = clipPath?.CopyByTransformingPath(pathTransform);
+						float tx = invA * kx + invC * ky + anchorInLayerX;
+						float ty = invB * kx + invD * ky + anchorInLayerY;
 
-					// Size the mask to cover the full content layer; the transformed path
-					// already encodes the correct clip region in pre-transform coords.
-					_contentMask.Bounds = new CGRect(0, 0, layerBounds.Width, layerBounds.Height);
-					_contentMask.Position = new CGPoint(layerBounds.Width / 2, layerBounds.Height / 2);
+						var pathTransform = new CGAffineTransform(
+							(nfloat)invA, (nfloat)invB,
+							(nfloat)invC, (nfloat)invD,
+							(nfloat)tx, (nfloat)ty);
 
-					SetContentMask(content);
-					return;
+						_contentMask.Path = clipPath?.CopyByTransformingPath(pathTransform);
+
+						// Size the mask to cover the full content layer; the transformed path
+						// already encodes the correct clip region in pre-transform coords.
+						_contentMask.Bounds = new CGRect(0, 0, layerBounds.Width, layerBounds.Height);
+						_contentMask.Position = new CGPoint(layerBounds.Width / 2, layerBounds.Height / 2);
+
+						SetContentMask(content);
+						return;
+					}
 				}
 			}
 
