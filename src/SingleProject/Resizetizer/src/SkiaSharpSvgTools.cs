@@ -25,7 +25,8 @@ namespace Microsoft.Maui.Resizetizer
 		public SkiaSharpSvgTools(string filename, SKSize? baseSize, SKColor? backgroundColor, SKColor? tintColor, ILogger logger)
 		 : base(filename, baseSize, backgroundColor, tintColor, logger)
 		{
-			var sw = Stopwatch.StartNew();
+			var sw = new Stopwatch();
+			sw.Start();
 
 			svg = new SKSvg();
 
@@ -48,40 +49,31 @@ namespace Microsoft.Maui.Resizetizer
 		/// </summary>
 		MemoryStream PreprocessSvgToStream(string filename)
 		{
-			try
-			{
-				var doc = XDocument.Load(filename);
-				var root = doc.Root;
+			var doc = XDocument.Load(filename);
+			var root = doc.Root;
 
-				if (root == null)
-					return null;
-
-				var widthAttr = root.Attribute("width");
-				var heightAttr = root.Attribute("height");
-
-				bool widthHasEm = widthAttr != null && RelativeUnitPattern.IsMatch(widthAttr.Value);
-				bool heightHasEm = heightAttr != null && RelativeUnitPattern.IsMatch(heightAttr.Value);
-
-				if (!widthHasEm && !heightHasEm)
-					return null;
-
-				if (widthHasEm)
-					widthAttr.Remove();
-
-				if (heightHasEm)
-					heightAttr.Remove();
-
-				var ms = new MemoryStream();
-				doc.Save(ms);
-				ms.Position = 0;
-
-				return ms;
-			}
-			catch (Exception ex)
-			{
-				Logger?.Log($"Failed to preprocess SVG, loading original: {ex.Message}");
+			if (root == null)
 				return null;
-			}
+
+			var widthAttr = root.Attribute("width");
+			var heightAttr = root.Attribute("height");
+
+			bool widthHasEm = widthAttr != null && RelativeUnitPattern.IsMatch(widthAttr.Value);
+			bool heightHasEm = heightAttr != null && RelativeUnitPattern.IsMatch(heightAttr.Value);
+
+			if (!widthHasEm && !heightHasEm)
+				return null;
+
+			if (widthHasEm)
+				widthAttr.Remove();
+
+			if (heightHasEm)
+				heightAttr.Remove();
+
+			var ms = new MemoryStream();
+			doc.Save(ms);
+			ms.Position = 0;
+			return ms;
 		}
 
 		public override SKSize GetOriginalSize() =>
@@ -93,8 +85,7 @@ namespace Microsoft.Maui.Resizetizer
 			if (size.IsEmpty)
 			{
 				throw new InvalidOperationException(
-				 $"Cannot draw SVG file '{Filename}'. The SVG has no size. " +
-				 "Ensure the SVG includes a viewBox or valid width/height.");
+				 $"Cannot draw SVG file '{Filename}'. The SVG has no size. " + "Ensure the SVG includes a viewBox or valid width/height.");
 			}
 
 			if (scale >= 1)
