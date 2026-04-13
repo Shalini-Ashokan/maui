@@ -221,8 +221,20 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 					return;
 				}
 
-				// We take the measured header height without margin, since the margin is already accounted for in the positioning of the scroll view itself.
-				ScrollView.ContentInset = new UIEdgeInsets((nfloat)Math.Max(HeaderMinimumHeight, MeasuredHeaderViewHeightWithNoMargin), 0, 0, 0);
+				if (IsFixedOrDefaultHeader())
+				{
+					// For Default/Fixed behaviors the content view is positioned below the header
+					// (not overlapping it), so no header-based content inset is needed.
+					ScrollView.ContentInset = new UIEdgeInsets(0, 0, 0, 0);
+				}
+				else
+				{
+					// For Scroll/CollapseOnScroll, the scroll view overlaps with the header for
+					// parallax, so use content inset to make the first item initially appear below
+					// the header. We take the measured header height without margin, since the
+					// margin is already accounted for in the positioning of the scroll view itself.
+					ScrollView.ContentInset = new UIEdgeInsets((nfloat)Math.Max(HeaderMinimumHeight, MeasuredHeaderViewHeightWithNoMargin), 0, 0, 0);
+				}
 			}
 			else
 			{
@@ -321,15 +333,17 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 
 			if (HeaderView is not null)
 			{
-				if (ScrollView is null)
+				if (ScrollView is null || IsFixedOrDefaultHeader())
 				{
-					// The margin is already managed by MAUI's layout system, so we don't need to add it here and we just offset the content by the header's height.				
+					// The margin is already managed by MAUI's layout system, so we don't need to add it here and we just offset the content by the header's height.
+					// For Default/Fixed header behaviors the scroll view must start BELOW the header so that items cannot scroll behind it.
 					contentYOffset += HeaderView.Frame.Height;
 				}
 				else
 				{
-					// For ScrollView, we need to consider the margin, but we should not consider the header height, since it should overlap with the scroll view. 
-					// The content inset is already managed by SetHeaderContentInset.
+					// For Scroll/CollapseOnScroll behaviors, the scroll view overlaps with the header for
+					// parallax effects. The top content inset is managed by SetHeaderContentInset;
+					// only account for margin here.
 					contentYOffset += HeaderView.View.Margin.VerticalThickness;
 				}
 			}
@@ -466,6 +480,12 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 		/// It should not be assumed as margin, because if Margin.Top = 0, it will return SafeAre.Top.
 		/// </summary>
 		double HeaderViewTopVerticalOffset => HeaderView?.Margin.Top ?? 0;
+
+		bool IsFixedOrDefaultHeader()
+		{
+			var behavior = _context.Shell.FlyoutHeaderBehavior;
+			return behavior == FlyoutHeaderBehavior.Default || behavior == FlyoutHeaderBehavior.Fixed;
+		}
 
 		public void TearDown()
 		{
