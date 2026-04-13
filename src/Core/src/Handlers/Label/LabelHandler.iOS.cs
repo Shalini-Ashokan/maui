@@ -1,6 +1,5 @@
 using System;
 using Microsoft.Maui.Graphics;
-using UIKit;
 using RectangleF = CoreGraphics.CGRect;
 using SizeF = CoreGraphics.CGSize;
 
@@ -17,17 +16,6 @@ namespace Microsoft.Maui.Handlers
 		public static void MapBackground(ILabelHandler handler, ILabel label)
 		{
 			handler.UpdateValue(nameof(IViewHandler.ContainerView));
-
-			if (label.Background.IsNullOrEmpty())
-			{
-				// UpdateBackground returns early for non-LayoutView/ContentView types (e.g. UILabel),
-				// leaving any previously applied solid BackgroundColor in place. Explicitly clear it
-				// and remove any residual gradient layer so the label returns to transparent default.
-				handler.PlatformView?.RemoveBackgroundLayer();
-				if (handler.PlatformView is not null)
-					handler.PlatformView.BackgroundColor = UIColor.Clear;
-				return;
-			}
 
 			// Gradient sublayers cover UILabel text, so route them to WrapperView; solid colors stay on PlatformView for correct Clip masking.
 			if (label.Background is GradientPaint)
