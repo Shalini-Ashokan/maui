@@ -284,6 +284,10 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 			if (FooterView is not null)
 			{
 				footerHeight = FooterView.Frame.Height;
+				// The footer view is positioned at View.Frame.Height - footerHeight - SafeAreaInsets.Bottom
+				// (see ShellFlyoutContentRenderer.UpdateFooterPosition). The scroll view frame must not
+				// extend past the footer's top edge, so we also reserve the safe area bottom inset.
+				footerHeight += UIApplication.SharedApplication.GetSafeAreaInsetsForWindow().Bottom;
 			}
 
 			LayoutHeader(parent.Frame);
