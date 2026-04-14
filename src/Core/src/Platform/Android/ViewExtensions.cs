@@ -347,20 +347,7 @@ namespace Microsoft.Maui.Platform
 			}
 			else
 			{
-				// Clear any background that was previously applied by MAUI.
-				// MauiDrawable is used for gradients/complex paints; ColorDrawable is set via SetBackgroundColor.
-				// Native platform-default drawables (e.g. EditText underline, ripple effects) are intentionally
-				// preserved so that controls with no custom Background keep their native appearance.
-				if (platformView.Background is MauiDrawable mauiDrawable)
-				{
-					platformView.Background = null;
-					mauiDrawable.Dispose();
-				}
-				else if (platformView.Background is ColorDrawable
-					|| platformView is LayoutViewGroup or ContentViewGroup)
-				{
-					platformView.Background = null;
-				}
+				platformView.Background = null;
 			}
 		}
 
