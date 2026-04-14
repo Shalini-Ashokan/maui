@@ -1,39 +1,35 @@
 using Microsoft.Maui.Controls;
-
 namespace Maui.Controls.Sample.Issues;
 
-[Issue(IssueTracker.Github, 34925, "Shell flyout items scroll behind FlyoutHeader on iOS", PlatformAffected.iOS)]
+[Issue(IssueTracker.Github, 34925, "Shell flyout items scroll behind FlyoutFooter on iOS", PlatformAffected.iOS)]
 public class Issue34925 : TestShell
 {
 	protected override void Init()
 	{
-		FlyoutHeaderBehavior = FlyoutHeaderBehavior.Default;
-
-		FlyoutHeaderTemplate = new DataTemplate(() =>
+		FlyoutFooterTemplate = new DataTemplate(() =>
 		{
-			var header = new Grid
+			var footer = new Grid
 			{
-				HeightRequest = 150,
-				BackgroundColor = Color.FromArgb("#80333399"), // semi-transparent so overlap is visible
-				AutomationId = "Issue34925FlyoutHeader",
+				HeightRequest = 80,
+				BackgroundColor = Color.FromArgb("#80993333"),
+				AutomationId = "Issue34925FlyoutFooter",
 			};
-			header.Children.Add(new Label
+			footer.Children.Add(new Label
 			{
-				Text = "Flyout Header",
+				Text = "Flyout Footer",
 				TextColor = Colors.White,
 				FontAttributes = FontAttributes.Bold,
 				VerticalOptions = LayoutOptions.Center,
 				HorizontalOptions = LayoutOptions.Center,
 			});
-			return header;
+			return footer;
 		});
 
-		for (int i = 1; i <= 15; i++)
+		for (int i = 1; i <= 20; i++)
 		{
 			var page = new ContentPage { Title = $"Page {i}" };
 			if (i == 1)
 			{
-				// Give the first page a detectable label so the test can wait for it
 				page.Content = new Label { Text = "Page 1", AutomationId = "Issue34925Page1Label" };
 			}
 			AddFlyoutItem(page, $"Page {i}");
