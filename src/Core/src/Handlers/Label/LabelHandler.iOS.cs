@@ -1,6 +1,5 @@
 using System;
 using Microsoft.Maui.Graphics;
-using UIKit;
 using RectangleF = CoreGraphics.CGRect;
 using SizeF = CoreGraphics.CGSize;
 
