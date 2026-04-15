@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.Maui.Graphics;
 
 namespace Microsoft.Maui.Handlers
 {
@@ -26,7 +27,11 @@ namespace Microsoft.Maui.Handlers
 			if (handler is IPlatformViewHandler platformViewHandler && platformViewHandler.ViewController is not null)
 			{
 				var provider = handler.GetRequiredService<IImageSourceServiceProvider>();
-				platformViewHandler.ViewController.View?.UpdateBackground(page, provider);
+				var containerView = platformViewHandler.ViewController.View;
+				containerView?.UpdateBackground(page, provider);
+
+				if (page.Background.IsNullOrEmpty() && containerView is not null)
+					containerView.BackgroundColor = ColorExtensions.BackgroundColor;
 			}
 		}
 

@@ -18,14 +18,6 @@ namespace Microsoft.Maui.Handlers
 		{
 			handler.UpdateValue(nameof(IViewHandler.ContainerView));
 
-			if (label.Background.IsNullOrEmpty())
-			{
-				handler.PlatformView?.RemoveBackgroundLayer();
-				if (handler.PlatformView is not null)
-					handler.PlatformView.BackgroundColor = UIColor.Clear;
-				return;
-			}
-
 			// Gradient sublayers cover UILabel text, so route them to WrapperView; solid colors stay on PlatformView for correct Clip masking.
 			if (label.Background is GradientPaint)
 			{
