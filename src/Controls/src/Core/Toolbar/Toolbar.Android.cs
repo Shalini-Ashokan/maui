@@ -33,6 +33,12 @@ namespace Microsoft.Maui.Controls
 				if (_platformTitleView != null)
 					_platformTitleView.Child = null;
 
+				if (_platformTitleViewHandler is IElementHandler titleHandler)
+					titleHandler.DisconnectHandler();
+
+				_platformTitleViewHandler = null;
+				_platformTitleView = null;
+
 				Controls.Platform.ToolbarExtensions.DisposeMenuItems(
 					oldHandler?.PlatformView as AToolbar,
 					ToolbarItems,
@@ -81,7 +87,15 @@ namespace Microsoft.Maui.Controls
 
 			if (titleView == null)
 			{
+				if (_platformTitleView != null)
+					_platformTitleView.Child = null;
+
 				_platformTitleView?.RemoveFromParent();
+
+				if (_platformTitleViewHandler is IElementHandler handler)
+					handler.DisconnectHandler();
+
+				_platformTitleViewHandler = null;
 				return;
 			}
 

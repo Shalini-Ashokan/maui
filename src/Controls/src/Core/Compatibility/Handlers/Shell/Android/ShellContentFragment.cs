@@ -194,6 +194,10 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 			if (_shellContent != null)
 			{
 				((IShellContentController)_shellContent).RecyclePage(_page);
+			}
+
+			if (_page != null)
+			{
 				_page.Handler = null;
 			}
 
@@ -220,6 +224,7 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 			_viewhandler = null;
 			_shellContent = null;
 			_shellPageContainer = null;
+			_page = null;
 		}
 
 		internal void DisposePage()

@@ -228,6 +228,8 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 			_toolbarTracker = null;
 			_tablayout = null;
 			_toolbar = null;
+			_shellToolbar?.Handler?.DisconnectHandler();
+			_shellToolbar = null;
 			_viewPager = null;
 			_rootView = null;
 
@@ -240,6 +242,17 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 			Destroy();
 			base.OnDestroy();
 		}
+
+		public override void OnHiddenChanged(bool hidden)
+		{
+			base.OnHiddenChanged(hidden);
+
+			if (!hidden && _shellToolbar?.Handler != null)
+			{
+				_shellToolbar.Handler.UpdateValue(nameof(Toolbar.TitleView));
+			}
+		}
+
 		protected override void Dispose(bool disposing)
 		{
 			if (_disposed)
