@@ -39,10 +39,12 @@ namespace Microsoft.Maui.Platform
 			switch (background)
 			{
 				case null:
+					uiSearchBar.RemoveBackgroundLayer();
 					uiSearchBar.BarTintColor = UISearchBar.Appearance.BarTintColor;
 					break;
 
 				case SolidPaint solid:
+					uiSearchBar.RemoveBackgroundLayer();
 					if (solid.Color == Colors.Transparent)
 					{
 						uiSearchBar.BackgroundImage = new UIImage();
@@ -56,6 +58,8 @@ namespace Microsoft.Maui.Platform
 					break;
 
 				case GradientPaint gradientPaint:
+					uiSearchBar.BackgroundImage = new UIImage();
+					uiSearchBar.BarTintColor = UIColor.Clear;
 					ViewExtensions.UpdateBackground(uiSearchBar, gradientPaint);
 					break;
 			}

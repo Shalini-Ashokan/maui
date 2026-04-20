@@ -49,7 +49,8 @@ namespace Microsoft.Maui.Controls
 			// Use ContentLabel instead of Label to avoid interference from global styles
 			var label = new ContentLabel
 			{
-				Text = textContent
+				Text = textContent,
+				Background = Brush.Transparent
 			};
 
 			if (HasTemplateAncestor(presenter, typeof(ITextElement)))

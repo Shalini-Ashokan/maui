@@ -518,6 +518,7 @@ namespace Microsoft.Maui.Controls
 				Padding = 2,
 				RowSpacing = 0,
 				ColumnSpacing = 6,
+				Background = Brush.Transparent,
 				ColumnDefinitions = new ColumnDefinitionCollection {
 					new ColumnDefinition { Width = GridLength.Auto },
 					new ColumnDefinition { Width = GridLength.Star }
@@ -553,7 +554,8 @@ namespace Microsoft.Maui.Controls
 			var contentPresenter = new ContentPresenter
 			{
 				HorizontalOptions = LayoutOptions.Fill,
-				VerticalOptions = LayoutOptions.Fill
+				VerticalOptions = LayoutOptions.Fill,
+				Background = Brush.Transparent,
 			};
 
 			object dynamicOuterEllipseThemeColor = null;
@@ -632,14 +634,14 @@ namespace Microsoft.Maui.Controls
 			var common = new VisualStateGroup() { Name = "Common" };
 			common.States.Add(new VisualState() { Name = VisualStateManager.CommonStates.Normal });
 			VisualState disabledVisualState = new VisualState() { Name = VisualStateManager.CommonStates.Disabled };
-            disabledVisualState.Setters.Add(
-                new Setter()
-                {
-                    Property = Grid.OpacityProperty,
-                    TargetName = "Grid",
-                    Value = 0.4f
-                });
-            common.States.Add(disabledVisualState);
+			disabledVisualState.Setters.Add(
+				new Setter()
+				{
+					Property = Grid.OpacityProperty,
+					TargetName = "Grid",
+					Value = 0.4f
+				});
+			common.States.Add(disabledVisualState);
 
 			visualStateGroups.Add(common);
 

@@ -28,10 +28,7 @@ namespace Microsoft.Maui.Handlers
 			{
 				var provider = handler.GetRequiredService<IImageSourceServiceProvider>();
 				var containerView = platformViewHandler.ViewController.View;
-				containerView?.UpdateBackground(page, provider);
-
-				if (page.Background.IsNullOrEmpty() && containerView is not null)
-					containerView.BackgroundColor = ColorExtensions.BackgroundColor;
+				platformViewHandler.ViewController.View?.UpdateBackground(page, provider);
 			}
 		}
 

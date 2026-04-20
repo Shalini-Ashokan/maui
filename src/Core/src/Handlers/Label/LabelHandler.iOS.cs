@@ -20,10 +20,14 @@ namespace Microsoft.Maui.Handlers
 			// Gradient sublayers cover UILabel text, so route them to WrapperView; solid colors stay on PlatformView for correct Clip masking.
 			if (label.Background is GradientPaint)
 			{
+				// Clear any previous solid color from PlatformView so it doesn't show through
+				handler.PlatformView.BackgroundColor = UIKit.UIColor.Clear;
 				handler.ToPlatform()?.UpdateBackground(label);
 			}
 			else
 			{
+				// Remove any previous gradient layer from the WrapperView
+				handler.ToPlatform()?.RemoveBackgroundLayer();
 				handler.PlatformView?.UpdateBackground(label);
 			}
 		}

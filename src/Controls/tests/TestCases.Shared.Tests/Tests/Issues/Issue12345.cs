@@ -8,15 +8,15 @@ namespace Microsoft.Maui.TestCases.Tests.Issues
 	{
 		public Issue12345(TestDevice testDevice) : base(testDevice) { }
 
-		public override string Issue => "Label background remains visible after being set to null on Android";
+		public override string Issue => "Control backgrounds remain visible after being set to null";
 
 		[Test]
 		[Category(UITestCategories.Label)]
-		public void LabelBackgroundClearsWhenSetToNull()
+		public void ControlBackgroundsClearWhenSetToNull()
 		{
-			App.WaitForElement("BackgroundLabel");
+			App.WaitForElement("SetBackgroundButton");
 			App.Tap("SetBackgroundButton");
-			VerifyScreenshot("NoBackground");
+			VerifyScreenshot();
 		}
 	}
 }
