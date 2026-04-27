@@ -65,6 +65,7 @@ namespace Microsoft.Maui.Handlers
 
 		internal static void MapFlowDirection(IIndicatorViewHandler handler, IIndicatorView indicator)
 		{
+			ViewHandler.MapFlowDirection(handler, indicator);
 			handler.PlatformView?.UpdateIndicatorFlowDirection(indicator);
 		}
 

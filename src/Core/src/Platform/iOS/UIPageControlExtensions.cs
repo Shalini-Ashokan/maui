@@ -35,6 +35,8 @@ namespace Microsoft.Maui.Platform
 			{
 				subview.SemanticContentAttribute = semantic;
 			}
+
+			pageControl.SetNeedsLayout();
 		}
 
 		public static void UpdateHideSingle(this UIPageControl pageControl, IIndicatorView indicatorView)
