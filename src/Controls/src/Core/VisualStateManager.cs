@@ -97,43 +97,65 @@ namespace Microsoft.Maui.Controls
 
 			var specificity = vsgSpecificity.CopyStyle(1, 0, 0, 0);
 
+			bool stateFound = false;
+			bool alreadyInTargetState = false;
+
 			foreach (VisualStateGroup group in groups)
 			{
 				if (group.CurrentState?.Name == name)
 				{
 					// We're already in the target state; nothing else to do
-					return true;
+					stateFound = true;
+					alreadyInTargetState = true;
+					continue;
 				}
 
 				// See if this group contains the new state
 				var target = group.GetState(name);
-				if (target == null)
+				if (target != null)
 				{
-					continue;
-				}
-
-				// If we've got a new state to transition to, unapply the setters from the current state
-				if (group.CurrentState != null)
-				{
-					foreach (Setter setter in group.CurrentState.Setters)
+					// If we've got a new state to transition to, unapply the setters from the current state
+					if (group.CurrentState != null)
 					{
-						setter.UnApply(visualElement, specificity);
+						foreach (Setter setter in group.CurrentState.Setters)
+						{
+							setter.UnApply(visualElement, specificity);
+						}
 					}
+
+					// Update the current state
+					group.CurrentState = target;
+
+					// Apply the setters from the new state
+					foreach (Setter setter in target.Setters)
+					{
+						setter.Apply(visualElement, specificity);
+					}
+
+					stateFound = true;
 				}
-
-				// Update the current state
-				group.CurrentState = target;
-
-				// Apply the setters from the new state
-				foreach (Setter setter in target.Setters)
-				{
-					setter.Apply(visualElement, specificity);
-				}
-
-				return true;
 			}
 
-			return false;
+			// If we couldn't find the target state anywhere and we're not already in it,
+			// but we're trying to go to Normal state, clear current states to reset properties
+			if (!stateFound && !alreadyInTargetState && name == CommonStates.Normal)
+			{
+				foreach (VisualStateGroup group in groups)
+				{
+					if (group.CurrentState != null)
+					{
+						// Unapply the current state setters to reset properties
+						foreach (Setter setter in group.CurrentState.Setters)
+						{
+							setter.UnApply(visualElement, specificity);
+						}
+						// Clear the current state
+						group.CurrentState = null;
+					}
+				}
+			}
+
+			return stateFound;
 		}
 
 		/// <summary>
