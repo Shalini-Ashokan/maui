@@ -49,6 +49,24 @@ namespace Microsoft.Maui.Platform
 		}
 
 
+#pragma warning disable RS0016 // Add public types and members to the declared API
+		public override CGSize SizeThatFits(CGSize size)
+#pragma warning restore RS0016 // Add public types and members to the declared API
+		{
+			if (_indicatorView?.TryGetTarget(out var indicatorView) == true &&
+				(indicatorView as ITemplatedIndicatorView)?.IndicatorsLayoutOverride is not null)
+			{
+				var indicatorsLayoutOverride = (indicatorView as ITemplatedIndicatorView)?.IndicatorsLayoutOverride;
+				UIView? handler = (UIView?)(indicatorsLayoutOverride?.Handler?.PlatformView);
+				if (handler is not null)
+				{
+					return handler.SizeThatFits(size);
+				}
+			}
+
+			return base.SizeThatFits(size);
+		}
+
 		public override void LayoutSubviews()
 		{
 			base.LayoutSubviews();
@@ -68,6 +86,11 @@ namespace Microsoft.Maui.Platform
 		public void UpdateIndicatorSize()
 		{
 			if (IndicatorSize == 0 || IndicatorSize == DefaultIndicatorSize)
+				return;
+
+			// Don't apply indicator size transform when using a custom template
+			if (_indicatorView?.TryGetTarget(out var indicatorView) == true &&
+				(indicatorView as ITemplatedIndicatorView)?.IndicatorsLayoutOverride is not null)
 				return;
 
 			if (Math.Abs(IndicatorSize - _lastAppliedIndicatorSize) < IndicatorSizeTolerance)
