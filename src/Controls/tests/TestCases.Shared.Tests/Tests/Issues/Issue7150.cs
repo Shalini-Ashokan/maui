@@ -1,9 +1,10 @@
-#if TEST_FAILS_ON_WINDOWS // Related issue for windows: https://github.com/dotnet/maui/issues/29245 
+
 using NUnit.Framework;
 using UITest.Appium;
 using UITest.Core;
 
 namespace Microsoft.Maui.TestCases.Tests.Issues;
+
 public class Issue7150 : _IssuesUITest
 {
     public Issue7150(TestDevice device) : base(device) { }
@@ -14,9 +15,9 @@ public class Issue7150 : _IssuesUITest
     [Category(UITestCategories.CarouselView)]
     public void VerifyCarouselViewEmptyView()
     {
-        App.WaitForElement("FilterButton");
+        App.WaitForElement("FilterButton", timeout: TimeSpan.FromSeconds(10));
         App.Tap("FilterButton");
+        App.WaitForElement("CarouselView", timeout: TimeSpan.FromSeconds(10));
         VerifyScreenshot();
     }
 }
-#endif
