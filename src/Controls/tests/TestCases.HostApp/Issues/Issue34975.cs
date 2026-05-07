@@ -1,6 +1,6 @@
 namespace Maui.Controls.Sample.Issues;
 
-[Issue(IssueTracker.Github, 34975, "Title view memory leak when using Shell TitleView and x Name", PlatformAffected.iOS)]
+[Issue(IssueTracker.Github, 34975, "Title view memory leak when using Shell TitleView and x Name", PlatformAffected.iOS | PlatformAffected.macOS)]
 public class Issue34975 : Shell
 {
 	public Issue34975()
@@ -31,13 +31,21 @@ public class Issue34975 : Shell
 
 		navigateButton.Clicked += async (s, e) =>
 		{
+			checkButton.IsVisible = false;
 			Issue34975SecondPage.Instances.Clear();
 
+			// Round 1: track the page instance we want to verify gets collected.
+			Issue34975SecondPage.IsTracking = true;
 			await Shell.Current.GoToAsync("Issue34975_second");
-
 			await Shell.Current.GoToAsync("..");
+			Issue34975SecondPage.IsTracking = false;
+			await Task.Delay(300);
 
-			// A small delay lets that continuation run before we expose CheckMemoryButton.
+			// Round 2: navigate again so that Mac's AXObserver (used by Appium) updates its
+			// tracked accessibility elements from Round 1 → Round 2, releasing the native
+			// hold on Round 1's views and allowing GC to collect Round 1's page.
+			await Shell.Current.GoToAsync("Issue34975_second");
+			await Shell.Current.GoToAsync("..");
 			await Task.Delay(500);
 
 			checkButton.IsVisible = true;
@@ -46,6 +54,8 @@ public class Issue34975 : Shell
 
 		checkButton.Clicked += async (s, e) =>
 		{
+			statusLabel.Text = "Checking...";
+
 			try
 			{
 				await GarbageCollectionHelper.WaitForGC(10000, Issue34975SecondPage.Instances.ToArray());
@@ -53,8 +63,7 @@ public class Issue34975 : Shell
 			catch { }
 
 			var alive = Issue34975SecondPage.Instances.Count(wr => wr.IsAlive);
-			statusLabel.Text = alive == 0 ? "Test does not failed" : $"Leak detected: {alive} alive";
-
+			statusLabel.Text = $"Still alive: {alive}";
 		};
 
 		var mainPage = new ContentPage
