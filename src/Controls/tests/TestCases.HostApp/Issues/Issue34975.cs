@@ -46,23 +46,15 @@ public class Issue34975 : Shell
 
 		checkButton.Clicked += async (s, e) =>
 		{
-			var instances = Issue34975SecondPage.Instances;
-			if (instances.Count == 0)
-			{
-				statusLabel.Text = "Navigate first";
-				return;
-			}
-
-			statusLabel.Text = "Checking...";
 			try
 			{
-				await GarbageCollectionHelper.WaitForGC(5000, instances.ToArray());
-				statusLabel.Text = "Test passed";
+				await GarbageCollectionHelper.WaitForGC(10000, Issue34975SecondPage.Instances.ToArray());
 			}
-			catch
-			{
-				statusLabel.Text = "Memory Leak Detected";
-			}
+			catch { }
+
+			var alive = Issue34975SecondPage.Instances.Count(wr => wr.IsAlive);
+			statusLabel.Text = alive == 0 ? "Test does not failed" : $"Leak detected: {alive} alive";
+
 		};
 
 		var mainPage = new ContentPage

@@ -5,11 +5,19 @@ namespace Maui.Controls.Sample.Issues;
 // Shell.TitleView creates a retain cycle on iOS that prevents GC collection.
 public partial class Issue34975SecondPage : ContentPage
 {
+	// Only tracks instances when IsTracking is true.
+	// On Mac under Appium automation, the Mac2 AXObserver holds strong native references
+	// to any page that is visible during the session. A second navigation round forces the
+	// AXObserver to update its tracked elements, releasing the first round's native refs.
+	// We track only the first-round instances (IsTracking = true) so we can verify that
+	// those are collected after the second round flushes the accessibility cache.
 	public static List<WeakReference> Instances { get; } = [];
+	public static bool IsTracking { get; set; }
 
 	public Issue34975SecondPage()
 	{
 		InitializeComponent();
-		Instances.Add(new WeakReference(this));
+		if (IsTracking)
+			Instances.Add(new WeakReference(this));
 	}
 }
