@@ -31,7 +31,6 @@ public class Issue34975 : Shell
 
 		navigateButton.Clicked += async (s, e) =>
 		{
-			checkButton.IsVisible = false;
 			Issue34975SecondPage.Instances.Clear();
 
 			// Round 1: track the page instance we want to verify gets collected.
@@ -39,14 +38,14 @@ public class Issue34975 : Shell
 			await Shell.Current.GoToAsync("Issue34975_second");
 			await Shell.Current.GoToAsync("..");
 			Issue34975SecondPage.IsTracking = false;
-			await Task.Delay(300);
+			await Task.Delay(100);
 
 			// Round 2: navigate again so that Mac's AXObserver (used by Appium) updates its
 			// tracked accessibility elements from Round 1 → Round 2, releasing the native
 			// hold on Round 1's views and allowing GC to collect Round 1's page.
 			await Shell.Current.GoToAsync("Issue34975_second");
 			await Shell.Current.GoToAsync("..");
-			await Task.Delay(500);
+			await Task.Delay(300);
 
 			checkButton.IsVisible = true;
 			statusLabel.Text = "Now tap Check Memory";
