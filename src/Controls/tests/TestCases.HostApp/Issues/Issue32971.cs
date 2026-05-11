@@ -5,6 +5,7 @@ public class Issue32971 : ContentPage
 {
     public Issue32971()
     {
+
         Label _scrollStateLabel = new Label
         {
             Text = "NotScrolled",
@@ -49,6 +50,12 @@ public class Issue32971 : ContentPage
             AutomationId = "CheckButton",
         };
 
+        var scrollButton = new Button
+        {
+            Text = "Scroll WebView Content",
+            AutomationId = "ScrollButton",
+        };
+
         checkButton.Clicked += async (s, e) =>
         {
             var result = await _webView.EvaluateJavaScriptAsync("Math.round(window.pageYOffset);");
@@ -58,12 +65,17 @@ public class Issue32971 : ContentPage
             }
         };
 
+        scrollButton.Clicked += async (s, e) =>
+       {
+           await _webView.EvaluateJavaScriptAsync("window.scrollTo(0, 300);");
+       };
+
         var scrollView = new ScrollView
         {
             AutomationId = "TestScrollView",
             Content = new VerticalStackLayout
             {
-                Children = { _scrollStateLabel, checkButton, _webView }
+                Children = { _scrollStateLabel, scrollButton, checkButton, _webView }
             }
         };
 

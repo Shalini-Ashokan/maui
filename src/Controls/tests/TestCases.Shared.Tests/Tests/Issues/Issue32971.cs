@@ -17,7 +17,10 @@ public class Issue32971 : _IssuesUITest
 	public void WebViewShouldScrollInsideScrollView()
 	{
 		App.WaitForElement("TestScrollView");
-		App.ScrollDown("TestScrollView");
+		System.Threading.Thread.Sleep(500);
+		App.Tap("ScrollButton");
+
+		App.WaitForElement("CheckButton");
 		App.Tap("CheckButton");
 		var scrollStateLabel = App.FindElement("ScrollStateLabel").GetText();
 		Assert.That(scrollStateLabel, Is.EqualTo("Scrolled"));
