@@ -361,23 +361,30 @@ internal static class LayoutFactory2
 					return;
 				}
 
-				// Calculate page index accounting for ItemSpacing
+				// Calculate page index accounting for ItemSpacing and scroll orientation.
+				// Use the correct axis dimension so vertical carousels divide offset.Y by item
+				// height rather than width, which is the primary cause of CurrentItem never
+				// updating when Orientation="Vertical".
 				var itemSpacing = itemsView.ItemsLayout is LinearItemsLayout linearLayout ? linearLayout.ItemSpacing : 0;
 
-				var effectiveItemWidth = env.Container.ContentSize.Width - sectionMargin * 2 + itemSpacing;
+				var effectiveItemSize = (isHorizontal ? env.Container.ContentSize.Width : env.Container.ContentSize.Height)
+					- sectionMargin * 2 + itemSpacing;
 
-				if (effectiveItemWidth <= 0)
+				if (effectiveItemSize <= 0)
 				{
 					return;
 				}
 
 				var pageOffset = isHorizontal ? offset.X : offset.Y;
-				var pageSize = isHorizontal
-					? env.Container.ContentSize.Width
-					: env.Container.ContentSize.Height;
-				double page = (pageOffset + sectionMargin) / effectiveItemWidth;
+				double page = (pageOffset + sectionMargin) / effectiveItemSize;
 
-				if (Math.Abs(page % 1) > (double.Epsilon * 100) || cv2Controller.ItemsSource.ItemCount <= 0)
+				// Horizontal carousels use GroupPagingCentered which snaps precisely to page
+				// boundaries, so an exact-integer guard is appropriate. Vertical carousels use
+				// OrthogonalScrollingBehavior.None (no auto-paging), so the offset can settle
+				// slightly off-center; use a 10% threshold to handle normal scroll settlement.
+				var pageThreshold = isHorizontal ? double.Epsilon * 100 : 0.1;
+
+				if (Math.Abs(page % 1) > pageThreshold || cv2Controller.ItemsSource.ItemCount <= 0)
 				{
 					return;
 				}
