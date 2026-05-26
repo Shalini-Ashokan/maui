@@ -45,6 +45,7 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 			Assert.NotNull(previousPage.NavigatedFromArgs);
 			Assert.Equal(previousPage, lcPage.NavigatedToArgs.PreviousPage);
 			Assert.Equal(lcPage, previousPage.NavigatedFromArgs.DestinationPage);
+			Assert.Equal(lcPage, previousPage.NavigatingFromArgs.DestinationPage);
 		}
 
 		[Theory]
@@ -64,6 +65,7 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 			Assert.NotNull(poppedPage.NavigatingFromArgs);
 			Assert.Equal(poppedPage, firstPage.NavigatedToArgs.PreviousPage);
 			Assert.Equal(firstPage, poppedPage.NavigatedFromArgs.DestinationPage);
+			Assert.Equal(firstPage, poppedPage.NavigatingFromArgs.DestinationPage);
 		}
 
 		[Theory]
@@ -85,6 +87,7 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 			Assert.NotNull(poppedPage.NavigatingFromArgs);
 			Assert.Equal(poppedPage, firstPage.NavigatedToArgs.PreviousPage);
 			Assert.Equal(firstPage, poppedPage.NavigatedFromArgs.DestinationPage);
+			Assert.Equal(firstPage, poppedPage.NavigatingFromArgs.DestinationPage);
 		}
 
 		[Fact]

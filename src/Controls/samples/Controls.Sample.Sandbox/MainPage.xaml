@@ -1,5 +1,36 @@
-﻿<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="Maui.Controls.Sample.MainPage"
-             xmlns:local="clr-namespace:Maui.Controls.Sample">
-</ContentPage>
+﻿<local:Issue35613NavigationReproPageBase xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+                                         xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+                                         x:Class="Maui.Controls.Sample.MainPage"
+                                         xmlns:local="clr-namespace:Maui.Controls.Sample">
+    <ScrollView>
+        <VerticalStackLayout Padding="16"
+                Spacing="12">
+            <Label Text="Issue #35613 Repro - NavigationPage DestinationPage"
+                   FontSize="20"
+                   FontAttributes="Bold"
+                   AutomationId="Issue35613_TitleLabel"/>
+
+            <Label Text="Expected behavior: OnNavigatingFrom should report the destination page for push/pop operations."/>
+            <Label Text="Actual bug behavior: OnNavigatingFrom logs DestinationPage as the current page instead of the destination page."/>
+            <Label Text="Steps: 1) Goto Page2 2) Goto Page2.1 3) Goto Page2.1.1 4) Go Back 5) Go Back"/>
+
+            <Button Text="Goto Page2"
+                    AutomationId="Issue35613_GotoPage2Button"
+                    Clicked="OnGotoPage2Clicked"/>
+
+            <Button Text="Clear Log"
+                    AutomationId="Issue35613_ClearLogButton"
+                    Clicked="OnClearLogClicked"/>
+
+            <Label Text="Event Log (look for OnNavigatingFrom lines):"
+                   FontAttributes="Bold"/>
+            <Editor x:Name="ReproLogEditor"
+                    AutomationId="Issue35613_LogEditor"
+                    IsReadOnly="True"
+                    AutoSize="TextChanges"
+                    MinimumHeightRequest="280"
+                    FontFamily="Courier New"
+                    FontSize="12"/>
+        </VerticalStackLayout>
+    </ScrollView>
+</local:Issue35613NavigationReproPageBase>
