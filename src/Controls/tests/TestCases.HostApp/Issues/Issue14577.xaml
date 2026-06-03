@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Maui.Controls.Sample.Issues.Issue14577">
+    <VerticalStackLayout Grid.Row="1"
+                         Grid.Column="0">
+        <Label x:Name="lblDistanceText"
+               AutomationId="ReferenceLabel"
+               Text="Distance"
+               FontSize="Medium"
+               FontAttributes="Bold"
+               VerticalOptions="CenterAndExpand"
+               HorizontalOptions="Center"
+               Margin="0,0,0,0"/>
+        <Line Stroke="DarkGreen"
+              StrokeThickness="3"
+              StrokeLineCap="Round"
+              Opacity="0.85"
+              HorizontalOptions="Center"
+              X2="{Binding Source={x:Reference lblDistanceText}, Path=Width}">
+            <Line.Shadow>
+                <Shadow Brush="DarkGreen"
+                        Offset="0,0"
+                        Radius="6"
+                        Opacity="0.9"/>
+            </Line.Shadow>
+        </Line>
+        <Label
+            Text="TotalDistance here"
+            FontSize="Medium"
+            FontAttributes="Bold"
+            VerticalOptions="CenterAndExpand"
+            HorizontalOptions="Center"
+            Margin="0,0,0,0"/>
+    </VerticalStackLayout>
+</ContentPage>

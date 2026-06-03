@@ -10,6 +10,7 @@ namespace Microsoft.Maui.Platform
 	public abstract class MauiPanel : Panel, ICrossPlatformLayoutBacking, IVisualTreeElementProvidable
 	{
 		UIElementCollection? _cachedChildren;
+		bool _measureSkipped;
 
 		[SuppressMessage("ApiDesign", "RS0030:Do not use banned APIs", Justification = "Panel.Children property is banned to enforce use of this CachedChildren property.")]
 		internal UIElementCollection CachedChildren
@@ -41,11 +42,13 @@ namespace Microsoft.Maui.Platform
 		// apply to ViewHandlerExtensions.MeasureVirtualView
 		protected override WSize MeasureOverride(global::Windows.Foundation.Size availableSize)
 		{
-			if (CrossPlatformMeasure == null || (availableSize.Width * availableSize.Height == 0))
+			if (availableSize.Width * availableSize.Height == 0)
 			{
+				_measureSkipped = true;
 				return base.MeasureOverride(availableSize);
 			}
 
+			_measureSkipped = false;
 			var measure = CrossPlatformMeasure(availableSize.Width, availableSize.Height);
 
 			measure.Width = Math.Max(measure.Width, 0);
@@ -56,13 +59,14 @@ namespace Microsoft.Maui.Platform
 
 		protected override WSize ArrangeOverride(WSize finalSize)
 		{
-			if (CrossPlatformArrange == null)
-			{
-				return base.ArrangeOverride(finalSize);
-			}
-
 			var width = finalSize.Width;
 			var height = finalSize.Height;
+
+			if (_measureSkipped && width > 0 && height > 0)
+			{
+				_measureSkipped = false;
+				CrossPlatformMeasure(width, height);
+			}
 
 			var actual = CrossPlatformArrange(new Rect(0, 0, width, height));
 
