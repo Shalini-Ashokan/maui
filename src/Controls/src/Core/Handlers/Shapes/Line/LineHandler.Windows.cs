@@ -25,16 +25,10 @@ namespace Microsoft.Maui.Controls.Handlers
 		static void InvalidateShapeAndLayout(IShapeViewHandler handler, Line line)
 		{
 			handler.PlatformView?.InvalidateShape(line);
-			line.InvalidateMeasure();
 			if (line.Parent is VisualElement parent)
-				parent.InvalidateMeasure();
-			// Schedule one extra remeasure to handle the initial layout/binding race on Windows.
-			line.Dispatcher?.Dispatch(() =>
 			{
-				line.InvalidateMeasure();
-				if (line.Parent is VisualElement deferredParent)
-					deferredParent.InvalidateMeasure();
-			});
+				parent.InvalidateMeasure();
+			}
 		}
 	}
 }
