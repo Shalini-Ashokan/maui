@@ -20,10 +20,17 @@ public class Issue35214 : ContentPage
         {
             ItemsSource = carouselItems,
             HeightRequest = 300,
+            WidthRequest = 300,
+            Loop = false,
             HorizontalOptions = LayoutOptions.Fill,
             IndicatorView = indicatorView,
             ItemTemplate = new DataTemplate(() =>
             {
+                var grid = new Grid
+                {
+                    Padding = 10
+                };
+
                 var label = new Label
                 {
                     VerticalOptions = LayoutOptions.Center,
@@ -31,7 +38,8 @@ public class Issue35214 : ContentPage
                     FontSize = 18,
                 };
                 label.SetBinding(Label.TextProperty, ".");
-                return label;
+                grid.Children.Add(label);
+                return grid;
             }),
         };
 
@@ -53,9 +61,10 @@ public class Issue35214 : ContentPage
             Spacing = 10,
             Children =
             {
+                setDefaultSizeButton,
                 carouselView,
                 indicatorView,
-                setDefaultSizeButton,
+
             }
         };
     }
