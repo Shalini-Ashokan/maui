@@ -18,8 +18,6 @@ namespace Microsoft.Maui.Platform
 
 		string? _pendingUrl;
 		readonly WeakReference<WebViewHandler> _handler;
-		[UnconditionalSuppressMessage("Memory", "MEM0002", Justification = "The KVO observer is disposed in Dispose(bool) and does not leak.")]
-		IDisposable? _contentSizeObserver;
 
 		public MauiWKWebView(WebViewHandler handler)
 			: this(RectangleF.Empty, handler)
@@ -41,35 +39,10 @@ namespace Microsoft.Maui.Platform
 			AutosizesSubviews = true;
 
 			NavigationDelegate = new MauiWebViewNavigationDelegate(handler);
-			_contentSizeObserver = ScrollView.AddObserver("contentSize", NSKeyValueObservingOptions.New, _ => OnContentSizeChanged());
 		}
 
 		public string? CurrentUrl =>
 			Url?.AbsoluteUrl?.ToString();
-
-		void OnContentSizeChanged()
-		{
-			if (_handler.TryGetTarget(out var handler))
-				handler.VirtualView?.InvalidateMeasure();
-		}
-
-		public override CGSize SizeThatFits(CGSize size)
-		{
-			var measured = base.SizeThatFits(size);
-			var contentSize = ScrollView?.ContentSize ?? CGSize.Empty;
-
-			if (contentSize.Height <= 0)
-				return measured;
-
-			double proposedWidth = size.Width;
-			bool widthIsBounded = !double.IsNaN(proposedWidth) && !double.IsInfinity(proposedWidth) && proposedWidth > 0;
-
-			var fittedWidth = widthIsBounded
-				? size.Width
-				: Math.Max(measured.Width, contentSize.Width);
-
-			return new CGSize(fittedWidth, contentSize.Height);
-		}
 
 		public override void MovedToWindow()
 		{
@@ -125,33 +98,7 @@ namespace Microsoft.Maui.Platform
 		public void LoadHtml(string? html, string? baseUrl)
 		{
 			if (html != null)
-				LoadHtmlString(EnsureViewportMetadata(html), baseUrl == null ? new NSUrl(NSBundle.MainBundle.BundlePath, true) : new NSUrl(baseUrl, true));
-		}
-
-		static string EnsureViewportMetadata(string html)
-		{
-			if (string.IsNullOrWhiteSpace(html))
-				return html;
-
-			if (html.Contains("name=\"viewport\"", StringComparison.OrdinalIgnoreCase) ||
-				html.Contains("name='viewport'", StringComparison.OrdinalIgnoreCase))
-				return html;
-
-			const string viewport = "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />";
-
-			var headCloseIndex = html.IndexOf("</head>", StringComparison.OrdinalIgnoreCase);
-			if (headCloseIndex >= 0)
-				return html.Insert(headCloseIndex, viewport);
-
-			var headOpenIndex = html.IndexOf("<head", StringComparison.OrdinalIgnoreCase);
-			if (headOpenIndex >= 0)
-			{
-				var headTagEndIndex = html.IndexOf('>', headOpenIndex);
-				if (headTagEndIndex >= 0)
-					return html.Insert(headTagEndIndex + 1, viewport);
-			}
-
-			return $"<head>{viewport}</head>{html}";
+				LoadHtmlString(html, baseUrl == null ? new NSUrl(NSBundle.MainBundle.BundlePath, true) : new NSUrl(baseUrl, true));
 		}
 
 		async Task LoadUrlAsync(string? url)
@@ -258,17 +205,6 @@ namespace Microsoft.Maui.Platform
 			}
 
 			return false;
-		}
-
-		protected override void Dispose(bool disposing)
-		{
-			if (disposing)
-			{
-				_contentSizeObserver?.Dispose();
-				_contentSizeObserver = null;
-			}
-
-			base.Dispose(disposing);
 		}
 
 		[UnconditionalSuppressMessage("Memory", "MEM0002", Justification = IUIViewLifeCycleEvents.UnconditionalSuppressMessage)]

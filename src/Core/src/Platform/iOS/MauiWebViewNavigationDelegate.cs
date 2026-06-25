@@ -44,7 +44,6 @@ namespace Microsoft.Maui.Platform
 			var url = GetCurrentUrl();
 
 			virtualView.Navigated(_lastEvent, url, WebNavigationResult.Success);
-			virtualView.InvalidateMeasure();
 
 			// ProcessNavigatedAsync calls UpdateCanGoBackForward
 			if (handler is WebViewHandler webViewHandler)

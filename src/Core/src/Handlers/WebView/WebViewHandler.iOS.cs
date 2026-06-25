@@ -115,33 +115,14 @@ namespace Microsoft.Maui.Handlers
 		{
 			var size = base.GetDesiredSize(widthConstraint, heightConstraint);
 
-			var width = size.Width;
-			var height = size.Height;
-			var contentSize = PlatformView?.ScrollView?.ContentSize;
-			var hasUnboundedWidth = widthConstraint <= 0 || double.IsInfinity(widthConstraint);
-			var hasUnboundedHeight = heightConstraint <= 0 || double.IsInfinity(heightConstraint);
 			var set = false;
 
-			if (contentSize?.Width > 0 && hasUnboundedWidth)
-			{
-				width = contentSize.Value.Width;
-				set = true;
-			}
-
-			if (contentSize?.Height > 0 && hasUnboundedHeight)
-			{
-				height = contentSize.Value.Height;
-				set = true;
-			}
+			var width = size.Width;
+			var height = size.Height;
 
 			if (width == 0)
 			{
-				if (contentSize?.Width > 0)
-				{
-					width = contentSize.Value.Width;
-					set = true;
-				}
-				else if (hasUnboundedWidth)
+				if (widthConstraint <= 0 || double.IsInfinity(widthConstraint))
 				{
 					width = MinimumSize;
 					set = true;
@@ -150,12 +131,7 @@ namespace Microsoft.Maui.Handlers
 
 			if (height == 0)
 			{
-				if (contentSize?.Height > 0)
-				{
-					height = contentSize.Value.Height;
-					set = true;
-				}
-				else if (hasUnboundedHeight)
+				if (heightConstraint <= 0 || double.IsInfinity(heightConstraint))
 				{
 					height = MinimumSize;
 					set = true;
