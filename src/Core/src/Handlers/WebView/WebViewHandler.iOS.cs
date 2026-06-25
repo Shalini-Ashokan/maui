@@ -115,33 +115,20 @@ namespace Microsoft.Maui.Handlers
 		{
 			var size = base.GetDesiredSize(widthConstraint, heightConstraint);
 
-			var set = false;
+			return new Size(
+				ResolveDimension(size.Width, widthConstraint),
+				ResolveDimension(size.Height, heightConstraint));
+		}
 
-			var width = size.Width;
-			var height = size.Height;
+		double ResolveDimension(double measured, double constraint)
+		{
+			if (measured > 0)
+				return measured;
 
-			if (width == 0)
-			{
-				if (widthConstraint <= 0 || double.IsInfinity(widthConstraint))
-				{
-					width = MinimumSize;
-					set = true;
-				}
-			}
+			if (constraint > 0 && !double.IsInfinity(constraint))
+				return constraint;
 
-			if (height == 0)
-			{
-				if (heightConstraint <= 0 || double.IsInfinity(heightConstraint))
-				{
-					height = MinimumSize;
-					set = true;
-				}
-			}
-
-			if (set)
-				size = new Size(width, height);
-
-			return size;
+			return MinimumSize;
 		}
 
 		internal async Task ProcessNavigatedAsync(string url)
