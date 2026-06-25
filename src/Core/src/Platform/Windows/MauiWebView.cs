@@ -2,14 +2,19 @@
 using System.Diagnostics;
 using System.Text;
 using Microsoft.Maui.ApplicationModel;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Windows.ApplicationModel;
+using WSize = global::Windows.Foundation.Size;
 
 namespace Microsoft.Maui.Platform
 {
 	public partial class MauiWebView : WebView2, IWebViewDelegate
 	{
 		readonly WeakReference<WebViewHandler> _handler;
+
+		double _contentWidth = double.NaN;
+		double _contentHeight = double.NaN;
 
 		[Obsolete("Constructor is no longer used, please use an overloaded version.")]
 #pragma warning disable CS8618
@@ -99,6 +104,54 @@ namespace Microsoft.Maui.Platform
 			{
 				Debug.WriteLine(nameof(MauiWebView), $"Failed to load: {uri} {exc}");
 			}
+		}
+
+		// Updates the stored content size and invalidates layout so MAUI re-measures with the
+		// HTML content dimensions. Called after NavigationCompleted to enable content-based sizing
+		// when no explicit WidthRequest/HeightRequest is set.
+		internal void UpdateContentSize(double width, double height)
+		{
+			if (!double.IsNaN(_contentWidth) && Math.Abs(_contentWidth - width) < 1.0 &&
+				!double.IsNaN(_contentHeight) && Math.Abs(_contentHeight - height) < 1.0)
+			{
+				return;
+			}
+
+			_contentWidth = width;
+			_contentHeight = height;
+			// WinUI propagates InvalidateMeasure up the visual tree, causing parent layouts to re-measure.
+			InvalidateMeasure();
+		}
+
+		// Clears stored content dimensions when navigation starts so stale sizes from
+		// a previous page are never applied to incoming content.
+		internal void ResetContentSize()
+		{
+			_contentWidth = double.NaN;
+			_contentHeight = double.NaN;
+		}
+
+		protected override WSize MeasureOverride(WSize availableSize)
+		{
+			var baseSize = base.MeasureOverride(availableSize);
+
+			// Only override width when no explicit WidthRequest is set (Width == NaN in WinUI)
+			// and we have known content width.
+			if (double.IsNaN(Width) && !double.IsNaN(_contentWidth) && _contentWidth > 0)
+			{
+				var targetWidth = double.IsInfinity(availableSize.Width)
+					? _contentWidth
+					: Math.Min(_contentWidth, availableSize.Width);
+				baseSize = new WSize(targetWidth, baseSize.Height);
+			}
+
+			// Only override height when no explicit HeightRequest is set and we have known content height.
+			if (double.IsNaN(Height) && !double.IsNaN(_contentHeight) && _contentHeight > 0)
+			{
+				baseSize = new WSize(baseSize.Width, _contentHeight);
+			}
+
+			return baseSize;
 		}
 
 		void SetupPlatformEvents()

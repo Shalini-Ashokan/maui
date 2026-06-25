@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -65,6 +66,11 @@ namespace Microsoft.Maui.Handlers
 
 		void OnNavigationStarting(CoreWebView2 sender, CoreWebView2NavigationStartingEventArgs args)
 		{
+			// Reset stored content dimensions so stale sizes from the previous page
+			// are not applied during the new navigation.
+			if (PlatformView is MauiWebView webView)
+				webView.ResetContentSize();
+
 			if (Uri.TryCreate(args.Uri, UriKind.Absolute, out Uri? uri) && uri is not null)
 			{
 				bool cancel = VirtualView.Navigating(CurrentNavigationEvent, uri.AbsoluteUri);
@@ -145,6 +151,58 @@ namespace Microsoft.Maui.Handlers
 				return;
 
 			PlatformView?.UpdateCanGoBackForward(VirtualView);
+
+			// After content loads, query its DOM dimensions so MAUI can size the WebView
+			// correctly when no explicit WidthRequest/HeightRequest is set.
+			if (PlatformView is MauiWebView)
+				UpdateContentSizeAsync(sender);
+		}
+
+		async void UpdateContentSizeAsync(CoreWebView2 coreWebView2)
+		{
+			if (PlatformView is not MauiWebView mauiWebView || VirtualView is null)
+				return;
+
+			try
+			{
+				// Temporarily collapse the <html> element height so it no longer stretches to fill
+				// the WebView2 container. This lets body.scrollHeight reflect the natural content
+				// height instead of the allocated container height.
+				// The change is invisible to the user because JS executes synchronously between
+				// paint frames — the browser never repaints at the collapsed height.
+				var result = await coreWebView2.ExecuteScriptAsync(
+					"(function(){" +
+					"  var b = document.body, d = document.documentElement;" +
+					"  var ph = d.style.height;" +
+					"  d.style.height = '0px';" +
+					"  var h = b ? b.scrollHeight : d.scrollHeight;" +
+					"  var w = Math.max(b ? b.scrollWidth : 0, d.scrollWidth);" +
+					"  d.style.height = ph;" +
+					"  return [w, h];" +
+					"})()");
+
+				// Guard against disposal or handler disconnect during the async gap.
+				if (PlatformView is not MauiWebView currentWebView || VirtualView is null)
+					return;
+
+				// result is a JSON array string like "[400,600]"
+				if (result is null)
+					return;
+
+				result = result.Trim('[', ']');
+				var parts = result.Split(',');
+				if (parts.Length == 2 &&
+					double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out double contentWidth) &&
+					double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out double contentHeight) &&
+					contentWidth > 0 && contentHeight > 0)
+				{
+					currentWebView.UpdateContentSize(contentWidth, contentHeight);
+				}
+			}
+			catch
+			{
+				// Best-effort: ignore failures (page error, CoreWebView2 disposed, navigation cancelled, etc.)
+			}
 		}
 
 		void NavigationFailed(CoreWebView2 sender, CoreWebView2NavigationCompletedEventArgs e)
