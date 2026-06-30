@@ -2,4 +2,130 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="Maui.Controls.Sample.MainPage"
              xmlns:local="clr-namespace:Maui.Controls.Sample">
+    <ScrollView>
+        <VerticalStackLayout Padding="18,18,18,28"
+                Spacing="16">
+            <Label Text="AdaptiveTrigger live theme-swap retention"
+                   FontSize="22"
+                   FontAttributes="Bold"
+                   TextColor="#0B1F33"/>
+
+            <Label Text="Run static control first, then live theme swap, then preloaded theme swap to compare weak-reference retention after full GC."
+                   FontSize="14"
+                   TextColor="#57606A"/>
+
+            <Grid ColumnDefinitions="*,*"
+                  RowDefinitions="Auto,Auto"
+                  ColumnSpacing="12"
+                  RowSpacing="12">
+                <VerticalStackLayout Grid.Column="0"
+                        Grid.Row="0"
+                        Spacing="4">
+                    <Label Text="Pages/run"
+                            FontSize="12"
+                            TextColor="#57606A"/>
+                    <Entry x:Name="CyclesEntry"
+                            Text="40"
+                            Keyboard="Numeric"
+                            FontSize="15"
+                            TextColor="#172026"
+                            BackgroundColor="#F6F8FA"/>
+                </VerticalStackLayout>
+
+                <VerticalStackLayout Grid.Column="1"
+                        Grid.Row="0"
+                        Spacing="4">
+                    <Label Text="Payload MB/page"
+                            FontSize="12"
+                            TextColor="#57606A"/>
+                    <Entry x:Name="PayloadEntry"
+                            Text="3"
+                            Keyboard="Numeric"
+                            FontSize="15"
+                            TextColor="#172026"
+                            BackgroundColor="#F6F8FA"/>
+                </VerticalStackLayout>
+
+                <VerticalStackLayout Grid.Column="0"
+                        Grid.Row="1"
+                        Spacing="4">
+                    <Label Text="Dwell ms/page"
+                            FontSize="12"
+                            TextColor="#57606A"/>
+                    <Entry x:Name="DwellEntry"
+                            Text="100"
+                            Keyboard="Numeric"
+                            FontSize="15"
+                            TextColor="#172026"
+                            BackgroundColor="#F6F8FA"/>
+                </VerticalStackLayout>
+            </Grid>
+
+            <Grid ColumnDefinitions="*,*"
+                  RowDefinitions="Auto,Auto"
+                  ColumnSpacing="12"
+                  RowSpacing="12">
+                <Button x:Name="RunLeakButton"
+                        Grid.Column="0"
+                        Grid.Row="0"
+                        Text="Run live theme swap"
+                        FontSize="14"
+                        BackgroundColor="#255A6E"
+                        TextColor="White"
+                        CornerRadius="6"
+                        MinimumHeightRequest="44"
+                        Clicked="OnRunLeakClicked"/>
+
+                <Button x:Name="RunControlButton"
+                        Grid.Column="1"
+                        Grid.Row="0"
+                        Text="Run static theme control"
+                        FontSize="14"
+                        BackgroundColor="#255A6E"
+                        TextColor="White"
+                        CornerRadius="6"
+                        MinimumHeightRequest="44"
+                        Clicked="OnRunControlClicked"/>
+
+                <Button x:Name="RunPreloadedThemeButton"
+                        Grid.Column="0"
+                        Grid.Row="1"
+                        Text="Run preloaded theme swap"
+                        FontSize="14"
+                        BackgroundColor="#255A6E"
+                        TextColor="White"
+                        CornerRadius="6"
+                        MinimumHeightRequest="44"
+                        Clicked="OnRunPreloadedClicked"/>
+
+                <Button x:Name="StopButton"
+                        Grid.Column="1"
+                        Grid.Row="1"
+                        Text="Stop"
+                        FontSize="14"
+                        BackgroundColor="#8A2432"
+                        TextColor="White"
+                        CornerRadius="6"
+                        MinimumHeightRequest="44"
+                        IsEnabled="False"
+                        Clicked="OnStopClicked"/>
+            </Grid>
+
+            <ProgressBar x:Name="RunProgress"
+                         Progress="0"
+                         HeightRequest="6"
+                         ProgressColor="#255A6E"/>
+
+            <Label x:Name="StatusLabel"
+                   Text="Ready. Run static control, then live theme swap."
+                   FontSize="14"
+                   TextColor="#172026"/>
+
+            <Label x:Name="SummaryLabel"
+                   Text="Results will show weak references still alive after full GC."
+                   FontSize="13"
+                   LineBreakMode="WordWrap"
+                   TextColor="#172026"/>
+        </VerticalStackLayout>
+    </ScrollView>
 </ContentPage>
