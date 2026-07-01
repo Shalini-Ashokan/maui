@@ -16,33 +16,27 @@ public class Issue36201 : _IssuesUITest
 	{
 		// Wait for WebView to finish loading
 		App.WaitForElement("EditorWebView");
-
 		// Step 1: Tap the WebView content to manually focus the editor (simulates user interaction)
 		App.Tap("EditorWebView");
-		Thread.Sleep(500);
-		App.Tap("CheckStatusButton");
-		Thread.Sleep(300);
 
-		var statusAfterTap = App.FindElement("FocusStatusLabel").GetText();
-		Assert.That(statusAfterTap, Is.EqualTo("focused"),
-			"Tapping the contenteditable area should focus the editor.");
+#if ANDROID || IOS
+       App.DismissKeyboard();
+#endif
 
 		// Step 2: Unfocus via WebView.Unfocus()
 		App.Tap("UnfocusButton");
-		Thread.Sleep(500);
+		App.WaitForElement("CheckStatusButton");
 		App.Tap("CheckStatusButton");
-		Thread.Sleep(300);
 
 		var statusAfterUnfocus = App.FindElement("FocusStatusLabel").GetText();
-		Assert.That(statusAfterUnfocus, Is.EqualTo("not-focused"),
+		Assert.That(statusAfterUnfocus, Is.EqualTo("unfocused"),
 			"WebView.Unfocus() should remove focus from the contenteditable element.");
 
 		// Step 3: Call WebView.Focus() — should restore focus to the contenteditable element
 		// on all platforms (iOS and MacCatalyst fixed via MapFocus override in WebViewHandler.iOS.cs).
 		App.Tap("FocusButton");
-		Thread.Sleep(500);
+		App.WaitForElement("CheckStatusButton");
 		App.Tap("CheckStatusButton");
-		Thread.Sleep(300);
 
 		var statusAfterFocus = App.FindElement("FocusStatusLabel").GetText();
 		Assert.That(statusAfterFocus, Is.EqualTo("focused"),

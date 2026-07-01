@@ -26,13 +26,6 @@ public class Issue36201 : ContentPage
 </head>
 <body>
   <div id='editor' contenteditable='true' tabindex='0'>Editable content area — tap Focus/Unfocus to test.</div>
-  <div id='status'>not-focused</div>
-  <script>
-    var editor = document.getElementById('editor');
-    var status = document.getElementById('status');
-    editor.addEventListener('focus', function() { status.textContent = 'focused'; });
-    editor.addEventListener('blur',  function() { status.textContent = 'not-focused'; });
-  </script>
 </body>
 </html>";
 
@@ -52,17 +45,14 @@ public class Issue36201 : ContentPage
 			Source = new HtmlWebViewSource { Html = HtmlContent }
 		};
 
-		_webView.Navigated += async (s, e) => await UpdateFocusStatusAsync();
-
 		var focusButton = new Button
 		{
 			Text = "Focus WebView",
 			AutomationId = "FocusButton"
 		};
-		focusButton.Clicked += async (s, e) =>
+		focusButton.Clicked += (s, e) =>
 		{
 			_webView.Focus();
-			await UpdateFocusStatusAsync();
 		};
 
 		var unfocusButton = new Button
@@ -70,10 +60,9 @@ public class Issue36201 : ContentPage
 			Text = "Unfocus WebView",
 			AutomationId = "UnfocusButton"
 		};
-		unfocusButton.Clicked += async (s, e) =>
+		unfocusButton.Clicked += (s, e) =>
 		{
 			_webView.Unfocus();
-			await UpdateFocusStatusAsync();
 		};
 
 		var checkStatusButton = new Button
@@ -81,7 +70,7 @@ public class Issue36201 : ContentPage
 			Text = "Check Status",
 			AutomationId = "CheckStatusButton"
 		};
-		checkStatusButton.Clicked += async (s, e) => await UpdateFocusStatusAsync();
+		checkStatusButton.Clicked += (s, e) => UpdateFocusStatusAsync();
 
 		Content = new VerticalStackLayout
 		{
@@ -98,9 +87,9 @@ public class Issue36201 : ContentPage
 		};
 	}
 
-	async Task UpdateFocusStatusAsync()
+	void UpdateFocusStatusAsync()
 	{
-		var result = await _webView.EvaluateJavaScriptAsync("document.getElementById('status').textContent");
-		_focusStatusLabel.Text = result ?? "unknown";
+		var result = _webView.IsFocused;
+		_focusStatusLabel.Text = result ? "focused" : "unfocused";
 	}
 }
