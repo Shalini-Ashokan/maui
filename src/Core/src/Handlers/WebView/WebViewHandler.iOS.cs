@@ -16,79 +16,12 @@ namespace Microsoft.Maui.Handlers
 	{
 		readonly HashSet<string> _loadedCookies = new HashSet<string>();
 
-		// Name used to register the WKScriptMessageHandler that tracks DOM focus changes.
-		// Must be unique across all handlers to avoid conflicts with other WebView instances.
-		const string FocusMessageHandlerName = "mauiWebViewFocus";
-
-		// JavaScript injected at document start that posts a message to the native layer
-		// whenever focus enters or leaves the document. We use 'focusin'/'focusout' because
-		// they bubble (unlike 'focus'/'blur') so a single document-level listener covers all
-		// child elements. The 'focusout' handler only fires when focus leaves the page entirely
-		// (relatedTarget == null) to avoid a false IsFocused=false when focus just moves between
-		// two elements inside the same page.
-		const string FocusTrackingScript =
-			"document.addEventListener('focusin',function(){" +
-			"  window.webkit.messageHandlers.mauiWebViewFocus.postMessage('focus');" +
-			"});" +
-			"document.addEventListener('focusout',function(e){" +
-			"  if(!e.relatedTarget){" +
-			"    window.webkit.messageHandlers.mauiWebViewFocus.postMessage('blur');" +
-			"  }" +
-			"});";
-
 		protected virtual float MinimumSize => 44f;
 
 		WKUIDelegate? _delegate;
 
 		protected override WKWebView CreatePlatformView() =>
 			new MauiWKWebView(this);
-
-		protected override void ConnectHandler(WKWebView platformView)
-		{
-			base.ConnectHandler(platformView);
-
-			// Inject focus-tracking script and message handler so VisualElement.IsFocused
-			// stays in sync with WKContentView's actual first-responder status. Without this,
-			// tapping web content sets focus on the private WKContentView but MAUI never
-			// learns about it, so IsFocused remains false and VisualElement.Unfocus() bails
-			// out early without calling MapUnfocus (issue #36201).
-			var script = new WKUserScript(
-				new NSString(FocusTrackingScript),
-				WKUserScriptInjectionTime.AtDocumentStart,
-				true);
-			platformView.Configuration.UserContentController.AddUserScript(script);
-			platformView.Configuration.UserContentController.AddScriptMessageHandler(
-				new WebViewFocusMessageHandler(this), FocusMessageHandlerName);
-		}
-
-		protected override void DisconnectHandler(WKWebView platformView)
-		{
-			platformView.Configuration.UserContentController
-				.RemoveScriptMessageHandler(FocusMessageHandlerName);
-
-			base.DisconnectHandler(platformView);
-		}
-
-		// Message handler receives DOM focus/blur events and keeps IsFocused in sync.
-		// Uses WeakReference to avoid a retain cycle between the WKUserContentController
-		// (which holds a strong reference to this handler) and the WebViewHandler.
-		sealed class WebViewFocusMessageHandler : NSObject, IWKScriptMessageHandler
-		{
-			readonly WeakReference<WebViewHandler> _handlerRef;
-
-			public WebViewFocusMessageHandler(WebViewHandler handler)
-			{
-				_handlerRef = new WeakReference<WebViewHandler>(handler);
-			}
-
-			public void DidReceiveScriptMessage(WKUserContentController userContentController, WKScriptMessage message)
-			{
-				if (!_handlerRef.TryGetTarget(out var handler))
-					return;
-
-				handler.VirtualView.IsFocused = (message.Body as NSString)?.ToString() == "focus";
-			}
-		}
 
 		public static void MapWKUIDelegate(IWebViewHandler handler, IWebView webView)
 		{
