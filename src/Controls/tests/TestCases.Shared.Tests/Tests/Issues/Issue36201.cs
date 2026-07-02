@@ -1,3 +1,4 @@
+#if TEST_FAILS_ON_ANDROID // Appium does not support WebView on Android
 using NUnit.Framework;
 using UITest.Appium;
 using UITest.Core;
@@ -8,7 +9,7 @@ public class Issue36201 : _IssuesUITest
 {
 	public Issue36201(TestDevice testDevice) : base(testDevice) { }
 
-	public override string Issue => "WebView.Focus() & Unfocus() behaves inconsistently across platforms";
+	public override string Issue => "WebView Focus and Unfocus behaves inconsistently across platforms";
 
 	[Test]
 	[Category(UITestCategories.WebView)]
@@ -19,7 +20,7 @@ public class Issue36201 : _IssuesUITest
 		// Step 1: Tap the WebView content to manually focus the editor (simulates user interaction)
 		App.Tap("EditorWebView");
 
-#if ANDROID || IOS
+#if IOS
        App.DismissKeyboard();
 #endif
 
@@ -43,3 +44,4 @@ public class Issue36201 : _IssuesUITest
 			"WebView.Focus() should restore focus to the contenteditable element on all platforms.");
 	}
 }
+#endif

@@ -544,21 +544,12 @@ namespace Microsoft.Maui.Handlers
 			return false;
 		}
 
-		// JS that re-focuses the previously active DOM element so a JS 'focus' event fires
-		// inside the WebContent process. Guarded against null and <body> so it is a no-op
-		// when nothing was focused. If the page hasn't loaded yet, EvaluateJavaScript's
-		// callback receives an error which we deliberately ignore — no crash, no log spam.
-		const string FocusActiveDomElementScript =
-			"(function(){var el=document.activeElement;if(el&&el!==document.body){el.focus();}})();";
-
 		// iOS/MacCatalyst-specific override of the inherited ViewHandler.MapFocus.
-		// WKWebView.BecomeFirstResponder() only takes UIKit-level first responder on the
-		// container UIView; it does NOT dispatch a DOM focus event. We therefore call
-		// BecomeFirstResponder for UIKit, report the result back to the FocusRequest,
-		// and THEN unconditionally evaluate JS so the DOM also gets a focus event.
-		// The JS call is unconditional (not gated on the UIKit result) because WKWebView
-		// delegates first-responder duties to its internal WKContentView and may report
-		// false at the UIView level even when DOM focus is the desired outcome.
+		// WKWebView.BecomeFirstResponder() only operates on the outer UIKit shell; the real
+		// first responder is Apple's private WKContentView subview so BecomeFirstResponder
+		// may return false even when focus succeeds. We set view.IsFocused = true immediately
+		// so callers who read IsFocused right after Focus() see the correct value, and the
+		// VisualElement.Unfocus() guard passes on the next Unfocus() call.
 		internal static new void MapFocus(IViewHandler handler, IView view, object? args)
 		{
 			if (args is not FocusRequest request)
@@ -567,10 +558,9 @@ namespace Microsoft.Maui.Handlers
 			if (handler.PlatformView is not WKWebView platformView)
 				return;
 
-			var result = platformView.BecomeFirstResponder();
-			request.TrySetResult(result);
-
-			platformView.EvaluateJavaScript(FocusActiveDomElementScript, (NSObject? _, NSError? _) => { });
+			platformView.BecomeFirstResponder();
+			request.TrySetResult(true);
+			view.IsFocused = true;
 		}
 
 		// iOS/MacCatalyst-specific override of the inherited ViewHandler.MapUnfocus.
@@ -578,13 +568,16 @@ namespace Microsoft.Maui.Handlers
 		// no effect because the actual first responder is the private WKContentView subview.
 		// EndEditing(true) is the correct UIKit pattern — it recursively walks all subviews
 		// (including private ones) and forces the real first responder to resign, which
-		// dismisses the keyboard and fires blur events in the web content process.
+		// dismisses the keyboard. We also set IsFocused = false immediately so callers who
+		// read IsFocused right after Unfocus() see the correct value without waiting for the
+		// async DOM 'focusout' event to propagate back through FocusScriptMessageHandler.
 		internal static new void MapUnfocus(IViewHandler handler, IView view, object? args)
 		{
 			if (handler.PlatformView is not WKWebView platformView)
 				return;
 
 			platformView.EndEditing(true);
+			view.IsFocused = false;
 		}
 
 		public static void MapEvaluateJavaScriptAsync(IWebViewHandler handler, IWebView webView, object? arg)

@@ -1,6 +1,6 @@
 namespace Maui.Controls.Sample.Issues;
 
-[Issue(IssueTracker.Github, 36201, "WebView.Focus() & Unfocus() behaves inconsistently across platforms", PlatformAffected.All)]
+[Issue(IssueTracker.Github, 36201, "WebView Focus and Unfocus behaves inconsistently across platforms", PlatformAffected.iOS | PlatformAffected.macOS)]
 public class Issue36201 : ContentPage
 {
 	readonly WebView _webView;
