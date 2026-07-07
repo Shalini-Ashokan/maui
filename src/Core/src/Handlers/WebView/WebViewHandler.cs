@@ -47,10 +47,7 @@ namespace Microsoft.Maui.Handlers
 			[nameof(IWebView.Eval)] = MapEval,
 			[nameof(IWebView.EvaluateJavaScriptAsync)] = MapEvaluateJavaScriptAsync,
 #if __IOS__ || MACCATALYST
-			// WKWebView.BecomeFirstResponder() / ResignFirstResponder() only operate at the
-			// UIKit container level; they do NOT dispatch DOM focus/blur events to web content.
-			// Override MapFocus and MapUnfocus so WebView.Focus()/Unfocus() also propagate
-			// to the active DOM element via JavaScript. See issue #36201.
+		
 			[nameof(IView.Focus)] = MapFocus,
 			[nameof(IView.Unfocus)] = MapUnfocus,
 #endif

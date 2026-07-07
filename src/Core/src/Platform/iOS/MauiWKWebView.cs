@@ -16,21 +16,34 @@ namespace Microsoft.Maui.Platform
 		[UnconditionalSuppressMessage("Memory", "MEM0002", Justification = "Used to persist cookies across WebView instances. Not a leak.")]
 		static WKProcessPool? SharedPool;
 
+		// Name of the script message handler used to observe DOM focus/blur so the virtual
+		// view's IsFocused stays in sync with the actually focused element, including when
+		// the user focuses or blurs web content manually.
+		internal const string FocusMessageHandlerName = "mauiFocusStateChanged";
+
+		// Reports DOM focusin/focusout back to the handler. Guarded so it is only installed once
+		// per document even if the script is injected multiple times.
+		const string FocusTrackingScript =
+		 "(function(){if(window.__mauiFocusTrackingInstalled){return;}window.__mauiFocusTrackingInstalled=true;" +
+		 "function post(f){try{window.webkit.messageHandlers." + FocusMessageHandlerName + ".postMessage(f);}catch(e){}}" +
+		 "document.addEventListener('focusin',function(){post(true);});" +
+		 "document.addEventListener('focusout',function(){post(false);});})();";
+
 		string? _pendingUrl;
 		readonly WeakReference<WebViewHandler> _handler;
 
 		public MauiWKWebView(WebViewHandler handler)
-			: this(RectangleF.Empty, handler)
+		 : this(RectangleF.Empty, handler)
 		{
 		}
 
 		public MauiWKWebView(CGRect frame, WebViewHandler handler)
-			: this(frame, handler, CreateConfiguration())
+		 : this(frame, handler, CreateConfiguration())
 		{
 		}
 
 		public MauiWKWebView(CGRect frame, WebViewHandler handler, WKWebViewConfiguration configuration)
-			: base(frame, configuration)
+		 : base(frame, configuration)
 		{
 			_ = handler ?? throw new ArgumentNullException(nameof(handler));
 			_handler = new WeakReference<WebViewHandler>(handler);
@@ -39,10 +52,15 @@ namespace Microsoft.Maui.Platform
 			AutosizesSubviews = true;
 
 			NavigationDelegate = new MauiWebViewNavigationDelegate(handler);
+
+			// Keep WebView.IsFocused in sync with the DOM focus state (see issue #36201).
+			var userContentController = configuration.UserContentController;
+			userContentController.AddScriptMessageHandler(new FocusScriptMessageHandler(handler), FocusMessageHandlerName);
+			userContentController.AddUserScript(new WKUserScript(new NSString(FocusTrackingScript), WKUserScriptInjectionTime.AtDocumentStart, false));
 		}
 
 		public string? CurrentUrl =>
-			Url?.AbsoluteUrl?.ToString();
+		 Url?.AbsoluteUrl?.ToString();
 
 		public override void MovedToWindow()
 		{
@@ -114,7 +132,7 @@ namespace Microsoft.Maui.Platform
 				if (_handler.TryGetTarget(out var handler))
 				{
 					if (handler.HasCookiesToLoad(safeFullUri.AbsoluteUri) &&
-						!(OperatingSystem.IsIOSVersionAtLeast(11) || OperatingSystem.IsTvOSVersionAtLeast(11)))
+					 !(OperatingSystem.IsIOSVersionAtLeast(11) || OperatingSystem.IsTvOSVersionAtLeast(11)))
 					{
 						return;
 					}
@@ -213,6 +231,29 @@ namespace Microsoft.Maui.Platform
 		{
 			add => _movedToWindow += value;
 			remove => _movedToWindow -= value;
+		}
+
+		// Receives DOM focusin/focusout notifications and mirrors them onto the virtual view's
+		// IsFocused so that programmatic Unfocus() works after the user focuses content manually.
+		sealed class FocusScriptMessageHandler : NSObject, IWKScriptMessageHandler
+		{
+			readonly WeakReference<WebViewHandler> _handler;
+
+			public FocusScriptMessageHandler(WebViewHandler handler)
+			{
+				_handler = new WeakReference<WebViewHandler>(handler);
+			}
+
+			public void DidReceiveScriptMessage(WKUserContentController userContentController, WKScriptMessage message)
+			{
+				if (!_handler.TryGetTarget(out var handler) || handler.VirtualView is not IView view)
+					return;
+
+				bool isFocused = (message.Body as NSNumber)?.BoolValue ?? false;
+
+				if (view.IsFocused != isFocused)
+					view.IsFocused = isFocused;
+			}
 		}
 	}
 }
