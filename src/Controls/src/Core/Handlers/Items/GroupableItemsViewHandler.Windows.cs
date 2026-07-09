@@ -16,6 +16,12 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			handler.UpdateItemsSource();
 		}
 
+		protected override bool IsGroupedVerticalGridLayout
+			=> ItemsView != null
+			&& ItemsView.IsGrouped
+			&& Layout is GridItemsLayout gridItemsLayout
+			&& gridItemsLayout.Orientation == ItemsLayoutOrientation.Vertical;
+
 		protected override CollectionViewSource CreateCollectionViewSource()
 		{
 			if (ItemsView != null && ItemsView.IsGrouped)
@@ -41,7 +47,14 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 		{
 			base.UpdateItemTemplate();
 
-			ListViewBase.GroupStyleSelector = new GroupHeaderStyleSelector();
+			if (ItemsView != null && ItemsView.IsGrouped && Layout is GridItemsLayout gridItemsLayout && gridItemsLayout.Orientation == ItemsLayoutOrientation.Vertical)
+			{
+				ListViewBase.GroupStyleSelector = new GroupHeaderStyleSelector(gridItemsLayout);
+			}
+			else
+			{
+				ListViewBase.GroupStyleSelector = new GroupHeaderStyleSelector();
+			}
 		}
 	}
 }

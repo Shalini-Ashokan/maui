@@ -22,6 +22,12 @@
         <ItemsWrapGrid Orientation="Horizontal" />
     </ItemsPanelTemplate>
 
+    <!-- Used by grouped vertical GridItemsLayout: group sections stack vertically, and each
+         group uses its own inner ItemsWrapGrid via GroupStyle.Panel. -->
+    <ItemsPanelTemplate x:Key="GroupedGridItemsPanel">
+        <ItemsStackPanel Orientation="Vertical" />
+    </ItemsPanelTemplate>
+
     <DataTemplate x:Key="ItemsViewDefaultTemplate">
         <local:ItemContentControl 
             x:Name="ItemContentControl" 

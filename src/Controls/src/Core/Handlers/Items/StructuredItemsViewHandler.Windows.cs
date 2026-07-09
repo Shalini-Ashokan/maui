@@ -89,7 +89,7 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			switch (VirtualView.ItemsLayout)
 			{
 				case GridItemsLayout gridItemsLayout:
-					return CreateGridView(gridItemsLayout);
+					return CreateGridView(gridItemsLayout, IsGroupedVerticalGridLayout);
 				case LinearItemsLayout listItemsLayout when listItemsLayout.Orientation == ItemsLayoutOrientation.Vertical:
 					return CreateVerticalListView(listItemsLayout);
 				case LinearItemsLayout listItemsLayout when listItemsLayout.Orientation == ItemsLayoutOrientation.Horizontal:
@@ -98,6 +98,8 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 
 			throw new NotImplementedException("The layout is not implemented");
 		}
+
+		protected virtual bool IsGroupedVerticalGridLayout => false;
 
 		protected virtual void UpdateHeader()
 		{
@@ -199,10 +201,11 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			}
 		}
 
-		static ListViewBase CreateGridView(GridItemsLayout gridItemsLayout)
+		static ListViewBase CreateGridView(GridItemsLayout gridItemsLayout, bool isGroupedVerticalGrid)
 		{
 			var gridView = new FormsGridView
 			{
+				IsGroupedVerticalGrid = isGroupedVerticalGrid,
 				Orientation = gridItemsLayout.Orientation == ItemsLayoutOrientation.Horizontal
 					? Orientation.Horizontal
 					: Orientation.Vertical,

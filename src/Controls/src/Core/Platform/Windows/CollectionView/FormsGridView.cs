@@ -1,8 +1,10 @@
 #nullable disable
 using System;
+using System.Collections.Generic;
 using Microsoft.Maui.Graphics;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using UWPApp = Microsoft.UI.Xaml.Application;
 using UWPControls = Microsoft.UI.Xaml.Controls;
 using WScrollMode = Microsoft.UI.Xaml.Controls.ScrollMode;
@@ -14,6 +16,7 @@ namespace Microsoft.Maui.Controls.Platform
 	{
 		int _span;
 		ItemsWrapGrid _wrapGrid;
+		readonly List<ItemsWrapGrid> _groupWrapGrids = new();
 		ContentControl _emptyViewContentControl;
 		ScrollViewer _scrollViewer;
 		FrameworkElement _emptyView;
@@ -29,6 +32,7 @@ namespace Microsoft.Maui.Controls.Platform
 			RegisterPropertyChangedCallback(ItemsPanelProperty, ItemsPanelChanged);
 
 			ChoosingItemContainer += OnChoosingItemContainer;
+			ContainerContentChanging += OnContainerContentChanging;
 		}
 
 		public int Span
@@ -70,7 +74,11 @@ namespace Microsoft.Maui.Controls.Platform
 			set
 			{
 				_orientation = value;
-				if (_orientation == Orientation.Horizontal)
+				if (IsGroupedVerticalGrid)
+				{
+					ItemsPanel = (ItemsPanelTemplate)UWPApp.Current.Resources["GroupedGridItemsPanel"];
+				}
+				else if (_orientation == Orientation.Horizontal)
 				{
 					ItemsPanel = (ItemsPanelTemplate)UWPApp.Current.Resources["HorizontalGridItemsPanel"];
 					ScrollViewer.SetHorizontalScrollMode(this, WScrollMode.Auto);
@@ -83,8 +91,16 @@ namespace Microsoft.Maui.Controls.Platform
 			}
 		}
 
+		public bool IsGroupedVerticalGrid { get; set; }
+
 		void FindItemsWrapGrid()
 		{
+			if (IsGroupedVerticalGrid)
+			{
+				FindGroupedWrapGrids();
+				return;
+			}
+
 			_wrapGrid = this.GetFirstDescendant<ItemsWrapGrid>();
 
 			if (_wrapGrid == null)
@@ -98,9 +114,55 @@ namespace Microsoft.Maui.Controls.Platform
 			UpdateItemSize();
 		}
 
+		void FindGroupedWrapGrids()
+		{
+			_groupWrapGrids.Clear();
+
+			CollectItemsWrapGrids(this, _groupWrapGrids);
+
+			if (_groupWrapGrids.Count == 0)
+			{
+				return;
+			}
+
+			foreach (var wrapGrid in _groupWrapGrids)
+			{
+				wrapGrid.SizeChanged -= WrapGridSizeChanged;
+				wrapGrid.SizeChanged += WrapGridSizeChanged;
+			}
+
+			_wrapGrid = _groupWrapGrids[0];
+			UpdateItemSize();
+		}
+
+		static void CollectItemsWrapGrids(DependencyObject root, List<ItemsWrapGrid> result)
+		{
+			var count = VisualTreeHelper.GetChildrenCount(root);
+
+			for (var i = 0; i < count; i++)
+			{
+				var child = VisualTreeHelper.GetChild(root, i);
+
+				if (child is ItemsWrapGrid wrapGrid)
+				{
+					result.Add(wrapGrid);
+				}
+
+				CollectItemsWrapGrids(child, result);
+			}
+		}
+
 		void OnChoosingItemContainer(ListViewBase sender, ChoosingItemContainerEventArgs args)
 		{
 			FindItemsWrapGrid();
+		}
+
+		void OnContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
+		{
+			if (IsGroupedVerticalGrid)
+			{
+				FindGroupedWrapGrids();
+			}
 		}
 
 		void WrapGridSizeChanged(object sender, SizeChangedEventArgs e)
@@ -110,24 +172,64 @@ namespace Microsoft.Maui.Controls.Platform
 
 		void UpdateItemSize()
 		{
+			if (IsGroupedVerticalGrid)
+			{
+				foreach (var wrapGrid in _groupWrapGrids)
+				{
+					UpdateWrapGridSize(wrapGrid);
+				}
+
+				return;
+			}
+
+			UpdateWrapGridSize(_wrapGrid);
+		}
+
+		void UpdateWrapGridSize(ItemsWrapGrid wrapGrid)
+		{
+			if (wrapGrid == null)
+			{
+				return;
+			}
+
 			// Avoid the ItemWrapGrid grow beyond what this grid view is configured to
-			_wrapGrid.MaximumRowsOrColumns = Span;
+			wrapGrid.MaximumRowsOrColumns = Span;
 
 			if (_orientation == Orientation.Horizontal)
 			{
-				_wrapGrid.ItemHeight = Math.Floor(_wrapGrid.ActualHeight / Span);
+				wrapGrid.ItemHeight = Math.Floor(wrapGrid.ActualHeight / Span);
 			}
 			else
 			{
 				if (Span > 1)
 				{
-					_wrapGrid.ItemWidth = Math.Floor(_wrapGrid.ActualWidth / Span);
+					// During first realization (especially grouped grids), ActualWidth can still be 0.
+					// Writing ItemWidth=0 locks the first realized item into a tiny size. Use a valid
+					// panel/control width when available; otherwise keep ItemWidth unset until layout settles.
+					var width = wrapGrid.ActualWidth;
+
+					if (width <= 0 || double.IsNaN(width) || double.IsInfinity(width))
+					{
+						width = ActualWidth;
+					}
+
+					if (width > 0 && !double.IsNaN(width) && !double.IsInfinity(width))
+					{
+						wrapGrid.ItemWidth = Math.Floor(width / Span);
+					}
+					else
+					{
+						wrapGrid.ClearValue(ItemsWrapGrid.ItemWidthProperty);
+					}
 				}
 				else
 				{
-					_wrapGrid.ClearValue(ItemsWrapGrid.ItemWidthProperty);
+					wrapGrid.ClearValue(ItemsWrapGrid.ItemWidthProperty);
 				}
 			}
+
+			wrapGrid.InvalidateMeasure();
+			wrapGrid.InvalidateArrange();
 		}
 
 		void ItemsPanelChanged(DependencyObject sender, DependencyProperty dp)
