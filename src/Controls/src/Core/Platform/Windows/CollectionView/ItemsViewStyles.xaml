@@ -22,6 +22,15 @@
         <ItemsWrapGrid Orientation="Horizontal" />
     </ItemsPanelTemplate>
 
+    <!-- Outer panel used for grouped GridItemsLayout (see FormsGridView.IsGrouped): groups simply stack
+         top-to-bottom, while the actual grid wrapping for each group's items happens in that group's own
+         ItemsWrapGrid, assigned separately via GroupStyle.Panel (see GroupHeaderStyleSelector). Without
+         this separation, WinUI's ItemsWrapGrid would count each group header as occupying one of the
+         Span cells in its row-wrap math, corrupting the column assignment for every item in that row. -->
+    <ItemsPanelTemplate x:Key="GroupedGridItemsPanel">
+        <ItemsStackPanel Orientation="Vertical" />
+    </ItemsPanelTemplate>
+
     <DataTemplate x:Key="ItemsViewDefaultTemplate">
         <local:ItemContentControl 
             x:Name="ItemContentControl" 
