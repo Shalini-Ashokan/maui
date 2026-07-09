@@ -11,27 +11,10 @@ namespace Microsoft.Maui.Controls.Platform
 {
 	internal partial class GroupHeaderStyleSelector : GroupStyleSelector
 	{
-		readonly ItemsPanelTemplate _panel;
 		readonly WStyle _headerContainerStyle;
 
 		public GroupHeaderStyleSelector()
 		{
-		}
-
-		// When the grouped items use a GridItemsLayout, each group needs its own ItemsWrapGrid panel so
-		// group headers are arranged by the outer (non-wrapping) panel instead of being counted as cells
-		// inside the same wrap grid as the items - see GroupableItemsViewHandler.UpdateItemTemplate and
-		// FormsGridView.IsGrouped for the full explanation of the underlying WinUI limitation.
-		public GroupHeaderStyleSelector(GridItemsLayout gridItemsLayout)
-		{
-			var orientation = gridItemsLayout.Orientation == ItemsLayoutOrientation.Horizontal
-				? Orientation.Horizontal
-				: Orientation.Vertical;
-
-			_panel = (ItemsPanelTemplate)UWPApp.Current.Resources[
-				orientation == Orientation.Horizontal ? "HorizontalGridItemsPanel" : "VerticalGridItemsPanel"];
-
-			_headerContainerStyle = CreateHeaderContainerStyle(gridItemsLayout);
 		}
 
 		// GetItemContainerStyle (StructuredItemsViewHandler.Windows.cs) gives every GridViewItem a
@@ -42,6 +25,11 @@ namespace Microsoft.Maui.Controls.Platform
 		// header and the first item ends up as only ~4 + v instead of 2v - i.e. roughly half the
 		// spacing seen between ordinary items. Building the header's margin from the same h/v values
 		// used for items keeps header-to-item spacing consistent with item-to-item spacing.
+		public GroupHeaderStyleSelector(GridItemsLayout gridItemsLayout)
+		{
+			_headerContainerStyle = CreateHeaderContainerStyle(gridItemsLayout);
+		}
+
 		static WStyle CreateHeaderContainerStyle(GridItemsLayout gridItemsLayout)
 		{
 			var h = gridItemsLayout?.HorizontalItemSpacing ?? 0;
@@ -66,7 +54,6 @@ namespace Microsoft.Maui.Controls.Platform
 			return new GroupStyle
 			{
 				HeaderTemplate = (UWPDataTemplate)UWPApp.Current.Resources["GroupHeaderTemplate"],
-				Panel = _panel,
 				HeaderContainerStyle = _headerContainerStyle
 			};
 		}

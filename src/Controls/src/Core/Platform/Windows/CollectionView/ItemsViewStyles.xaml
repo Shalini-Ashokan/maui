@@ -22,15 +22,6 @@
         <ItemsWrapGrid Orientation="Horizontal" />
     </ItemsPanelTemplate>
 
-    <!-- Used as the outer panel for a grouped GridItemsLayout. Groups (header + per-group items panel) are
-    simply stacked vertically here; the actual grid wrapping for each group's items is handled by its own
-    ItemsWrapGrid, assigned via GroupStyle.Panel (see GroupHeaderStyleSelector). This avoids the outer panel
-    treating group headers as grid cells, which otherwise throws off the column assignment for every item in
-    that row. -->
-    <ItemsPanelTemplate x:Key="GroupedGridItemsPanel">
-        <ItemsStackPanel Orientation="Vertical" />
-    </ItemsPanelTemplate>
-
     <DataTemplate x:Key="ItemsViewDefaultTemplate">
         <local:ItemContentControl 
             x:Name="ItemContentControl" 
