@@ -24,6 +24,9 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			[GroupableItemsView.GroupFooterTemplateProperty.PropertyName] = MapIsGrouped,
 			[GroupableItemsView.GroupHeaderTemplateProperty.PropertyName] = MapIsGrouped,
 #endif
+#if WINDOWS
+			[StructuredItemsView.ItemsLayoutProperty.PropertyName] = MapItemsLayout,
+#endif
 		};
 	}
 }

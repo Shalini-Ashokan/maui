@@ -14,6 +14,13 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 		public static void MapIsGrouped(GroupableItemsViewHandler<TItemsView> handler, GroupableItemsView itemsView)
 		{
 			handler.UpdateItemsSource();
+			handler.ApplyGroupStyleSelector();
+		}
+
+		public static void MapItemsLayout(GroupableItemsViewHandler<TItemsView> handler, StructuredItemsView itemsView)
+		{
+			handler.UpdateItemsLayout();
+			handler.ApplyGroupStyleSelector();
 		}
 
 		protected override bool IsGroupedVerticalGridLayout
@@ -46,7 +53,11 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 		protected override void UpdateItemTemplate()
 		{
 			base.UpdateItemTemplate();
+			ApplyGroupStyleSelector();
+		}
 
+		void ApplyGroupStyleSelector()
+		{
 			if (ItemsView != null && ItemsView.IsGrouped && Layout is GridItemsLayout gridItemsLayout && gridItemsLayout.Orientation == ItemsLayoutOrientation.Vertical)
 			{
 				ListViewBase.GroupStyleSelector = new GroupHeaderStyleSelector(gridItemsLayout);
