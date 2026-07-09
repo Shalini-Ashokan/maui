@@ -89,7 +89,7 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			switch (VirtualView.ItemsLayout)
 			{
 				case GridItemsLayout gridItemsLayout:
-					return CreateGridView(gridItemsLayout);
+					return CreateGridView(gridItemsLayout, IsGroupedGridLayout);
 				case LinearItemsLayout listItemsLayout when listItemsLayout.Orientation == ItemsLayoutOrientation.Vertical:
 					return CreateVerticalListView(listItemsLayout);
 				case LinearItemsLayout listItemsLayout when listItemsLayout.Orientation == ItemsLayoutOrientation.Horizontal:
@@ -98,6 +98,12 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 
 			throw new NotImplementedException("The layout is not implemented");
 		}
+
+		// True when this is a GridItemsLayout AND grouping is enabled (i.e. this instance is really a
+		// GroupableItemsViewHandler backing a GroupableItemsView with IsGrouped == true). Used to decide
+		// whether the outer ListViewBase panel needs to avoid wrapping group headers/content as grid cells
+		// (see CreateGridView / FormsGridView.IsGrouped for details on the underlying WinUI limitation).
+		protected virtual bool IsGroupedGridLayout => false;
 
 		protected virtual void UpdateHeader()
 		{
@@ -199,10 +205,13 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			}
 		}
 
-		static ListViewBase CreateGridView(GridItemsLayout gridItemsLayout)
+		static ListViewBase CreateGridView(GridItemsLayout gridItemsLayout, bool isGrouped)
 		{
 			var gridView = new FormsGridView
 			{
+				// Must be set before Orientation: it determines which ItemsPanel Orientation assigns.
+				IsGrouped = isGrouped,
+
 				Orientation = gridItemsLayout.Orientation == ItemsLayoutOrientation.Horizontal
 					? Orientation.Horizontal
 					: Orientation.Vertical,

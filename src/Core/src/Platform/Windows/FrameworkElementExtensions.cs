@@ -79,6 +79,29 @@ namespace Microsoft.Maui.Platform
 			return result is not null;
 		}
 
+		// Walks the entire visual subtree and yields every descendant of type T. Unlike GetFirstDescendant,
+		// this does not stop at the first match, so it can be used to find all panels of a given type when
+		// a control (e.g. a grouped ListViewBase) realizes multiple instances of the same panel type
+		// (one per group), each of which needs to be configured individually.
+		internal static IEnumerable<T> GetDescendants<T>(this DependencyObject element) where T : FrameworkElement
+		{
+			var count = VisualTreeHelper.GetChildrenCount(element);
+			for (var i = 0; i < count; i++)
+			{
+				DependencyObject child = VisualTreeHelper.GetChild(element, i);
+
+				if (child is T target)
+				{
+					yield return target;
+				}
+
+				foreach (var descendant in child.GetDescendants<T>())
+				{
+					yield return descendant;
+				}
+			}
+		}
+
 		internal static ResourceDictionary CloneResources(this FrameworkElement element)
 		{
 			var rd = new ResourceDictionary();

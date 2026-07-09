@@ -1,5 +1,6 @@
 #nullable disable
 using System;
+using System.Collections.Generic;
 using Microsoft.Maui.Graphics;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -13,7 +14,11 @@ namespace Microsoft.Maui.Controls.Platform
 	internal partial class FormsGridView : GridView, IEmptyView
 	{
 		int _span;
-		ItemsWrapGrid _wrapGrid;
+		// When the CollectionView is grouped, WinUI realizes one ItemsWrapGrid per group (each group hosts
+		// its own copy of the ItemsPanelTemplate). Tracking all of them - not just the first one found -
+		// ensures every group's grid gets the correct MaximumRowsOrColumns/ItemWidth, instead of only the
+		// first group being sized correctly while later groups fall back to WinUI's default wrapping.
+		readonly List<ItemsWrapGrid> _groupWrapGrids = new();
 		ContentControl _emptyViewContentControl;
 		ScrollViewer _scrollViewer;
 		FrameworkElement _emptyView;
@@ -37,7 +42,7 @@ namespace Microsoft.Maui.Controls.Platform
 			set
 			{
 				_span = value;
-				if (_wrapGrid != null)
+				if (_groupWrapGrids.Count > 0)
 				{
 					UpdateItemSize();
 				}
@@ -64,36 +69,70 @@ namespace Microsoft.Maui.Controls.Platform
 			set { SetValue(EmptyViewVisibilityProperty, value); }
 		}
 
+		// When true, the actual grid wrapping is delegated per-group to GroupStyle.Panel (see
+		// GroupHeaderStyleSelector), so the outer panel here must NOT be an ItemsWrapGrid. If it were,
+		// WinUI would treat each group's header AND its items-panel as individual cells and wrap them
+		// together (e.g. "5 slots per row" would count a header as slot 1, throwing off every item's
+		// column for that row) - this is the root cause of the well-known "first item in a grouped grid
+		// renders with the wrong size" ItemsWrapGrid bug. Using a plain (non-wrapping) outer panel here
+		// means headers and their group content simply stack vertically, and each group's own
+		// ItemsWrapGrid (from GroupStyle.Panel) handles the actual grid wrapping in isolation.
+		public bool IsGrouped { get; set; }
+
 		public Orientation Orientation
 		{
 			get => _orientation;
 			set
 			{
 				_orientation = value;
-				if (_orientation == Orientation.Horizontal)
+
+				if (IsGrouped)
+				{
+					// Groups always stack top-to-bottom regardless of the inner grid's orientation;
+					// the real wrapping happens inside each group's own panel (GroupStyle.Panel).
+					ItemsPanel = (ItemsPanelTemplate)UWPApp.Current.Resources["GroupedGridItemsPanel"];
+				}
+				else if (_orientation == Orientation.Horizontal)
 				{
 					ItemsPanel = (ItemsPanelTemplate)UWPApp.Current.Resources["HorizontalGridItemsPanel"];
-					ScrollViewer.SetHorizontalScrollMode(this, WScrollMode.Auto);
-					ScrollViewer.SetHorizontalScrollBarVisibility(this, UWPControls.ScrollBarVisibility.Auto);
 				}
 				else
 				{
 					ItemsPanel = (ItemsPanelTemplate)UWPApp.Current.Resources["VerticalGridItemsPanel"];
+				}
+
+				if (_orientation == Orientation.Horizontal)
+				{
+					ScrollViewer.SetHorizontalScrollMode(this, WScrollMode.Auto);
+					ScrollViewer.SetHorizontalScrollBarVisibility(this, UWPControls.ScrollBarVisibility.Auto);
 				}
 			}
 		}
 
 		void FindItemsWrapGrid()
 		{
-			_wrapGrid = this.GetFirstDescendant<ItemsWrapGrid>();
+			// When grouping is enabled, WinUI realizes a separate ItemsWrapGrid instance for each group
+			// (the ItemsPanelTemplate is applied per-group), not a single shared panel. Only patching the
+			// first one found (as GetFirstDescendant did previously) leaves every other group's grid
+			// unconfigured, causing its row/column layout (span, item spacing) to look wrong. Track every
+			// realized wrap grid so each one gets sized consistently.
+			foreach (var wrapGrid in _groupWrapGrids)
+			{
+				wrapGrid.SizeChanged -= WrapGridSizeChanged;
+			}
 
-			if (_wrapGrid == null)
+			_groupWrapGrids.Clear();
+			_groupWrapGrids.AddRange(this.GetDescendants<ItemsWrapGrid>());
+
+			if (_groupWrapGrids.Count == 0)
 			{
 				return;
 			}
 
-			_wrapGrid.SizeChanged -= WrapGridSizeChanged;
-			_wrapGrid.SizeChanged += WrapGridSizeChanged;
+			foreach (var wrapGrid in _groupWrapGrids)
+			{
+				wrapGrid.SizeChanged += WrapGridSizeChanged;
+			}
 
 			UpdateItemSize();
 		}
@@ -110,22 +149,25 @@ namespace Microsoft.Maui.Controls.Platform
 
 		void UpdateItemSize()
 		{
-			// Avoid the ItemWrapGrid grow beyond what this grid view is configured to
-			_wrapGrid.MaximumRowsOrColumns = Span;
+			foreach (var wrapGrid in _groupWrapGrids)
+			{
+				// Avoid the ItemWrapGrid grow beyond what this grid view is configured to
+				wrapGrid.MaximumRowsOrColumns = Span;
 
-			if (_orientation == Orientation.Horizontal)
-			{
-				_wrapGrid.ItemHeight = Math.Floor(_wrapGrid.ActualHeight / Span);
-			}
-			else
-			{
-				if (Span > 1)
+				if (_orientation == Orientation.Horizontal)
 				{
-					_wrapGrid.ItemWidth = Math.Floor(_wrapGrid.ActualWidth / Span);
+					wrapGrid.ItemHeight = Math.Floor(wrapGrid.ActualHeight / Span);
 				}
 				else
 				{
-					_wrapGrid.ClearValue(ItemsWrapGrid.ItemWidthProperty);
+					if (Span > 1)
+					{
+						wrapGrid.ItemWidth = Math.Floor(wrapGrid.ActualWidth / Span);
+					}
+					else
+					{
+						wrapGrid.ClearValue(ItemsWrapGrid.ItemWidthProperty);
+					}
 				}
 			}
 		}
