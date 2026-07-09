@@ -16,10 +16,6 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			handler.UpdateItemsSource();
 		}
 
-		// Used by StructuredItemsViewHandler.SelectListViewBase (via CreateGridView) to decide whether the
-		// outer panel needs special handling to avoid group headers being miscounted as grid cells.
-		protected override bool IsGroupedGridLayout => ItemsView != null && ItemsView.IsGrouped && Layout is GridItemsLayout;
-
 		protected override CollectionViewSource CreateCollectionViewSource()
 		{
 			if (ItemsView != null && ItemsView.IsGrouped)
