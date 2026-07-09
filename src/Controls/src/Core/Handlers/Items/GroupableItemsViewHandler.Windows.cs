@@ -51,10 +51,24 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			// occupying one of the Span cells in its row-wrap math, which throws off the column
 			// assignment for every item in that row (the well-known "first item after a header renders
 			// with the wrong size" ItemsWrapGrid grouping bug).
-			ListViewBase.GroupStyleSelector = Layout is GridItemsLayout gridItemsLayout
-				? new GroupHeaderStyleSelector(gridItemsLayout.Orientation == ItemsLayoutOrientation.Horizontal
-					? Orientation.Horizontal
-					: Orientation.Vertical)
+			//
+			// IMPORTANT: only do this when IsGrouped is actually true. GroupStyleSelector is set
+			// unconditionally on every CollectionView (grouped or not), so if we assigned a non-null
+			// GroupStyle.Panel here for every GridItemsLayout regardless of grouping, WinUI's GridView
+			// would engage grouping-related layout behavior even for plain (ungrouped) grids, corrupting
+			// their normal span/wrap layout.
+			ApplyGroupHeaderStyleSelector();
+		}
+
+		// Refreshes the group header's container style (spacing) whenever HorizontalItemSpacing or
+		// VerticalItemSpacing change at runtime - see GroupHeaderStyleSelector for why the header's
+		// margin needs to be derived from the same values used for item margins.
+		protected override void UpdateGroupHeaderContainerSpacing() => ApplyGroupHeaderStyleSelector();
+
+		void ApplyGroupHeaderStyleSelector()
+		{
+			ListViewBase.GroupStyleSelector = ItemsView != null && ItemsView.IsGrouped && Layout is GridItemsLayout gridItemsLayout
+				? new GroupHeaderStyleSelector(gridItemsLayout)
 				: new GroupHeaderStyleSelector();
 		}
 	}

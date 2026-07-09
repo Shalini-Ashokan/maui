@@ -105,6 +105,13 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 		// (see CreateGridView / FormsGridView.IsGrouped for details on the underlying WinUI limitation).
 		protected virtual bool IsGroupedGridLayout => false;
 
+		// Overridden by GroupableItemsViewHandler to refresh the group header's container style
+		// (spacing) whenever HorizontalItemSpacing/VerticalItemSpacing change at runtime for a
+		// grouped GridItemsLayout. No-op for non-grouped items views.
+		protected virtual void UpdateGroupHeaderContainerSpacing()
+		{
+		}
+
 		protected virtual void UpdateHeader()
 		{
 			if (ListViewBase == null)
@@ -329,6 +336,12 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			if (ListViewBase is FormsGridView formsGridView && Layout is GridItemsLayout gridLayout)
 			{
 				formsGridView.ItemContainerStyle = GetItemContainerStyle(gridLayout);
+
+				// For grouped grids, the group header's container style also encodes spacing
+				// derived from this same layout (see GroupHeaderStyleSelector) - refresh it too
+				// so a runtime change to HorizontalItemSpacing/VerticalItemSpacing keeps header
+				// spacing consistent with item spacing.
+				UpdateGroupHeaderContainerSpacing();
 			}
 
 			if (Layout is LinearItemsLayout linearItemsLayout)
