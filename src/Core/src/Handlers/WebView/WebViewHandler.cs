@@ -46,6 +46,10 @@ namespace Microsoft.Maui.Handlers
 			[nameof(IWebView.Reload)] = MapReload,
 			[nameof(IWebView.Eval)] = MapEval,
 			[nameof(IWebView.EvaluateJavaScriptAsync)] = MapEvaluateJavaScriptAsync,
+#if __IOS__ || MACCATALYST
+			[nameof(IView.Focus)] = MapFocus,
+			[nameof(IView.Unfocus)] = MapUnfocus,
+#endif
 		};
 
 		public WebViewHandler() : base(Mapper, CommandMapper)

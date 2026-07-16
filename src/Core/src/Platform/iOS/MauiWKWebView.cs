@@ -39,7 +39,66 @@ namespace Microsoft.Maui.Platform
 			AutosizesSubviews = true;
 
 			NavigationDelegate = new MauiWebViewNavigationDelegate(handler);
+
+			// Unlike Android and Windows, WKWebView does not automatically restore focus to the
+			// previously focused DOM element when it becomes the first responder again. Track the
+			// last focused element in the page so it can be explicitly refocused from Focus().
+			// See https://github.com/dotnet/maui/issues/36201
+			configuration.UserContentController.AddUserScript(LastFocusedElementTrackerScript);
 		}
+
+		internal const string RefocusLastFocusedElementScript = @"(function() {
+			var el = window.__mauiLastFocusedElement;
+			if (!el || typeof el.focus !== 'function') {
+				return;
+			}
+			el.focus();
+			// Move the caret to the end of the content instead of leaving it at the
+			// beginning, matching the behavior users expect when regaining focus.
+			if (el.isContentEditable) {
+				var range = document.createRange();
+				range.selectNodeContents(el);
+				range.collapse(false);
+				var selection = window.getSelection();
+				selection.removeAllRanges();
+				selection.addRange(range);
+			} else if (typeof el.setSelectionRange === 'function' && typeof el.value === 'string') {
+				var end = el.value.length;
+				el.setSelectionRange(end, end);
+			}
+		})();";
+
+		internal const string BlurActiveElementScript = @"(function() {
+			var el = document.activeElement;
+			if (el && typeof el.blur === 'function') {
+				el.blur();
+			}
+		})();";
+
+		internal const string FocusStateMessageHandlerName = "mauiWebViewFocusState";
+
+		[UnconditionalSuppressMessage("Memory", "MEM0002", Justification = "Shared, immutable script instance reused across all WebView instances. Not a leak.")]
+		static readonly WKUserScript LastFocusedElementTrackerScript = new WKUserScript(
+			new NSString(@"(function() {
+				if (window.__mauiFocusTrackerInstalled) {
+					return;
+				}
+				window.__mauiFocusTrackerInstalled = true;
+				function postFocusState(state) {
+					if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.mauiWebViewFocusState) {
+						window.webkit.messageHandlers.mauiWebViewFocusState.postMessage(state);
+					}
+				}
+				document.addEventListener('focusin', function (e) {
+					window.__mauiLastFocusedElement = e.target;
+					postFocusState('focus');
+				}, true);
+				document.addEventListener('focusout', function (e) {
+					postFocusState('blur');
+				}, true);
+			})();"),
+			WKUserScriptInjectionTime.AtDocumentStart,
+			false);
 
 		public string? CurrentUrl =>
 			Url?.AbsoluteUrl?.ToString();

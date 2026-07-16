@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Foundation;
 using Microsoft.Extensions.Logging;
 using Microsoft.Maui.Graphics;
+using Microsoft.Maui.Platform;
 using WebKit;
 
 namespace Microsoft.Maui.Handlers
@@ -21,6 +22,21 @@ namespace Microsoft.Maui.Handlers
 
 		protected override WKWebView CreatePlatformView() =>
 			new MauiWKWebView(this);
+
+		protected override void ConnectHandler(WKWebView platformView)
+		{
+			base.ConnectHandler(platformView);
+
+			platformView.Configuration.UserContentController.AddScriptMessageHandler(
+				new FocusStateScriptMessageHandler(this), MauiWKWebView.FocusStateMessageHandlerName);
+		}
+
+		protected override void DisconnectHandler(WKWebView platformView)
+		{
+			platformView.Configuration.UserContentController.RemoveScriptMessageHandler(MauiWKWebView.FocusStateMessageHandlerName);
+
+			base.DisconnectHandler(platformView);
+		}
 
 		public static void MapWKUIDelegate(IWebViewHandler handler, IWebView webView)
 		{
@@ -554,6 +570,72 @@ namespace Microsoft.Maui.Handlers
 				}
 
 				handler.PlatformView.EvaluateJavaScript(request);
+			}
+		}
+
+		public static void MapFocus(IWebViewHandler handler, IWebView webView, object? arg)
+		{
+			if (arg is not FocusRequest request)
+				return;
+
+			var platformView = handler.PlatformView;
+
+			if (platformView is null)
+			{
+				request.TrySetResult(false);
+				return;
+			}
+
+			var succeeded = platformView.BecomeFirstResponder();
+			request.TrySetResult(succeeded);
+
+			if (succeeded)
+			{
+				// WKWebView does not automatically restore focus to the previously focused DOM
+				// element the way the native WebView controls on Android and Windows do. Explicitly
+				// refocus the last focused element (if any) so behavior is consistent across platforms.
+				// See https://github.com/dotnet/maui/issues/36201
+				platformView.EvaluateJavaScriptAsync(MauiWKWebView.RefocusLastFocusedElementScript);
+			}
+		}
+
+		public static void MapUnfocus(IWebViewHandler handler, IWebView webView, object? arg)
+		{
+			var platformView = handler.PlatformView;
+
+			if (platformView is null)
+				return;
+
+			platformView.ResignFirstResponder();
+
+			// Explicitly blur the currently focused DOM element so the web content's visual focus
+			// (e.g. text cursor) is cleared, matching the Unfocus() behavior on Android and Windows.
+			// See https://github.com/dotnet/maui/issues/36201
+			platformView.EvaluateJavaScriptAsync(MauiWKWebView.BlurActiveElementScript);
+		}
+
+		// Bridges DOM focusin/focusout events (posted by MauiWKWebView's focus tracker script) back
+		// to the cross-platform IWebView.IsFocused property, since WKWebView's own first-responder
+		// state does not reflect focus changes that occur within the web content itself.
+		// See https://github.com/dotnet/maui/issues/36201
+		sealed class FocusStateScriptMessageHandler : NSObject, IWKScriptMessageHandler
+		{
+			readonly WeakReference<WebViewHandler> _handler;
+
+			public FocusStateScriptMessageHandler(WebViewHandler handler)
+			{
+				_handler = new WeakReference<WebViewHandler>(handler);
+			}
+
+			public void DidReceiveScriptMessage(WKUserContentController userContentController, WKScriptMessage message)
+			{
+				if (!_handler.TryGetTarget(out var handler) || handler.VirtualView is not IWebView webView)
+					return;
+
+				if (message.Body is not NSString state)
+					return;
+
+				webView.IsFocused = state == "focus";
 			}
 		}
 	}
