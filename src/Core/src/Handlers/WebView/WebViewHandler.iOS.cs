@@ -120,22 +120,19 @@ namespace Microsoft.Maui.Handlers
 			var width = size.Width;
 			var height = size.Height;
 
-			if (width == 0)
+			bool hasUsableWidthConstraint = widthConstraint > 0 && !double.IsInfinity(widthConstraint) && !double.IsNaN(widthConstraint);
+			bool hasUsableHeightConstraint = heightConstraint > 0 && !double.IsInfinity(heightConstraint) && !double.IsNaN(heightConstraint);
+
+			if (width <= 0 || double.IsNaN(width))
 			{
-				if (widthConstraint <= 0 || double.IsInfinity(widthConstraint))
-				{
-					width = MinimumSize;
-					set = true;
-				}
+				width = hasUsableWidthConstraint ? widthConstraint : MinimumSize;
+				set = true;
 			}
 
-			if (height == 0)
+			if (height <= 0 || double.IsNaN(height))
 			{
-				if (heightConstraint <= 0 || double.IsInfinity(heightConstraint))
-				{
-					height = MinimumSize;
-					set = true;
-				}
+				height = hasUsableHeightConstraint ? heightConstraint : MinimumSize;
+				set = true;
 			}
 
 			if (set)
