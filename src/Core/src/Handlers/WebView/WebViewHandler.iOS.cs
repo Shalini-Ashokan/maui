@@ -596,6 +596,13 @@ namespace Microsoft.Maui.Handlers
 				// refocus the last focused element (if any) so behavior is consistent across platforms.
 				// See https://github.com/dotnet/maui/issues/36201
 				platformView.EvaluateJavaScriptAsync(MauiWKWebView.RefocusLastFocusedElementScript);
+
+				// Set IsFocused synchronously here rather than waiting for the DOM focusin event to
+				// round-trip through the WKScriptMessageHandler bridge below — callers that read
+				// IsFocused immediately after Focus() (e.g. on the very next line, or the next UI
+				// event) must see the requested state without racing the async JS/postMessage path.
+				// See https://github.com/dotnet/maui/issues/36201
+				webView.IsFocused = true;
 			}
 		}
 
@@ -612,6 +619,10 @@ namespace Microsoft.Maui.Handlers
 			// (e.g. text cursor) is cleared, matching the Unfocus() behavior on Android and Windows.
 			// See https://github.com/dotnet/maui/issues/36201
 			platformView.EvaluateJavaScriptAsync(MauiWKWebView.BlurActiveElementScript);
+
+			// Set IsFocused synchronously for the same reason as MapFocus above — don't wait for the
+			// DOM focusout event to round-trip through the postMessage bridge.
+			webView.IsFocused = false;
 		}
 
 		// Bridges DOM focusin/focusout events (posted by MauiWKWebView's focus tracker script) back
