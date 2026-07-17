@@ -24,26 +24,26 @@ namespace Microsoft.Maui.Platform
 		// Reports DOM focusin/focusout back to the handler. Guarded so it is only installed once
 		// per document even if the script is injected multiple times.
 		const string FocusTrackingScript =
-		 "(function(){if(window.__mauiFocusTrackingInstalled){return;}window.__mauiFocusTrackingInstalled=true;" +
-		 "function post(f){try{window.webkit.messageHandlers." + FocusMessageHandlerName + ".postMessage(f);}catch(e){}}" +
-		 "document.addEventListener('focusin',function(){post(true);});" +
-		 "document.addEventListener('focusout',function(){post(false);});})();";
+			"(function(){if(window.__mauiFocusTrackingInstalled){return;}window.__mauiFocusTrackingInstalled=true;" +
+			"function post(f){try{window.webkit.messageHandlers." + FocusMessageHandlerName + ".postMessage(f);}catch(e){}}" +
+			"document.addEventListener('focusin',function(){post(true);});" +
+			"document.addEventListener('focusout',function(){post(false);});})();";
 
 		string? _pendingUrl;
 		readonly WeakReference<WebViewHandler> _handler;
 
 		public MauiWKWebView(WebViewHandler handler)
-		 : this(RectangleF.Empty, handler)
+			: this(RectangleF.Empty, handler)
 		{
 		}
 
 		public MauiWKWebView(CGRect frame, WebViewHandler handler)
-		 : this(frame, handler, CreateConfiguration())
+			: this(frame, handler, CreateConfiguration())
 		{
 		}
 
 		public MauiWKWebView(CGRect frame, WebViewHandler handler, WKWebViewConfiguration configuration)
-		 : base(frame, configuration)
+			: base(frame, configuration)
 		{
 			_ = handler ?? throw new ArgumentNullException(nameof(handler));
 			_handler = new WeakReference<WebViewHandler>(handler);
@@ -60,7 +60,7 @@ namespace Microsoft.Maui.Platform
 		}
 
 		public string? CurrentUrl =>
-		 Url?.AbsoluteUrl?.ToString();
+			Url?.AbsoluteUrl?.ToString();
 
 		public override void MovedToWindow()
 		{
@@ -132,7 +132,7 @@ namespace Microsoft.Maui.Platform
 				if (_handler.TryGetTarget(out var handler))
 				{
 					if (handler.HasCookiesToLoad(safeFullUri.AbsoluteUri) &&
-					 !(OperatingSystem.IsIOSVersionAtLeast(11) || OperatingSystem.IsTvOSVersionAtLeast(11)))
+						!(OperatingSystem.IsIOSVersionAtLeast(11) || OperatingSystem.IsTvOSVersionAtLeast(11)))
 					{
 						return;
 					}

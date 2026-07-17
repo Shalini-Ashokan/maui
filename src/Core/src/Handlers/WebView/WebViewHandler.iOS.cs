@@ -21,7 +21,7 @@ namespace Microsoft.Maui.Handlers
 		WKUIDelegate? _delegate;
 
 		protected override WKWebView CreatePlatformView() =>
-		 new MauiWKWebView(this);
+			new MauiWKWebView(this);
 
 		protected override void DisconnectHandler(WKWebView platformView)
 		{
@@ -48,16 +48,18 @@ namespace Microsoft.Maui.Handlers
 		// WKWebView.BecomeFirstResponder() only makes the UIKit container first responder; it does
 		// NOT move focus onto a DOM element, so on its own it never shows a caret or raises the
 		// keyboard. To match Android/Windows, we focus the currently active (or first) editable DOM
-		// element via JavaScript so the web content actually receives focus.
+		// element via JavaScript so the web content actually receives focus. Calling .focus() alone
+		// leaves the caret at the start of the text (WebKit's default), so we also explicitly move
+		// the caret to the end, matching Android/Windows behavior (issue #36201).
 		const string FocusEditableElementScript =
-		 "(function(){var e=document.activeElement;if(!e||e===document.body){e=document.querySelector('input, textarea, select, [contenteditable=\"true\"]');}if(e){e.focus();}})();";
+			"(function(){var e=document.activeElement;if(!e||e===document.body){e=document.querySelector('input, textarea, select, [contenteditable=\"true\"]');}if(e){e.focus();try{if(typeof e.setSelectionRange==='function'&&typeof e.value==='string'){var len=e.value.length;e.setSelectionRange(len,len);}else if(e.isContentEditable){var range=document.createRange();range.selectNodeContents(e);range.collapse(false);var sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);}}catch(err){}}})();";
 
 		// ResignFirstResponder() on the WKWebView itself does not blur any currently
 		// focused DOM element, since that element's editing session is owned by WebKit's
 		// internal content view, not the WKWebView. Without explicitly blurring it via
 		// JavaScript, the soft keyboard can remain visible after Unfocus() is called.
 		const string BlurActiveElementScript =
-		 "if (document.activeElement) { document.activeElement.blur(); }";
+			"if (document.activeElement) { document.activeElement.blur(); }";
 
 		internal static new async void MapFocus(IViewHandler handler, IView view, object? args)
 		{
@@ -78,13 +80,9 @@ namespace Microsoft.Maui.Handlers
 			// Then move focus onto the DOM element so the web content actually receives focus and
 			// shows a caret / raises the keyboard. BecomeFirstResponder() alone only makes the UIKit
 			// container first responder; it does not focus DOM content.
-			try
+			if (isFocused)
 			{
 				await platformView.EvaluateJavaScriptAsync(FocusEditableElementScript);
-			}
-			catch (Exception)
-			{
-				// Ignore script evaluation failures, e.g. the page hasn't finished loading yet.
 			}
 		}
 
@@ -93,14 +91,7 @@ namespace Microsoft.Maui.Handlers
 			if (handler.PlatformView is not WKWebView platformView)
 				return;
 
-			try
-			{
-				await platformView.EvaluateJavaScriptAsync(BlurActiveElementScript);
-			}
-			catch (Exception)
-			{
-				// Ignore script evaluation failures, e.g. the page hasn't finished loading yet.
-			}
+			await platformView.EvaluateJavaScriptAsync(BlurActiveElementScript);
 
 			platformView.ResignFirstResponder();
 			view.IsFocused = false;
@@ -381,8 +372,8 @@ namespace Microsoft.Maui.Handlers
 					{
 						// if the cookie value hasn't changed don't set it again
 						if (nsCookie.Domain == cookie.Domain &&
-						 nsCookie.Name == cookie.Name &&
-						 nsCookie.Value == cookie.Value)
+							nsCookie.Name == cookie.Name &&
+							nsCookie.Value == cookie.Value)
 						{
 							changeCookie = false;
 							break;
@@ -500,26 +491,26 @@ namespace Microsoft.Maui.Handlers
 				// I tried to set an expired cookie but it doesn't delete the cookie
 				// So, just deleting the whole domain is the best option I've found
 				WKWebsiteDataStore
-				 .DefaultDataStore
-				 .FetchDataRecordsOfTypes(WKWebsiteDataStore.AllWebsiteDataTypes, (NSArray records) =>
-				 {
-					 for (nuint i = 0; i < records.Count; i++)
-					 {
-						 var record = records.GetItem<WKWebsiteDataRecord>(i);
+					.DefaultDataStore
+					.FetchDataRecordsOfTypes(WKWebsiteDataStore.AllWebsiteDataTypes, (NSArray records) =>
+					{
+						for (nuint i = 0; i < records.Count; i++)
+						{
+							var record = records.GetItem<WKWebsiteDataRecord>(i);
 
-						 foreach (var deleteme in cookies)
-						 {
-							 if (record.DisplayName.Contains(deleteme.Domain, StringComparison.Ordinal) || deleteme.Domain.Contains(record.DisplayName, StringComparison.Ordinal))
-							 {
-								 WKWebsiteDataStore.DefaultDataStore.RemoveDataOfTypes(record.DataTypes,
-						new[] { record }, () => { });
+							foreach (var deleteme in cookies)
+							{
+								if (record.DisplayName.Contains(deleteme.Domain, StringComparison.Ordinal) || deleteme.Domain.Contains(record.DisplayName, StringComparison.Ordinal))
+								{
+									WKWebsiteDataStore.DefaultDataStore.RemoveDataOfTypes(record.DataTypes,
+										  new[] { record }, () => { });
 
-								 break;
-							 }
+									break;
+								}
 
-						 }
-					 }
-				 });
+							}
+						}
+					});
 			}
 		}
 
