@@ -25,7 +25,16 @@ namespace Microsoft.Maui.Platform
 		{
 			var actual = base.ArrangeOverride(finalSize);
 
-			if (!(Parent is ContentPanel contentPanel && contentPanel.BorderStroke?.Shape is not null))
+			// Content is now hosted inside ContentPanel's ContentClipHost rather than being a direct
+			// child of ContentPanel, so resolve the owning ContentPanel (if any) through that host.
+			var contentPanel = Parent switch
+			{
+				ContentPanel cp => cp,
+				ContentClipHost host => host.Owner,
+				_ => null
+			};
+
+			if (!(contentPanel is not null && contentPanel.BorderStroke?.Shape is not null))
 			{
 				Clip = ClipsToBounds ? new RectangleGeometry { Rect = new WRect(0, 0, finalSize.Width, finalSize.Height) } : null;
 			}

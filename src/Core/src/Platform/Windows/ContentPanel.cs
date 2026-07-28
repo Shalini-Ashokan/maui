@@ -22,6 +22,18 @@ namespace Microsoft.Maui.Platform
 	public partial class ContentPanel : MauiPanel
 	{
 		readonly Path? _borderPath;
+
+		// A dedicated, never-transformed host for Content. Content's Scale/ScaleX/ScaleY/Rotation/Translation
+		// are applied on Windows as a RenderTransform directly on Content's own visual (see
+		// TransformationExtensions.UpdateTransformation). Composition Clip and RenderTransform ordering on the
+		// SAME visual isn't reliable to build on (and it interacts badly with non-rectangular shapes such as a
+		// Polygon/triangle Border - see UpdateClip). Instead we clip this separate, unscaled host visual: a
+		// parent's Clip always bounds everything rendered by its descendants regardless of any transform or
+		// shape involved, so nesting Content inside this host keeps the Border's clip aperture fixed to its
+		// real on-screen bounds no matter what Scale/Rotation/Translation Content has, and works uniformly for
+		// any IShape.
+		readonly ContentClipHost _contentClipHost;
+
 		IBorderStroke? _borderStroke;
 		FrameworkElement? _content;
 
@@ -32,7 +44,7 @@ namespace Microsoft.Maui.Platform
 			get => _content;
 			set
 			{
-				var children = CachedChildren;
+				var children = _contentClipHost.CachedChildren;
 
 				// Remove the previous content if it exists
 				if (_content is not null && children.Contains(_content) && value != _content)
@@ -93,6 +105,10 @@ namespace Microsoft.Maui.Platform
 
 			_borderPath?.Arrange(new global::Windows.Foundation.Rect(0, 0, finalSize.Width, finalSize.Height));
 
+			// The clip host must span the full ContentPanel bounds so its (unscaled) visual has the
+			// correct Size for the clip geometry we compute in UpdateClip.
+			_contentClipHost.Arrange(new global::Windows.Foundation.Rect(0, 0, finalSize.Width, finalSize.Height));
+
 			var size = new global::Windows.Foundation.Size(Math.Max(0, actual.Width), Math.Max(0, actual.Height));
 
 			// We need to update the clip since the content's position might have changed
@@ -120,6 +136,9 @@ namespace Microsoft.Maui.Platform
 		{
 			_borderPath = new Path();
 			EnsureBorderPath(containsCheck: false);
+
+			_contentClipHost = new ContentClipHost { Owner = this };
+			CachedChildren.Add(_contentClipHost);
 
 			SizeChanged += ContentPanelSizeChanged;
 
@@ -251,14 +270,14 @@ namespace Microsoft.Maui.Platform
 				return;
 			}
 
-			var visual = ElementCompositionPreview.GetElementVisual(Content);
-
-			// Prevent clip collision: When ContentView is inside Border, let WrapperView handle 
-			// clipping to avoid Border overwriting ContentView's clip geometry during SizeChanged.
-			if (visual.Clip != null && Content.Parent is WrapperView)
-			{
-				return;
-			}
+			// Clip the dedicated, unscaled host - NOT Content's own visual. Content's Scale/Rotation/
+			// Translation are applied as a RenderTransform directly on Content's visual, and Composition
+			// Clip + RenderTransform ordering on that SAME visual isn't reliable to build on (it also
+			// interacts badly with non-rectangular shapes such as a Polygon/triangle Border). A parent's
+			// Clip, however, always bounds everything its descendants render, regardless of any transform
+			// or shape - so clipping _contentClipHost keeps the aperture fixed to the Border's real
+			// bounds no matter how Content is scaled/rotated/translated, for any IShape.
+			var visual = ElementCompositionPreview.GetElementVisual(_contentClipHost);
 			var compositor = visual.Compositor;
 
 			PathF? clipPath;
@@ -283,12 +302,13 @@ namespace Microsoft.Maui.Platform
 			var pathGeometry = compositor.CreatePathGeometry(path);
 			var geometricClip = compositor.CreateGeometricClip(pathGeometry);
 
-			// Use ActualOffset (not LayoutInformation.GetLayoutSlot) because it reflects the true
-			// visual position of Content after WinUI alignment adjustments (e.g. a Stretch=None
-			// image wider than its slot is centered, shifting ActualOffset well outside the slot).
-			// The formula converts the stroke-inset boundary from ContentPanel space into Content's
-			// local space so the clip aligns correctly regardless of alignment-driven offsets.
-			geometricClip.Offset = new Vector2(strokeThickness - Content.ActualOffset.X, strokeThickness - Content.ActualOffset.Y);
+			// Use Content's ActualOffset (not LayoutInformation.GetLayoutSlot) because it reflects the true
+			// layout position of Content after WinUI alignment adjustments (e.g. a Stretch=None image wider
+			// than its slot is centered, shifting ActualOffset well outside the slot). _contentClipHost fills
+			// the same coordinate space as ContentPanel itself (arranged to (0,0,width,height)), so this
+			// offset lines the clip up with Content's position exactly as it did when Content was clipped
+			// directly, regardless of alignment-driven offsets.
+			geometricClip.Offset = new Vector2(strokeThickness - (Content?.ActualOffset.X ?? 0), strokeThickness - (Content?.ActualOffset.Y ?? 0));
 
 			visual.Clip = geometricClip;
 		}
