@@ -277,70 +277,20 @@ namespace Microsoft.Maui.Platform
 				IsInnerPath = false;
 			}
 
-			// Use ActualOffset (not LayoutInformation.GetLayoutSlot) because it reflects the true
-			// visual position of Content after WinUI alignment adjustments (e.g. a Stretch=None
-			// image wider than its slot is centered, shifting ActualOffset well outside the slot).
-			// The formula converts the stroke-inset boundary from ContentPanel space into Content's
-			// local space so the clip aligns correctly regardless of alignment-driven offsets.
-			var offset = new Vector2(strokeThickness - (float)Content.ActualOffset.X, strokeThickness - (float)Content.ActualOffset.Y);
-
-			// If Content has a RenderTransform (Scale/Rotation/Translation applied via
-			// TransformationExtensions.UpdateTransformation), Composition applies visual.Clip in
-			// the same local coordinate space that the RenderTransform itself operates in. A plain
-			// translation offset (as used above) no longer lines the clip up with the Border's
-			// shape once Content is scaled/rotated/translated, because the whole visual (its
-			// content plus its clip) is transformed together. Map the clip path from ContentPanel
-			// space into Content's local (pre-transform) space using the inverse of the full
-			// Content -> ContentPanel transform (layout offset + RenderTransform), the same
-			// TransformToVisual idiom WrapperView already uses elsewhere in this file's platform
-			// folder, so the clip stays aligned to the Border's boundary regardless of the
-			// transform applied to Content.
-			if (Content.RenderTransform is not null &&
-				Content.TransformToVisual(this).Inverse is MatrixTransform inverse)
-			{
-				var m = inverse.Matrix;
-				var panelToContent = new Matrix3x2(
-					(float)m.M11, (float)m.M12,
-					(float)m.M21, (float)m.M22,
-					(float)m.OffsetX, (float)m.OffsetY);
-
-				clipPath.Transform(Matrix3x2.CreateTranslation(strokeThickness, strokeThickness) * panelToContent);
-				offset = Vector2.Zero;
-			}
-
 			var device = CanvasDevice.GetSharedDevice();
 			var geometry = clipPath.AsPath(device);
 			var path = new CompositionPath(geometry);
 			var pathGeometry = compositor.CreatePathGeometry(path);
 			var geometricClip = compositor.CreateGeometricClip(pathGeometry);
 
-			geometricClip.Offset = offset;
+			// Use ActualOffset (not LayoutInformation.GetLayoutSlot) because it reflects the true
+			// visual position of Content after WinUI alignment adjustments (e.g. a Stretch=None
+			// image wider than its slot is centered, shifting ActualOffset well outside the slot).
+			// The formula converts the stroke-inset boundary from ContentPanel space into Content's
+			// local space so the clip aligns correctly regardless of alignment-driven offsets.
+			geometricClip.Offset = new Vector2(strokeThickness - Content.ActualOffset.X, strokeThickness - Content.ActualOffset.Y);
 
 			visual.Clip = geometricClip;
-		}
-
-		/// <summary>
-		/// Recomputes the Border's clip using the current stroke shape and size. Called when
-		/// Content's RenderTransform changes (Scale/Rotation/Translation) without a corresponding
-		/// size change, since <see cref="ArrangeOverride"/>/<see cref="ContentPanelSizeChanged"/>
-		/// won't fire in that case but the clip still needs to realign with the new transform.
-		/// </summary>
-		internal void InvalidateClip()
-		{
-			if (_borderStroke is null)
-			{
-				return;
-			}
-
-			var width = ActualWidth;
-			var height = ActualHeight;
-
-			if (width <= 0 || height <= 0)
-			{
-				return;
-			}
-
-			UpdateClip(_borderStroke.Shape, width, height);
 		}
 	}
 }

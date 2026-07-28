@@ -67,15 +67,5 @@ public static class TransformationExtensions
 				};
 			}
 		}
-
-		// If this element is the direct Content of a Border, its clip needs to be recomputed
-		// whenever the transform changes: ContentPanel.UpdateClip's clip geometry accounts for
-		// Content's current RenderTransform, but MapScale/MapScaleX/MapScaleY/MapRotation/etc.
-		// (ViewHandler.Windows.cs) only call UpdateTransformation — they don't otherwise trigger
-		// ArrangeOverride/SizeChanged, which are the only other places the clip is refreshed.
-		if (frameworkElement.Parent is ContentPanel contentPanel && contentPanel.Content == frameworkElement)
-		{
-			contentPanel.InvalidateClip();
-		}
 	}
 }
