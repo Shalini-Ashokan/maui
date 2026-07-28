@@ -14,7 +14,7 @@ namespace Microsoft.Maui.Platform
 	// shape being clipped to (rectangle, rounded rectangle, or an arbitrary custom IShape such as a
 	// Polygon/triangle). No per-shape scale-compensation math is needed at all: a parent visual's
 	// Clip always bounds everything its descendants render.
-	sealed class ContentClipHost : Panel
+	sealed partial class ContentClipHost : Panel
 	{
 		// Lets Content (e.g. a LayoutPanel) walk back up to the owning ContentPanel even though
 		// this host - not ContentPanel itself - is now its direct visual parent. See

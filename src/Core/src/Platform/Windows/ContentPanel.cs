@@ -302,13 +302,12 @@ namespace Microsoft.Maui.Platform
 			var pathGeometry = compositor.CreatePathGeometry(path);
 			var geometricClip = compositor.CreateGeometricClip(pathGeometry);
 
-			// Use Content's ActualOffset (not LayoutInformation.GetLayoutSlot) because it reflects the true
-			// layout position of Content after WinUI alignment adjustments (e.g. a Stretch=None image wider
-			// than its slot is centered, shifting ActualOffset well outside the slot). _contentClipHost fills
-			// the same coordinate space as ContentPanel itself (arranged to (0,0,width,height)), so this
-			// offset lines the clip up with Content's position exactly as it did when Content was clipped
-			// directly, regardless of alignment-driven offsets.
-			geometricClip.Offset = new Vector2(strokeThickness - (Content?.ActualOffset.X ?? 0), strokeThickness - (Content?.ActualOffset.Y ?? 0));
+			// _contentClipHost fills the exact same coordinate space as ContentPanel itself (arranged to
+			// (0,0,width,height) in ArrangeOverride), so the clip's local origin already lines up with
+			// ContentPanel's - no adjustment for Content's own ActualOffset is needed (or correct) here,
+			// unlike the old same-visual approach where the clip lived on Content's own (possibly
+			// alignment-shifted) visual.
+			geometricClip.Offset = new Vector2(strokeThickness, strokeThickness);
 
 			visual.Clip = geometricClip;
 		}
