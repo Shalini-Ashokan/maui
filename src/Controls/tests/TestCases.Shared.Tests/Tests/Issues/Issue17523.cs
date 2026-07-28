@@ -39,26 +39,25 @@ public class Issue17523 : _IssuesUITest
 
 	[Test]
 	[Category(UITestCategories.Border)]
-	public void UnscaledImageIsClippedToTriangleBorder()
+	public void UnscaledImageIsClippedToEllipseBorder()
 	{
-		App.WaitForElement("TriangleImage");
+		App.WaitForElement("EllipseImage");
 
-		// Baseline: unscaled image should already be clipped to the Border's triangle (Polygon) shape.
+		// Baseline: unscaled image should already be clipped to the Border's ellipse shape.
 		VerifyScreenshot();
 	}
 
 	[Test]
 	[Category(UITestCategories.Border)]
-	public void ScaledImageStaysClippedToTriangleBorder()
+	public void ScaledImageStaysClippedToEllipseBorder()
 	{
-		App.WaitForElement("TriangleImage");
+		App.WaitForElement("EllipseImage");
 
 		App.Tap("IncreaseScaleButton");
 		App.WaitForTextToBePresentInElement("ScaleLabel", "1.5");
 
-		// Scaled: the image must still be clipped to the triangle - it should not spill outside
-		// the triangle's edges (non-rectangular shapes exercise a different clip code path than
-		// a plain/rounded rectangle).
+		// Scaled: the image must still be clipped to the Border - it should not spill outside
+		// the ellipse's edges.
 		VerifyScreenshot();
 	}
 }

@@ -7,7 +7,7 @@ public class Issue17523 : TestContentPage
 {
 	Label _scaleLabel;
 	Image _roundRectangleImage;
-	Image _triangleImage;
+	Image _ellipseImage;
 	double _scale = 1;
 
 	protected override void Init()
@@ -37,7 +37,7 @@ public class Issue17523 : TestContentPage
 		_roundRectangleImage = new Image
 		{
 			AutomationId = "RoundRectangleImage",
-			Source = "dotnet_bot.png"
+			Source = "oasis.jpg"
 		};
 
 		var roundRectangleBorder = new Border
@@ -52,29 +52,22 @@ public class Issue17523 : TestContentPage
 			Content = _roundRectangleImage
 		};
 
-		_triangleImage = new Image
+		_ellipseImage = new Image
 		{
-			AutomationId = "TriangleImage",
-			Source = "dotnet_bot.png"
+			AutomationId = "EllipseImage",
+			Source = "oasis.jpg"
 		};
 
-		// Non-rectangular shape: a triangle drawn as a Polygon. Border clipping to arbitrary
-		// (non-IRoundRectangle) shapes exercises a different code path than a plain/rounded
-		// rectangle - see ContentPanel.UpdateClip on Windows.
-		var triangleBorder = new Border
+		var ellipseBorder = new Border
 		{
-			AutomationId = "TriangleBorder",
+			AutomationId = "EllipseBorder",
 			WidthRequest = 150,
 			HeightRequest = 150,
 			BackgroundColor = Colors.LightBlue,
 			Stroke = Colors.LightGreen,
 			StrokeThickness = 8,
-			StrokeShape = new Polygon
-			{
-				Points = new PointCollection { new Point(75, 0), new Point(150, 150), new Point(0, 150) },
-				StrokeThickness = 3
-			},
-			Content = _triangleImage
+			StrokeShape = new Ellipse(),
+			Content = _ellipseImage
 		};
 
 		var shapesGrid = new Grid
@@ -89,7 +82,7 @@ public class Issue17523 : TestContentPage
 		};
 
 		shapesGrid.Add(roundRectangleBorder, 0, 0);
-		shapesGrid.Add(triangleBorder, 1, 0);
+		shapesGrid.Add(ellipseBorder, 1, 0);
 
 		Content = new VerticalStackLayout
 		{
@@ -112,7 +105,7 @@ public class Issue17523 : TestContentPage
 		_scale = _scale >= 2.5 ? 1 : _scale + 0.5;
 
 		_roundRectangleImage.Scale = _scale;
-		_triangleImage.Scale = _scale;
+		_ellipseImage.Scale = _scale;
 
 		_scaleLabel.Text = $"Scale: {_scale}";
 	}
