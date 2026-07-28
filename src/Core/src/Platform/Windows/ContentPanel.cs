@@ -24,7 +24,6 @@ namespace Microsoft.Maui.Platform
 		readonly Path? _borderPath;
 		IBorderStroke? _borderStroke;
 		FrameworkElement? _content;
-		long _contentRenderTransformCallbackToken;
 
 		internal Path? BorderPath => _borderPath;
 		internal IBorderStroke? BorderStroke => _borderStroke;
@@ -36,14 +35,9 @@ namespace Microsoft.Maui.Platform
 				var children = CachedChildren;
 
 				// Remove the previous content if it exists
-				if (_content is not null)
+				if (_content is not null && children.Contains(_content) && value != _content)
 				{
-					_content.UnregisterPropertyChangedCallback(RenderTransformProperty, _contentRenderTransformCallbackToken);
-
-					if (children.Contains(_content) && value != _content)
-					{
-						children.Remove(_content);
-					}
+					children.Remove(_content);
 				}
 
 				_content = value;
@@ -57,17 +51,17 @@ namespace Microsoft.Maui.Platform
 				{
 					children.Add(_content);
 				}
-
-				// Content's Scale/ScaleX/ScaleY/Rotation/Translation (IView) are applied on Windows as a
-				// RenderTransform (see TransformationExtensions.UpdateTransformation). Changing those values
-				// doesn't affect layout (ActualWidth/Height/ActualOffset) and so never triggers SizeChanged or
-				// re-arrange - meaning the Border's clip would otherwise go stale and never account for the new
-				// transform. Re-run UpdateClip whenever Content's RenderTransform changes to keep it in sync.
-				_contentRenderTransformCallbackToken = _content.RegisterPropertyChangedCallback(RenderTransformProperty, OnContentRenderTransformChanged);
 			}
 		}
 
-		void OnContentRenderTransformChanged(DependencyObject sender, DependencyProperty dp)
+		// Content's Scale/ScaleX/ScaleY/Rotation/Translation (IView) are applied on Windows as a
+		// RenderTransform (see TransformationExtensions.UpdateTransformation). Changing those values doesn't
+		// affect layout (ActualWidth/Height/ActualOffset) and so never triggers SizeChanged or re-arrange -
+		// meaning the Border's clip would otherwise go stale and never account for the new transform.
+		// TransformationExtensions.UpdateTransformation calls this directly whenever it applies a new
+		// RenderTransform to a ContentPanel's Content, so the clip is always recomputed in sync with the
+		// transform.
+		internal void InvalidateClip()
 		{
 			UpdateClip(_borderStroke?.Shape, ActualWidth, ActualHeight);
 		}

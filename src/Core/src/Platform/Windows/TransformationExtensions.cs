@@ -66,6 +66,11 @@ public static class TransformationExtensions
 					TranslateY = translationY
 				};
 			}
+
+			if (frameworkElement.Parent is ContentPanel contentPanel && contentPanel.Content == frameworkElement)
+			{
+				contentPanel.InvalidateClip();
+			}
 		}
 	}
 }
