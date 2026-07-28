@@ -24,6 +24,7 @@ namespace Microsoft.Maui.Platform
 		readonly Path? _borderPath;
 		IBorderStroke? _borderStroke;
 		FrameworkElement? _content;
+		long _contentRenderTransformCallbackToken;
 
 		internal Path? BorderPath => _borderPath;
 		internal IBorderStroke? BorderStroke => _borderStroke;
@@ -35,9 +36,14 @@ namespace Microsoft.Maui.Platform
 				var children = CachedChildren;
 
 				// Remove the previous content if it exists
-				if (_content is not null && children.Contains(_content) && value != _content)
+				if (_content is not null)
 				{
-					children.Remove(_content);
+					_content.UnregisterPropertyChangedCallback(RenderTransformProperty, _contentRenderTransformCallbackToken);
+
+					if (children.Contains(_content) && value != _content)
+					{
+						children.Remove(_content);
+					}
 				}
 
 				_content = value;
@@ -51,7 +57,19 @@ namespace Microsoft.Maui.Platform
 				{
 					children.Add(_content);
 				}
+
+				// Content's Scale/ScaleX/ScaleY/Rotation/Translation (IView) are applied on Windows as a
+				// RenderTransform (see TransformationExtensions.UpdateTransformation). Changing those values
+				// doesn't affect layout (ActualWidth/Height/ActualOffset) and so never triggers SizeChanged or
+				// re-arrange - meaning the Border's clip would otherwise go stale and never account for the new
+				// transform. Re-run UpdateClip whenever Content's RenderTransform changes to keep it in sync.
+				_contentRenderTransformCallbackToken = _content.RegisterPropertyChangedCallback(RenderTransformProperty, OnContentRenderTransformChanged);
 			}
+		}
+
+		void OnContentRenderTransformChanged(DependencyObject sender, DependencyProperty dp)
+		{
+			UpdateClip(_borderStroke?.Shape, ActualWidth, ActualHeight);
 		}
 
 		internal bool IsInnerPath { get; private set; }
@@ -263,8 +281,42 @@ namespace Microsoft.Maui.Platform
 
 			PathF? clipPath;
 			float strokeThickness = (float)(_borderPath?.StrokeThickness ?? 0);
+
+			// The clip we set below lives on Content's own visual - the SAME visual that RenderTransform
+			// (from Content's Scale/ScaleX/ScaleY, see TransformationExtensions.UpdateTransformation) is
+			// applied to. Just like CSS clip-path + transform: scale() on the same element, the clip
+			// geometry is evaluated against the untransformed local box first, and the whole clipped
+			// result is scaled afterwards - so a clip sized for the unscaled Content would grow right
+			// along with it and let the content spill outside the Border. To keep the clip aperture fixed
+			// to the Border's real on-screen bounds, convert that target aperture back into Content's
+			// local (pre-transform) space by inverse-scaling around the RenderTransformOrigin.
+			GetContentRenderScale(Content, out float scaleX, out float scaleY);
+
+			// Target aperture (screen space, relative to Content's untransformed top-left at ActualOffset).
+			float targetX = strokeThickness - (float)Content.ActualOffset.X;
+			float targetY = strokeThickness - (float)Content.ActualOffset.Y;
+			float targetWidth = (float)(width - strokeThickness * 2);
+			float targetHeight = (float)(height - strokeThickness * 2);
+
+			float localX = targetX;
+			float localY = targetY;
+			float localWidth = targetWidth;
+			float localHeight = targetHeight;
+
+			if (scaleX != 1 || scaleY != 1)
+			{
+				var origin = Content.RenderTransformOrigin;
+				float originX = (float)(origin.X * Content.ActualWidth);
+				float originY = (float)(origin.Y * Content.ActualHeight);
+
+				localX = originX + (targetX - originX) / scaleX;
+				localY = originY + (targetY - originY) / scaleY;
+				localWidth = targetWidth / scaleX;
+				localHeight = targetHeight / scaleY;
+			}
+
 			// The path size should consider the space taken by the border (top and bottom, left and right)
-			var pathSize = new Rect(0, 0, width - strokeThickness * 2, height - strokeThickness * 2);
+			var pathSize = new Rect(0, 0, localWidth, localHeight);
 
 			if (clipGeometry is IRoundRectangle roundedRectangle)
 			{
@@ -288,9 +340,39 @@ namespace Microsoft.Maui.Platform
 			// image wider than its slot is centered, shifting ActualOffset well outside the slot).
 			// The formula converts the stroke-inset boundary from ContentPanel space into Content's
 			// local space so the clip aligns correctly regardless of alignment-driven offsets.
-			geometricClip.Offset = new Vector2(strokeThickness - Content.ActualOffset.X, strokeThickness - Content.ActualOffset.Y);
+			geometricClip.Offset = new Vector2(localX, localY);
 
 			visual.Clip = geometricClip;
+		}
+
+		// Extracts the scale factor applied to Content via RenderTransform (e.g. from IView.Scale/ScaleX/ScaleY
+		// on Windows, see TransformationExtensions.UpdateTransformation), so UpdateClip can compensate for it.
+		static void GetContentRenderScale(FrameworkElement content, out float scaleX, out float scaleY)
+		{
+			scaleX = 1f;
+			scaleY = 1f;
+
+			switch (content.RenderTransform)
+			{
+				case ScaleTransform scaleTransform:
+					scaleX = (float)scaleTransform.ScaleX;
+					scaleY = (float)scaleTransform.ScaleY;
+					break;
+				case CompositeTransform compositeTransform:
+					scaleX = (float)compositeTransform.ScaleX;
+					scaleY = (float)compositeTransform.ScaleY;
+					break;
+			}
+
+			if (scaleX == 0)
+			{
+				scaleX = 1f;
+			}
+
+			if (scaleY == 0)
+			{
+				scaleY = 1f;
+			}
 		}
 	}
 }
