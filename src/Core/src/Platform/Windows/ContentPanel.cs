@@ -182,6 +182,21 @@ namespace Microsoft.Maui.Platform
 			}
 		}
 
+		// Re-adds _contentClipHost to ContentPanel's own children if it's missing (e.g. after
+		// BorderHandler.Windows.cs clears CachedChildren whenever Border's content is updated). Content
+		// itself lives inside _contentClipHost.CachedChildren (see the Content property setter above), so
+		// this must run before Content is (re-)assigned - otherwise the host, and everything nested inside
+		// it, would be missing from the visual tree entirely and nothing would render.
+		internal void EnsureContentClipHost()
+		{
+			var children = CachedChildren;
+
+			if (!children.Contains(_contentClipHost))
+			{
+				children.Add(_contentClipHost);
+			}
+		}
+
 		static void OnBackgroundPropertyChanged(DependencyObject dependencyObject, DependencyProperty dependencyProperty)
 		{
 			if (dependencyObject is ContentPanel contentPanel)

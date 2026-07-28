@@ -22,6 +22,7 @@ namespace Microsoft.Maui.Handlers
 
 			handler.PlatformView.CachedChildren.Clear();
 			handler.PlatformView.EnsureBorderPath();
+			handler.PlatformView.EnsureContentClipHost();
 
 			if (handler.VirtualView.PresentedContent is IView view)
 			{
