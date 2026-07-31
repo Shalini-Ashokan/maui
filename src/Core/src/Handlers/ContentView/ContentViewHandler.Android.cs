@@ -56,12 +56,7 @@ namespace Microsoft.Maui.Handlers
 			UpdateContent(handler);
 		}
 
-		/// <summary>
-		/// Maps the abstract <see cref="IView.InputTransparent"/> property to the platform-specific implementation.
-		/// </summary>
-		/// <param name="handler">The associated handler.</param>
-		/// <param name="view">The associated <see cref="IContentView"/> instance.</param>
-		public static partial void MapInputTransparent(IContentViewHandler handler, IContentView view)
+		internal static partial void MapInputTransparent(IContentViewHandler handler, IContentView view)
 		{
 			// Preserve the base behavior of propagating InputTransparent to a WrapperView container
 			// (used when this ContentView has a Shadow, Clip, or Border applied).

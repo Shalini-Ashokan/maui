@@ -70,12 +70,7 @@ namespace Microsoft.Maui.Handlers
 		public static partial void MapContent(IContentViewHandler handler, IContentView page);
 
 #if ANDROID
-		/// <summary>
-		/// Maps the abstract <see cref="IView.InputTransparent"/> property to the platform-specific implementations.
-		/// </summary>
-		/// <param name="handler">The associated handler.</param>
-		/// <param name="view">The associated <see cref="IContentView"/> instance.</param>
-		public static partial void MapInputTransparent(IContentViewHandler handler, IContentView view);
+		internal static partial void MapInputTransparent(IContentViewHandler handler, IContentView view);
 #endif
 	}
 }

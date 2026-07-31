@@ -27,7 +27,7 @@ namespace Microsoft.Maui.Platform
 		bool _didSafeAreaEdgeConfigurationChange = true;
 		bool _isInsetListenerSet;
 
-		public bool InputTransparent { get; set; }
+		internal bool InputTransparent { get; set; }
 
 		// Opt-in flag, set only by the handlers that should behave like a hit-testable, opaque
 		// rectangle (currently ContentView/ContentPage). ContentViewGroup is also reused as-is by
