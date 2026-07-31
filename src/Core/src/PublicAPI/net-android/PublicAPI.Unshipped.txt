@@ -25,3 +25,7 @@ override Microsoft.Maui.Platform.MauiSwipeRefreshLayout.OnInterceptTouchEvent(An
 override Microsoft.Maui.Platform.MauiWebView.Dispose(bool disposing) -> void
 override Microsoft.Maui.Platform.MauiWebView.OnDetachedFromWindow() -> void
 override Microsoft.Maui.Platform.MauiWebView.OnTouchEvent(Android.Views.MotionEvent? e) -> bool
+Microsoft.Maui.Platform.ContentViewGroup.InputTransparent.get -> bool
+Microsoft.Maui.Platform.ContentViewGroup.InputTransparent.set -> void
+override Microsoft.Maui.Platform.ContentViewGroup.OnTouchEvent(Android.Views.MotionEvent? e) -> bool
+static Microsoft.Maui.Handlers.ContentViewHandler.MapInputTransparent(Microsoft.Maui.Handlers.IContentViewHandler! handler, Microsoft.Maui.IContentView! view) -> void

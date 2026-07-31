@@ -13,7 +13,11 @@ namespace Microsoft.Maui.Handlers
 
 			var viewGroup = new ContentViewGroup(Context)
 			{
-				CrossPlatformLayout = VirtualView
+				CrossPlatformLayout = VirtualView,
+				// A ContentView represents a solid, hit-testable rectangle (unless InputTransparent),
+				// so it should consume touches like it does on iOS/Windows instead of leaking clicks
+				// through to whatever is stacked behind it.
+				ConsumesUnhandledTouches = true
 			};
 
 			viewGroup.SetClipChildren(false);
@@ -50,6 +54,23 @@ namespace Microsoft.Maui.Handlers
 		public static partial void MapContent(IContentViewHandler handler, IContentView page)
 		{
 			UpdateContent(handler);
+		}
+
+		/// <summary>
+		/// Maps the abstract <see cref="IView.InputTransparent"/> property to the platform-specific implementation.
+		/// </summary>
+		/// <param name="handler">The associated handler.</param>
+		/// <param name="view">The associated <see cref="IContentView"/> instance.</param>
+		public static partial void MapInputTransparent(IContentViewHandler handler, IContentView view)
+		{
+			// Preserve the base behavior of propagating InputTransparent to a WrapperView container
+			// (used when this ContentView has a Shadow, Clip, or Border applied).
+			ViewHandler.MapInputTransparent(handler, view);
+
+			if (handler.PlatformView is ContentViewGroup contentViewGroup)
+			{
+				contentViewGroup.InputTransparent = view.InputTransparent;
+			}
 		}
 
 		protected override void DisconnectHandler(ContentViewGroup platformView)

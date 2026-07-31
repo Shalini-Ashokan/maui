@@ -23,6 +23,9 @@ namespace Microsoft.Maui.Handlers
 			new PropertyMapper<IContentView, IContentViewHandler>(ViewMapper)
 			{
 				[nameof(IContentView.Content)] = MapContent,
+#if ANDROID
+				[nameof(IView.InputTransparent)] = MapInputTransparent,
+#endif
 #if TIZEN
 				[nameof(IContentView.Background)] = MapBackground,
 #endif
@@ -65,5 +68,14 @@ namespace Microsoft.Maui.Handlers
 		/// <param name="handler">The associated handler.</param>
 		/// <param name="page">The associated <see cref="IContentView"/> instance.</param>
 		public static partial void MapContent(IContentViewHandler handler, IContentView page);
+
+#if ANDROID
+		/// <summary>
+		/// Maps the abstract <see cref="IView.InputTransparent"/> property to the platform-specific implementations.
+		/// </summary>
+		/// <param name="handler">The associated handler.</param>
+		/// <param name="view">The associated <see cref="IContentView"/> instance.</param>
+		public static partial void MapInputTransparent(IContentViewHandler handler, IContentView view);
+#endif
 	}
 }

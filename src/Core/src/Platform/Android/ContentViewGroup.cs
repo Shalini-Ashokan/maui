@@ -27,6 +27,15 @@ namespace Microsoft.Maui.Platform
 		bool _didSafeAreaEdgeConfigurationChange = true;
 		bool _isInsetListenerSet;
 
+		public bool InputTransparent { get; set; }
+
+		// Opt-in flag, set only by the handlers that should behave like a hit-testable, opaque
+		// rectangle (currently ContentView/ContentPage). ContentViewGroup is also reused as-is by
+		// Border, the ScrollView padding/inset shim, and SwipeItemView, which rely on the default
+		// Android pass-through behavior (e.g. ScrollView needs unhandled touches to bubble back up
+		// to itself to enable scrolling), so this defaults to false to avoid changing their behavior.
+		internal bool ConsumesUnhandledTouches { get; set; }
+
 		public ContentViewGroup(Context context) : base(context)
 		{
 			_context = context;
@@ -165,6 +174,26 @@ namespace Microsoft.Maui.Platform
 
 			MauiWindowInsetListener.FindListenerForView(this)?.ResetView(this);
 			_didSafeAreaEdgeConfigurationChange = true;
+		}
+
+		public override bool OnTouchEvent(MotionEvent? e)
+		{
+			if (InputTransparent)
+			{
+				return false;
+			}
+
+			// Android's default ViewGroup touch dispatch lets a touch "fall through" to a sibling
+			// underneath this view whenever this view (and its children) don't consume it. iOS and
+			// Windows don't have this behavior: the topmost view under a touch point always receives
+			// it. When opted in, consume unhandled touches here so this view behaves consistently
+			// with the other platforms instead of leaking clicks to whatever is stacked behind it.
+			if (ConsumesUnhandledTouches)
+			{
+				return true;
+			}
+
+			return base.OnTouchEvent(e);
 		}
 
 		/// <summary>
