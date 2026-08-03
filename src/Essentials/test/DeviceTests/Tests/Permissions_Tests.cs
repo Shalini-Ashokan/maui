@@ -1,10 +1,11 @@
 using System;
+using System.Collections;
+using System.Reflection;
 using System.Threading.Tasks;
+using Android;
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Devices;
-using Microsoft.Maui.Dispatching;
 using Xunit;
-using Xunit.Sdk;
 
 namespace Microsoft.Maui.Essentials.DeviceTests
 {
@@ -84,6 +85,32 @@ namespace Microsoft.Maui.Essentials.DeviceTests
 		(Skip = "Test only applies to Android")
 #endif
 		]
+		public async Task Request_NotMainThread_DoesNotLeakPendingRequests()
+		{
+#if __ANDROID__
+			// Reflect into the private static `requests` dictionary that DoRequest() populates.
+			// This lets the test assert directly on the root cause (a leaked table entry) instead
+			// of looping hundreds of times to reproduce the resulting request-code collision.
+			var requestsField = typeof(Permissions.BasePlatformPermission)
+				.GetField("requests", BindingFlags.NonPublic | BindingFlags.Static);
+			var requests = (IDictionary)requestsField.GetValue(null);
+
+			var permission = new TestPlatformPermission(Manifest.Permission.Camera);
+			var countBefore = requests.Count;
+
+			await Assert.ThrowsAsync<PermissionException>(
+				() => Task.Run(() => permission.InvokeDoRequestAsync())).ConfigureAwait(false);
+
+			// A background-thread call must fail without registering a pending request.
+			Assert.Equal(countBefore, requests.Count);
+#endif
+		}
+
+		[Fact
+#if !__ANDROID__
+		(Skip = "Test only applies to Android")
+#endif
+		]
 		public async Task StorageAndroid13AlwaysGranted()
 		{
 			if (DeviceInfo.Platform == DevicePlatform.Android && OperatingSystem.IsAndroidVersionAtLeast(33))
@@ -103,5 +130,21 @@ namespace Microsoft.Maui.Essentials.DeviceTests
 				Assert.Equal(PermissionStatus.Denied, status);
 			}
 		}
+
+#if __ANDROID__
+		sealed class TestPlatformPermission : Permissions.BasePlatformPermission
+		{
+			readonly string _permission;
+
+			public TestPlatformPermission(string permission) =>
+				_permission = permission;
+
+			public override (string androidPermission, bool isRuntime)[] RequiredPermissions =>
+				new[] { (_permission, true) };
+
+			public Task<Permissions.PermissionResult> InvokeDoRequestAsync() =>
+				DoRequest(new[] { _permission });
+		}
+#endif
 	}
 }
