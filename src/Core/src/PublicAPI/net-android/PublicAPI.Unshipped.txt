@@ -11,6 +11,7 @@ override Microsoft.Maui.PlatformDrawable.ThresholdType.get -> System.Type!
 override Microsoft.Maui.Handlers.LabelHandler.GetDesiredSize(double widthConstraint, double heightConstraint) -> Microsoft.Maui.Graphics.Size
 override Microsoft.Maui.Platform.MauiScrollView.OnVisibilityChanged(Android.Views.View! changedView, Android.Views.ViewStates visibility) -> void
 override Microsoft.Maui.Platform.ContentViewGroup.HasOverlappingRendering.get -> bool
+override Microsoft.Maui.Platform.ContentViewGroup.OnTouchEvent(Android.Views.MotionEvent? e) -> bool
 override Microsoft.Maui.Platform.LayoutViewGroup.HasOverlappingRendering.get -> bool
 override Microsoft.Maui.Platform.WrapperView.HasOverlappingRendering.get -> bool
 override Microsoft.Maui.Platform.MauiHybridWebView.OnAttachedToWindow() -> void

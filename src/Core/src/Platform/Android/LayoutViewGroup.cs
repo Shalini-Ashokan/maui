@@ -233,7 +233,10 @@ namespace Microsoft.Maui.Platform
 				return false;
 			}
 
-			return base.OnTouchEvent(e);
+			// If nothing else handled this touch, we still claim it here (by returning true)
+			// so the touch doesn't fall through to a sibling view stacked underneath this one.
+			base.OnTouchEvent(e);
+			return true;
 		}
 
 		IVisualTreeElement? IVisualTreeElementProvidable.GetElement()

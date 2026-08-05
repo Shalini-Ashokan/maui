@@ -57,7 +57,10 @@ namespace Microsoft.Maui.Platform
 				return false;
 			}
 
-			return base.DispatchTouchEvent(e);
+			// If nothing else handled this touch, we still claim it here (by returning true)
+			// so the touch doesn't fall through to a sibling view stacked underneath this one.
+			base.DispatchTouchEvent(e);
+			return true;
 		}
 
 		partial void ClipChanged()

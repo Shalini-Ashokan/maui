@@ -167,6 +167,18 @@ namespace Microsoft.Maui.Platform
 			_didSafeAreaEdgeConfigurationChange = true;
 		}
 
+		// Note: InputTransparent="true" is handled upstream — NeedsContainer() (see ViewExtensions.cs)
+		// always wraps an InputTransparent view in a WrapperView on Android, so this method only
+		// ever runs for non-transparent content and doesn't need its own InputTransparent check.
+		public override bool OnTouchEvent(MotionEvent? e)
+		{
+			// If nothing else handled this touch, we still claim it here (by returning true)
+			// so the touch doesn't fall through to a sibling view stacked underneath this one.
+			// See https://github.com/dotnet/maui/issues/36816
+			base.OnTouchEvent(e);
+			return true;
+		}
+
 		/// <summary>
 		/// Marks that the SafeAreaEdges configuration for this view (or its associated virtual view)
 		/// has changed and that window insets should be re-applied on the next layout pass.
