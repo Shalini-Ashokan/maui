@@ -8,7 +8,7 @@ using Object = Java.Lang.Object;
 
 namespace Microsoft.Maui.Controls.Handlers.Items
 {
-	public class EmptyViewAdapter : RecyclerView.Adapter
+	public class EmptyViewAdapter : RecyclerView.Adapter, IAccessibilityCollectionAdapter
 	{
 		double _headerHeight;
 		int _headerViewType;
@@ -273,6 +273,14 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 				return false;
 
 			return (Header == null && HeaderTemplate == null) ? position == 0 : position == 1;
+		}
+
+		// Header, Footer, and EmptyView are all synthetic adapter rows here (there is no real
+		// ItemsSource content while the EmptyView is showing), so none of them should be counted
+		// as list items for accessibility services (e.g. TalkBack). See https://github.com/dotnet/maui/issues/35681.
+		public bool IsExcludedFromAccessibilityCollection(int position)
+		{
+			return IsHeader(position) || IsFooter(position) || IsEmpty(position);
 		}
 
 		int GetHeight(ViewGroup parent)

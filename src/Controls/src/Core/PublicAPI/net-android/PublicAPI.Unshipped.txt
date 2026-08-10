@@ -22,3 +22,6 @@ override Microsoft.Maui.Controls.Platform.Compatibility.ShellSectionRenderer.OnH
 ~override Microsoft.Maui.Controls.RadioButton.OnPropertyChanged(string propertyName = null) -> void
 ~override Microsoft.Maui.Controls.SwipeItems.OnPropertyChanged(string propertyName = null) -> void
 Microsoft.Maui.Controls.Label.~Label() -> void
+virtual Microsoft.Maui.Controls.Handlers.Items.ItemsViewAdapter<TItemsView, TItemsViewSource>.IsExcludedFromAccessibilityCollection(int position) -> bool
+override Microsoft.Maui.Controls.Handlers.Items.StructuredItemsViewAdapter<TItemsView, TItemsViewSource>.IsExcludedFromAccessibilityCollection(int position) -> bool
+Microsoft.Maui.Controls.Handlers.Items.EmptyViewAdapter.IsExcludedFromAccessibilityCollection(int position) -> bool

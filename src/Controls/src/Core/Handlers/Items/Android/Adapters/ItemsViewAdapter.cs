@@ -8,7 +8,7 @@ using ViewGroup = Android.Views.ViewGroup;
 
 namespace Microsoft.Maui.Controls.Handlers.Items
 {
-	public class ItemsViewAdapter<TItemsView, TItemsViewSource> : RecyclerView.Adapter
+	public class ItemsViewAdapter<TItemsView, TItemsViewSource> : RecyclerView.Adapter, IAccessibilityCollectionAdapter
 		where TItemsView : ItemsView
 		where TItemsViewSource : IItemsViewSource
 	{
@@ -146,6 +146,9 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 		{
 			return ItemsSource.GetPosition(item);
 		}
+
+		// No synthetic rows (Header/Footer/EmptyView) in the base adapter; every position is a real data item.
+		public virtual bool IsExcludedFromAccessibilityCollection(int position) => false;
 
 		protected virtual void BindTemplatedItemViewHolder(TemplatedItemViewHolder templatedItemViewHolder, object context)
 		{

@@ -64,6 +64,10 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			_itemsUpdateScrollObserver = new DataChangeObserver(AdjustScrollForItemUpdate);
 			_dispatchTouchEventToRecyclerView = DispatchTouchEventToRecyclerView;
 			_parentScrollGestureDispatcher = new ParentScrollGestureDispatcher(this);
+
+			// Ensure TalkBack does not count the Header/Footer/EmptyView rows as list items.
+			// https://github.com/dotnet/maui/issues/35681
+			SetAccessibilityDelegateCompat(new CollectionViewAccessibilityDelegate(this));
 		}
 
 		protected override void OnAttachedToWindow()

@@ -140,6 +140,14 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			return ItemsSource.IsFooter(position);
 		}
 
+		// The Header and Footer are rendered as adapter rows on Android but are not part of the
+		// CollectionView's ItemsSource, so they must not be counted as list items for accessibility
+		// services (e.g. TalkBack). See https://github.com/dotnet/maui/issues/35681.
+		public override bool IsExcludedFromAccessibilityCollection(int position)
+		{
+			return IsHeader(position) || IsFooter(position);
+		}
+
 		protected RecyclerView.ViewHolder CreateHeaderFooterViewHolder(object content, DataTemplate template, Context context)
 		{
 			if (template != null)
