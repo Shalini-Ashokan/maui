@@ -5,98 +5,205 @@ using AndroidX.Core.View;
 using AndroidX.Core.View.Accessibility;
 using AndroidX.RecyclerView.Widget;
 using AView = Android.Views.View;
-using Info = AndroidX.Core.View.Accessibility.AccessibilityNodeInfoCompat.CollectionInfoCompat;
-using ItemInfo = AndroidX.Core.View.Accessibility.AccessibilityNodeInfoCompat.CollectionItemInfoCompat;
+using CollectionInfo = AndroidX.Core.View.Accessibility.AccessibilityNodeInfoCompat.CollectionInfoCompat;
+using CollectionItemInfo = AndroidX.Core.View.Accessibility.AccessibilityNodeInfoCompat.CollectionItemInfoCompat;
 
 namespace Microsoft.Maui.Controls.Handlers.Items
 {
-    // Excludes Header/Footer/EmptyView from TalkBack's list count and per-item index. See dotnet/maui#35681.
+    // Excludes Header/Footer/GroupHeader/GroupFooter/EmptyView from TalkBack's list count
+    // and per-item index. See dotnet/maui#35681.
     internal sealed class CollectionViewAccessibilityDelegate : RecyclerViewAccessibilityDelegate
     {
-        readonly RecyclerView _rv;
-        readonly ItemDelegateImpl _itemDelegate;
+        readonly RecyclerView _recyclerView;
+        readonly ItemAccessibilityDelegate _itemDelegate;
 
-        public CollectionViewAccessibilityDelegate(RecyclerView rv) : base(rv)
-            => (_rv, _itemDelegate) = (rv, new ItemDelegateImpl(this));
+        public CollectionViewAccessibilityDelegate(RecyclerView recyclerView) : base(recyclerView)
+        {
+            _recyclerView = recyclerView;
+            _itemDelegate = new ItemAccessibilityDelegate(this);
+        }
 
-        public override AccessibilityDelegateCompat GetItemDelegate() => _itemDelegate;
+        public override AccessibilityDelegateCompat GetItemDelegate()
+        {
+            return _itemDelegate;
+        }
 
         public override void OnInitializeAccessibilityNodeInfo(AView host, AccessibilityNodeInfoCompat info)
         {
             base.OnInitializeAccessibilityNodeInfo(host, info);
 
-            var excluded = ExcludedCount(_rv.GetAdapter());
-            var old = info?.CollectionInfo;
-            if (excluded <= 0 || old is null)
-                return;
+            var excludedCount = GetExcludedItemCount(_recyclerView.GetAdapter());
+            var oldInfo = info?.CollectionInfo;
 
-            var h = IsHorizontal(_rv);
-            info.SetCollectionInfo(Info.Obtain(
-                h ? old.RowCount : Math.Max(0, old.RowCount - excluded),
-                h ? Math.Max(0, old.ColumnCount - excluded) : old.ColumnCount,
-                old.IsHierarchical, old.SelectionMode));
+            if (excludedCount <= 0 || oldInfo is null)
+            {
+                return;
+            }
+
+            var isHorizontal = IsHorizontal(_recyclerView);
+
+            int rowCount = isHorizontal
+                ? oldInfo.RowCount
+                : Math.Max(0, oldInfo.RowCount - excludedCount);
+
+            int columnCount = isHorizontal
+                ? Math.Max(0, oldInfo.ColumnCount - excludedCount)
+                : oldInfo.ColumnCount;
+
+            info.SetCollectionInfo(CollectionInfo.Obtain(
+                rowCount,
+                columnCount,
+                oldInfo.IsHierarchical,
+                oldInfo.SelectionMode));
         }
 
         public override void OnInitializeAccessibilityEvent(AView host, AccessibilityEvent e)
         {
             base.OnInitializeAccessibilityEvent(host, e);
-            if (e is not null)
-                e.ItemCount = Math.Max(0, e.ItemCount - ExcludedCount(_rv.GetAdapter()));
+
+            if (e is null)
+            {
+                return;
+            }
+
+            var excludedCount = GetExcludedItemCount(_recyclerView.GetAdapter());
+
+            if (excludedCount > 0)
+            {
+                e.ItemCount = Math.Max(0, e.ItemCount - excludedCount);
+            }
         }
 
-        static int ExcludedCount(RecyclerView.Adapter a)
+        static int GetExcludedItemCount(RecyclerView.Adapter adapter)
         {
-            if (a is null || a.ItemCount == 0)
+            if (adapter is null || adapter.ItemCount == 0)
+            {
                 return 0;
-            if (a is EmptyViewAdapter)
-                return a.ItemCount;
-            var last = a.ItemCount - 1;
-            return (a.GetItemViewType(0) == ItemViewType.Header ? 1 : 0)
-                 + (last > 0 && a.GetItemViewType(last) == ItemViewType.Footer ? 1 : 0);
+            }
+
+            if (adapter is EmptyViewAdapter)
+            {
+                return adapter.ItemCount;
+            }
+
+            int excluded = 0;
+
+            for (int i = 0; i < adapter.ItemCount; i++)
+            {
+                if (IsNonDataViewType(adapter.GetItemViewType(i)))
+                {
+                    excluded++;
+                }
+            }
+
+            return excluded;
         }
 
-        static int HeaderOffset(RecyclerView.Adapter a) =>
-            a is null or EmptyViewAdapter || a.ItemCount == 0 ? 0
-                : a.GetItemViewType(0) == ItemViewType.Header ? 1 : 0;
+        static int GetNonDataItemsBefore(RecyclerView.Adapter adapter, int position)
+        {
+            if (adapter is null || adapter is EmptyViewAdapter || position <= 0)
+            {
+                return 0;
+            }
 
-        static bool IsHorizontal(RecyclerView rv) =>
-            rv.GetLayoutManager() is LinearLayoutManager lm && lm.Orientation == LinearLayoutManager.Horizontal;
+            int count = 0;
 
-        sealed class ItemDelegateImpl : ItemDelegate
+            for (int i = 0; i < position; i++)
+            {
+                if (IsNonDataViewType(adapter.GetItemViewType(i)))
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        static bool IsNonDataViewType(int viewType)
+        {
+            return viewType == ItemViewType.Header
+                || viewType == ItemViewType.Footer
+                || viewType == ItemViewType.GroupHeader
+                || viewType == ItemViewType.GroupFooter;
+        }
+
+        static bool IsHorizontal(RecyclerView recyclerView)
+        {
+            return recyclerView.GetLayoutManager() is LinearLayoutManager linearLayoutManager
+                && linearLayoutManager.Orientation == LinearLayoutManager.Horizontal;
+        }
+
+        sealed class ItemAccessibilityDelegate : ItemDelegate
         {
             readonly CollectionViewAccessibilityDelegate _parent;
-            public ItemDelegateImpl(CollectionViewAccessibilityDelegate p) : base(p) => _parent = p;
+
+            public ItemAccessibilityDelegate(CollectionViewAccessibilityDelegate parent) : base(parent)
+            {
+                _parent = parent;
+            }
 
             public override void OnInitializeAccessibilityNodeInfo(AView host, AccessibilityNodeInfoCompat info)
             {
                 base.OnInitializeAccessibilityNodeInfo(host, info);
 
-                var rv = _parent._rv;
-                var a = rv.GetAdapter();
-                if (host is null || info is null || a is null)
-                    return;
+                var recyclerView = _parent._recyclerView;
+                var adapter = recyclerView.GetAdapter();
 
-                var pos = rv.GetChildAdapterPosition(host);
-                if (pos == RecyclerView.NoPosition)
+                if (host is null || info is null || adapter is null)
+                {
                     return;
+                }
 
-                if (a is EmptyViewAdapter || a.GetItemViewType(pos) is ItemViewType.Header or ItemViewType.Footer)
+                var position = recyclerView.GetChildAdapterPosition(host);
+
+                if (position == RecyclerView.NoPosition)
+                {
+                    return;
+                }
+
+                if (IsNonDataItem(adapter, position))
                 {
                     info.SetCollectionItemInfo(null);
                     return;
                 }
 
-                var offset = HeaderOffset(a);
-                var old = info.CollectionItemInfo;
-                if (offset == 0 || old is null)
-                    return;
+                var offset = GetNonDataItemsBefore(adapter, position);
+                var oldItemInfo = info.CollectionItemInfo;
 
-                var h = IsHorizontal(rv);
-                info.SetCollectionItemInfo(ItemInfo.Obtain(
-                    h ? old.RowIndex : Math.Max(0, old.RowIndex - offset), old.RowSpan,
-                    h ? Math.Max(0, old.ColumnIndex - offset) : old.ColumnIndex, old.ColumnSpan,
-                    false, old.IsSelected));
+                if (offset == 0 || oldItemInfo is null)
+                {
+                    return;
+                }
+
+                var isHorizontal = IsHorizontal(recyclerView);
+
+                int rowIndex = isHorizontal
+                    ? oldItemInfo.RowIndex
+                    : Math.Max(0, oldItemInfo.RowIndex - offset);
+
+                int columnIndex = isHorizontal
+                    ? Math.Max(0, oldItemInfo.ColumnIndex - offset)
+                    : oldItemInfo.ColumnIndex;
+
+                info.SetCollectionItemInfo(CollectionItemInfo.Obtain(
+                    rowIndex,
+                    oldItemInfo.RowSpan,
+                    columnIndex,
+                    oldItemInfo.ColumnSpan,
+                    false,
+                    oldItemInfo.IsSelected));
+            }
+
+            static bool IsNonDataItem(RecyclerView.Adapter adapter, int position)
+            {
+                if (adapter is EmptyViewAdapter)
+                {
+                    return true;
+                }
+
+                return IsNonDataViewType(adapter.GetItemViewType(position));
             }
         }
     }
 }
+
