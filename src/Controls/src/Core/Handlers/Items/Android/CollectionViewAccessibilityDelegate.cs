@@ -10,16 +10,19 @@ using CollectionItemInfo = AndroidX.Core.View.Accessibility.AccessibilityNodeInf
 
 namespace Microsoft.Maui.Controls.Handlers.Items
 {
-    // Excludes Header/Footer/GroupHeader/GroupFooter/EmptyView from TalkBack's list count
-    // and per-item index. See dotnet/maui#35681.
+    // Translates cached metadata from CollectionViewAccessibilityMetadata into TalkBack-visible
+    // CollectionInfo / CollectionItemInfo / AccessibilityEvent values.
     internal sealed class CollectionViewAccessibilityDelegate : RecyclerViewAccessibilityDelegate
     {
         readonly RecyclerView _recyclerView;
+        readonly CollectionViewAccessibilityMetadata _accessibilityMetadata;
         readonly ItemAccessibilityDelegate _itemDelegate;
 
-        public CollectionViewAccessibilityDelegate(RecyclerView recyclerView) : base(recyclerView)
+        public CollectionViewAccessibilityDelegate(RecyclerView recyclerView, CollectionViewAccessibilityMetadata metadata)
+            : base(recyclerView)
         {
             _recyclerView = recyclerView;
+            _accessibilityMetadata = metadata;
             _itemDelegate = new ItemAccessibilityDelegate(this);
         }
 
@@ -32,14 +35,18 @@ namespace Microsoft.Maui.Controls.Handlers.Items
         {
             base.OnInitializeAccessibilityNodeInfo(host, info);
 
-            var excludedCount = GetExcludedItemCount(_recyclerView.GetAdapter());
-            var oldInfo = info?.CollectionInfo;
-
-            if (excludedCount <= 0 || oldInfo is null)
+            if (info is null || !_accessibilityMetadata.HasSupplementaryItems)
             {
                 return;
             }
 
+            var oldInfo = info.CollectionInfo;
+            if (oldInfo is null)
+            {
+                return;
+            }
+
+            var excludedCount = _accessibilityMetadata.SupplementaryItemCount;
             var isHorizontal = IsHorizontal(_recyclerView);
 
             int rowCount = isHorizontal
@@ -61,70 +68,12 @@ namespace Microsoft.Maui.Controls.Handlers.Items
         {
             base.OnInitializeAccessibilityEvent(host, e);
 
-            if (e is null)
+            if (e is null || !_accessibilityMetadata.HasSupplementaryItems)
             {
                 return;
             }
 
-            var excludedCount = GetExcludedItemCount(_recyclerView.GetAdapter());
-
-            if (excludedCount > 0)
-            {
-                e.ItemCount = Math.Max(0, e.ItemCount - excludedCount);
-            }
-        }
-
-        static int GetExcludedItemCount(RecyclerView.Adapter adapter)
-        {
-            if (adapter is null || adapter.ItemCount == 0)
-            {
-                return 0;
-            }
-
-            if (adapter is EmptyViewAdapter)
-            {
-                return adapter.ItemCount;
-            }
-
-            int excluded = 0;
-
-            for (int i = 0; i < adapter.ItemCount; i++)
-            {
-                if (IsNonDataViewType(adapter.GetItemViewType(i)))
-                {
-                    excluded++;
-                }
-            }
-
-            return excluded;
-        }
-
-        static int GetNonDataItemsBefore(RecyclerView.Adapter adapter, int position)
-        {
-            if (adapter is null || adapter is EmptyViewAdapter || position <= 0)
-            {
-                return 0;
-            }
-
-            int count = 0;
-
-            for (int i = 0; i < position; i++)
-            {
-                if (IsNonDataViewType(adapter.GetItemViewType(i)))
-                {
-                    count++;
-                }
-            }
-
-            return count;
-        }
-
-        static bool IsNonDataViewType(int viewType)
-        {
-            return viewType == ItemViewType.Header
-                || viewType == ItemViewType.Footer
-                || viewType == ItemViewType.GroupHeader
-                || viewType == ItemViewType.GroupFooter;
+            e.ItemCount = Math.Max(0, e.ItemCount - _accessibilityMetadata.SupplementaryItemCount);
         }
 
         static bool IsHorizontal(RecyclerView recyclerView)
@@ -146,28 +95,26 @@ namespace Microsoft.Maui.Controls.Handlers.Items
             {
                 base.OnInitializeAccessibilityNodeInfo(host, info);
 
-                var recyclerView = _parent._recyclerView;
-                var adapter = recyclerView.GetAdapter();
-
-                if (host is null || info is null || adapter is null)
+                var metadata = _parent._accessibilityMetadata;
+                if (host is null || info is null || !metadata.HasSupplementaryItems)
                 {
                     return;
                 }
 
+                var recyclerView = _parent._recyclerView;
                 var position = recyclerView.GetChildAdapterPosition(host);
-
                 if (position == RecyclerView.NoPosition)
                 {
                     return;
                 }
 
-                if (IsNonDataItem(adapter, position))
+                if (metadata.IsSupplementary(position))
                 {
                     info.SetCollectionItemInfo(null);
                     return;
                 }
 
-                var offset = GetNonDataItemsBefore(adapter, position);
+                var offset = metadata.GetNonDataItemsBefore(position);
                 var oldItemInfo = info.CollectionItemInfo;
 
                 if (offset == 0 || oldItemInfo is null)
@@ -185,25 +132,18 @@ namespace Microsoft.Maui.Controls.Handlers.Items
                     ? Math.Max(0, oldItemInfo.ColumnIndex - offset)
                     : oldItemInfo.ColumnIndex;
 
+#pragma warning disable CS0618 // Preserve the base heading metadata; IsHeading is the current API surface.
+                var isHeading = oldItemInfo.IsHeading;
+#pragma warning restore CS0618
+
                 info.SetCollectionItemInfo(CollectionItemInfo.Obtain(
                     rowIndex,
                     oldItemInfo.RowSpan,
                     columnIndex,
                     oldItemInfo.ColumnSpan,
-                    false,
+                    isHeading,
                     oldItemInfo.IsSelected));
-            }
-
-            static bool IsNonDataItem(RecyclerView.Adapter adapter, int position)
-            {
-                if (adapter is EmptyViewAdapter)
-                {
-                    return true;
-                }
-
-                return IsNonDataViewType(adapter.GetItemViewType(position));
             }
         }
     }
 }
-
