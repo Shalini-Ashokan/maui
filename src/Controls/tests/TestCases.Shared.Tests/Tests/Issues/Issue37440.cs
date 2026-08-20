@@ -14,7 +14,7 @@ public class Issue37440 : _IssuesUITest
     [Category(UITestCategories.Editor)]
     public void Issue37440EmptyAutoSizeEditorDoesNotSnapToMaximumHeight()
     {
-        App.WaitForElement("Issue37440Editor");
+        App.WaitForElement("WaitForLabel");
         VerifyScreenshot();
     }
 }
