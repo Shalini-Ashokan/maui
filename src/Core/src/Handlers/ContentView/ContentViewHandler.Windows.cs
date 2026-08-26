@@ -22,6 +22,12 @@ namespace Microsoft.Maui.Handlers
 			_ = handler.VirtualView ?? throw new InvalidOperationException($"{nameof(VirtualView)} should have been set by base class.");
 			_ = handler.MauiContext ?? throw new InvalidOperationException($"{nameof(MauiContext)} should have been set by base class.");
 
+			// Release current content BEFORE resolving the new PresentedContent. Resolving it
+			// (view.ToPlatform) can recursively create a nested handler (e.g. a ControlTemplate's
+			// ContentPresenter) that tries to reparent an element still attached here.
+			handler.PlatformView.Content = null;
+			handler.PlatformView.CachedChildren.Clear();
+
 			if (handler.VirtualView.PresentedContent is IView view)
 			{
 				var platformView = view.ToPlatform(handler.MauiContext);
@@ -48,10 +54,6 @@ namespace Microsoft.Maui.Handlers
 				}
 
 				handler.PlatformView.Content = platformView;
-			}
-			else
-			{
-				handler.PlatformView.Content = null;
 			}
 		}
 
