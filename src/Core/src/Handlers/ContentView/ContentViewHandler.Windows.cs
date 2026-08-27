@@ -22,14 +22,22 @@ namespace Microsoft.Maui.Handlers
 			_ = handler.VirtualView ?? throw new InvalidOperationException($"{nameof(VirtualView)} should have been set by base class.");
 			_ = handler.MauiContext ?? throw new InvalidOperationException($"{nameof(MauiContext)} should have been set by base class.");
 
-			// Release current content BEFORE resolving the new PresentedContent. Resolving it
-			// (view.ToPlatform) can recursively create a nested handler (e.g. a ControlTemplate's
-			// ContentPresenter) that tries to reparent an element still attached here.
+			// Clear current content before resolving new PresentedContent.
+			// ToPlatform can recursively create nested handlers (e.g. ControlTemplate's
+			// ContentPresenter) that try to reparent an element still attached here.
 			handler.PlatformView.Content = null;
 			handler.PlatformView.CachedChildren.Clear();
 
 			if (handler.VirtualView.PresentedContent is IView view)
 			{
+				// Disconnect old handler so shared resources (e.g. a Label from a
+				// StaticResource Style) get a fresh native view without COM parent conflicts.
+				// Skip ScrollView/RefreshView — disconnecting crashes their pointer-routing pipeline.
+				if (view is not IScrollView && view is not IRefreshView)
+				{
+					view.Handler?.DisconnectHandler();
+				}
+
 				var platformView = view.ToPlatform(handler.MauiContext);
 
 				// Detach from existing parent — mirrors Android RemoveFromParent / iOS RemoveFromSuperview.
@@ -92,7 +100,7 @@ namespace Microsoft.Maui.Handlers
 
 			var defaultBrush = new UI.Xaml.Media.SolidColorBrush(Colors.Transparent.ToWindowsColor());
 			platformContent.UpdatePlatformViewBackground(content, defaultBrush);
-			
+
 			return platformContent;
 
 		}
