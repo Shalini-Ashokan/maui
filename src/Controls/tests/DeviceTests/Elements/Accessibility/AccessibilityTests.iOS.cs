@@ -11,13 +11,110 @@ using Xunit;
 
 namespace Microsoft.Maui.DeviceTests
 {
-	// Regression tests for https://github.com/dotnet/maui/issues/34380
-	// [iOS] VoiceOver does not correctly describe a View with GestureRecognizers when it has
-	// SemanticProperties.Hint and child Labels — should synthesize an accessibility label from
-	// children, promote the layout to an accessibility element, and route VoiceOver activation
-	// to the layout's TapGestureRecognizer.
 	public partial class AccessibilityTests
 	{
+		[Category(TestCategory.Accessibility)]
+		[Collection(ControlsHandlerTestBase.RunInNewWindowCollection)]
+		public class Issue38023Tests : ControlsHandlerTestBase
+		{
+			void SetupBuilder()
+			{
+				EnsureHandlerCreated(builder =>
+				{
+					builder.ConfigureMauiHandlers(handlers =>
+					{
+						handlers.AddMauiControlsHandlers();
+						handlers.AddHandler(typeof(Window), typeof(WindowHandlerStub));
+					});
+				});
+			}
+
+			[Fact("Accessible child remains separate from a semantic parent")]
+			public async Task AccessibleChild_RemainsSeparateFromSemanticParent()
+			{
+				SetupBuilder();
+
+				var child = new Label { Text = "Filter", AutomationId = "FilterIcon" };
+				AutomationProperties.SetIsInAccessibleTree(child, true);
+				SemanticProperties.SetDescription(child, "Filter icon");
+
+				var parent = new Grid();
+				parent.Add(child);
+				SemanticProperties.SetDescription(parent, "Header cell");
+
+				var page = new ContentPage { Content = parent };
+
+				await CreateHandlerAndAddToWindow<IWindowHandler>(page, async (handler) =>
+				{
+					await Task.Delay(100);
+
+					var childView = (UIView)child.Handler.PlatformView;
+					var parentView = (UIView)parent.Handler.PlatformView;
+
+					Assert.True(childView.IsAccessibilityElement);
+					Assert.Equal("FilterIcon", childView.AccessibilityIdentifier);
+					Assert.Equal("Filter icon", childView.AccessibilityLabel);
+					Assert.False(parentView.IsAccessibilityElement);
+				});
+			}
+
+			[Fact("Accessible child remains separate through nested semantic containers")]
+			public async Task AccessibleChild_DemotesImplicitlyAccessibleAncestors()
+			{
+				SetupBuilder();
+
+				var child = new Label { Text = "Filter" };
+				AutomationProperties.SetIsInAccessibleTree(child, true);
+
+				var inner = new Grid();
+				inner.Add(child);
+				SemanticProperties.SetDescription(inner, "Inner header");
+
+				var outer = new VerticalStackLayout { inner };
+				SemanticProperties.SetDescription(outer, "Outer header");
+
+				var page = new ContentPage { Content = outer };
+
+				await CreateHandlerAndAddToWindow<IWindowHandler>(page, async (handler) =>
+				{
+					await Task.Delay(100);
+
+					Assert.True(((UIView)child.Handler.PlatformView).IsAccessibilityElement);
+					Assert.False(((UIView)inner.Handler.PlatformView).IsAccessibilityElement);
+					Assert.False(((UIView)outer.Handler.PlatformView).IsAccessibilityElement);
+				});
+			}
+
+			[Fact("Explicitly accessible parent retains its grouping behavior")]
+			public async Task AccessibleChild_DoesNotDemoteExplicitlyAccessibleParent()
+			{
+				SetupBuilder();
+
+				var child = new Label { Text = "Filter" };
+				AutomationProperties.SetIsInAccessibleTree(child, true);
+
+				var parent = new Grid();
+				parent.Add(child);
+				AutomationProperties.SetIsInAccessibleTree(parent, true);
+				SemanticProperties.SetDescription(parent, "Header cell");
+
+				var page = new ContentPage { Content = parent };
+
+				await CreateHandlerAndAddToWindow<IWindowHandler>(page, async (handler) =>
+				{
+					await Task.Delay(100);
+
+					Assert.True(((UIView)child.Handler.PlatformView).IsAccessibilityElement);
+					Assert.True(((UIView)parent.Handler.PlatformView).IsAccessibilityElement);
+				});
+			}
+		}
+
+		// Regression tests for https://github.com/dotnet/maui/issues/34380
+		// [iOS] VoiceOver does not correctly describe a View with GestureRecognizers when it has
+		// SemanticProperties.Hint and child Labels — should synthesize an accessibility label from
+		// children, promote the layout to an accessibility element, and route VoiceOver activation
+		// to the layout's TapGestureRecognizer.
 		[Category(TestCategory.Accessibility)]
 		[Collection(ControlsHandlerTestBase.RunInNewWindowCollection)]
 		public class Issue34380Tests : ControlsHandlerTestBase

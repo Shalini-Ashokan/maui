@@ -28,6 +28,11 @@ namespace Microsoft.Maui.Controls
 			var _defaultIsAccessibilityElement = Control.IsAccessibilityElement || Control is UIControl;
 
 			Control.IsAccessibilityElement = (bool)((bool?)element.GetValue(AutomationProperties.IsInAccessibleTreeProperty) ?? _defaultIsAccessibilityElement);
+
+			for (var parent = element.Parent; parent is not null; parent = parent.Parent)
+			{
+				parent.Handler?.UpdateValue(nameof(IView.Semantics));
+			}
 		}
 
 		public static void MapAutomationPropertiesExcludedWithChildren(IElementHandler handler, Element view)

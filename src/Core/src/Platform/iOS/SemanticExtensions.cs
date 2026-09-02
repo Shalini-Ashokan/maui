@@ -108,6 +108,9 @@ namespace Microsoft.Maui.Platform
 				return;
 			}
 
+			var hasExplicitlyAccessibleDescendant = semantics.IsInAccessibleTree != true &&
+				semantics.HasAccessibleDescendant;
+
 			// For layout containers with a Hint set, decide on an AccessibilityLabel that gives
 			// VoiceOver the children's content (matching Android TalkBack behavior).
 			// - If the developer explicitly set Description, respect it as the label — don't
@@ -117,7 +120,8 @@ namespace Microsoft.Maui.Platform
 			//   text so VoiceOver reads "[children], [hint]" instead of just "[hint]".
 			// We gate on Hint only (not Description) so Description-only layouts retain their
 			// existing legacy-path behavior.
-			if (view is ILayout layout &&
+			if (!hasExplicitlyAccessibleDescendant &&
+				view is ILayout layout &&
 				!string.IsNullOrWhiteSpace(semantics.Hint))
 			{
 				if (!string.IsNullOrWhiteSpace(semantics.Description))
@@ -184,6 +188,11 @@ namespace Microsoft.Maui.Platform
 			}
 
 			UpdateSemantics(platformView, semantics);
+
+			if (hasExplicitlyAccessibleDescendant && platformView is not UIControl)
+			{
+				platformView.IsAccessibilityElement = false;
+			}
 		}
 
 		internal static void UpdateSemantics(this UIView platformView, Semantics? semantics)
