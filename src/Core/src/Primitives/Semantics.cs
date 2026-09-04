@@ -7,12 +7,6 @@ namespace Microsoft.Maui
 
 		public string? Hint { get; set; }
 
-#if IOS || MACCATALYST
-		internal bool? IsInAccessibleTree { get; set; }
-
-		internal bool HasAccessibleDescendant { get; set; }
-#endif
-
 		public bool IsHeading => HeadingLevel != SemanticHeadingLevel.None;
 
 		public Semantics()

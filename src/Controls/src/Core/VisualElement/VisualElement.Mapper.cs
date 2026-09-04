@@ -39,6 +39,9 @@ namespace Microsoft.Maui.Controls
 			viewMapper.ReplaceMapping<IView, IViewHandler>(SemanticProperties.DescriptionProperty.PropertyName, MapSemanticPropertiesDescriptionProperty);
 			viewMapper.ReplaceMapping<IView, IViewHandler>(SemanticProperties.HintProperty.PropertyName, MapSemanticPropertiesHintProperty);
 			viewMapper.ReplaceMapping<IView, IViewHandler>(SemanticProperties.HeadingLevelProperty.PropertyName, MapSemanticPropertiesHeadingLevelProperty);
+#if IOS || MACCATALYST
+			viewMapper.AppendToMapping<VisualElement, IViewHandler>(nameof(IView.Semantics), MapSemantics);
+#endif
 
 			viewMapper.AppendToMapping<VisualElement, IViewHandler>(nameof(IViewHandler.ContainerView), MapContainerView);
 

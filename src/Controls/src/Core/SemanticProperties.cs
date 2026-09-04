@@ -95,11 +95,7 @@ namespace Microsoft.Maui.Controls
 		{
 			if (!bindable.IsSet(HintProperty) &&
 				!bindable.IsSet(DescriptionProperty) &&
-				!bindable.IsSet(HeadingLevelProperty)
-#if IOS || MACCATALYST
-				&& !bindable.IsSet(AutomationProperties.IsInAccessibleTreeProperty)
-#endif
-				)
+				!bindable.IsSet(HeadingLevelProperty))
 			{
 				return null;
 			}
@@ -108,31 +104,7 @@ namespace Microsoft.Maui.Controls
 			semantics.Description = GetDescription(bindable);
 			semantics.HeadingLevel = GetHeadingLevel(bindable);
 			semantics.Hint = GetHint(bindable);
-#if IOS || MACCATALYST
-			semantics.IsInAccessibleTree = AutomationProperties.GetIsInAccessibleTree(bindable);
-			semantics.HasAccessibleDescendant = bindable is IVisualTreeElement visualTreeElement &&
-				HasAccessibleDescendant(visualTreeElement);
-#endif
 			return semantics;
 		}
-
-#if IOS || MACCATALYST
-		static bool HasAccessibleDescendant(IVisualTreeElement element)
-		{
-			foreach (var child in element.GetVisualChildren())
-			{
-				if (child is BindableObject bindable &&
-					AutomationProperties.GetIsInAccessibleTree(bindable) == true)
-				{
-					return true;
-				}
-
-				if (HasAccessibleDescendant(child))
-					return true;
-			}
-
-			return false;
-		}
-#endif
 	}
 }
