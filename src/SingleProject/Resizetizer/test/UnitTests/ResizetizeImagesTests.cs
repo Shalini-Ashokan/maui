@@ -62,6 +62,7 @@ namespace Microsoft.Maui.Resizetizer.Tests
 			[InlineData("dotnet_bot.svg")]
 			[InlineData("dotnet_logo.svg")]
 			[InlineData("find_icon.svg")]
+			[InlineData("filtered.svg")]
 			[InlineData("not_working.svg")]
 			[InlineData("prismicon.svg")]
 			[InlineData("warning.svg")]
