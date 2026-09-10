@@ -288,14 +288,6 @@
         Version="$(SvgSkiaPackageVersion)"
     />
     <PackageReference
-        Update="Svg.SceneGraph"
-        Version="$(SvgSkiaPackageVersion)"
-    />
-    <PackageReference
-        Update="Svg.Animation"
-        Version="$(SvgSkiaPackageVersion)"
-    />
-    <PackageReference
         Update="ShimSkiaSharp"
         Version="$(SvgSkiaPackageVersion)"
     />

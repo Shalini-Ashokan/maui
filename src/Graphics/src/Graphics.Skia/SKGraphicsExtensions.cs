@@ -182,7 +182,7 @@ namespace Microsoft.Maui.Graphics.Skia
 			float fx,
 			float fy)
 		{
-			using var platformPathBuilder = new SKPathBuilder();
+			var platformPath = new SKPath();
 
 			var ppux = ppu * fx;
 			var ppuy = ppu * fy;
@@ -196,26 +196,26 @@ namespace Microsoft.Maui.Graphics.Skia
 				if (type == PathOperation.Move)
 				{
 					var point = path[pointIndex++];
-					platformPathBuilder.MoveTo((ox + point.X * ppux), (oy + point.Y * ppuy));
+					platformPath.MoveTo((ox + point.X * ppux), (oy + point.Y * ppuy));
 				}
 				else if (type == PathOperation.Line)
 				{
 					var point = path[pointIndex++];
-					platformPathBuilder.LineTo((ox + point.X * ppux), (oy + point.Y * ppuy));
+					platformPath.LineTo((ox + point.X * ppux), (oy + point.Y * ppuy));
 				}
 
 				else if (type == PathOperation.Quad)
 				{
 					var controlPoint = path[pointIndex++];
 					var point = path[pointIndex++];
-					platformPathBuilder.QuadTo((ox + controlPoint.X * ppux), (oy + controlPoint.Y * ppuy), (ox + point.X * ppux), (oy + point.Y * ppuy));
+					platformPath.QuadTo((ox + controlPoint.X * ppux), (oy + controlPoint.Y * ppuy), (ox + point.X * ppux), (oy + point.Y * ppuy));
 				}
 				else if (type == PathOperation.Cubic)
 				{
 					var controlPoint1 = path[pointIndex++];
 					var controlPoint2 = path[pointIndex++];
 					var point = path[pointIndex++];
-					platformPathBuilder.CubicTo((ox + controlPoint1.X * ppux), (oy + controlPoint1.Y * ppuy), (ox + controlPoint2.X * ppux), (oy + controlPoint2.Y * ppuy), (ox + point.X * ppux),
+					platformPath.CubicTo((ox + controlPoint1.X * ppux), (oy + controlPoint1.Y * ppuy), (ox + controlPoint2.X * ppux), (oy + controlPoint2.Y * ppuy), (ox + point.X * ppux),
 						(oy + point.Y * ppuy));
 				}
 				else if (type == PathOperation.Arc)
@@ -243,15 +243,15 @@ namespace Microsoft.Maui.Graphics.Skia
 					if (!clockwise)
 						sweep *= -1;
 
-					platformPathBuilder.AddArc(rect, startAngle, sweep);
+					platformPath.AddArc(rect, startAngle, sweep);
 				}
 				else if (type == PathOperation.Close)
 				{
-					platformPathBuilder.Close();
+					platformPath.Close();
 				}
 			}
 
-			return platformPathBuilder.Detach();
+			return platformPath;
 		}
 
 		/// <summary>
@@ -278,38 +278,38 @@ namespace Microsoft.Maui.Graphics.Skia
 		{
 			ppu = zoom * ppu;
 
-			using var pathBuilder = new SKPathBuilder();
+			var path = new SKPath();
 
 			var type = target.GetSegmentType(segmentIndex);
 			if (type == PathOperation.Line)
 			{
 				var pointIndex = target.GetSegmentPointIndex(segmentIndex);
 				var startPoint = target[pointIndex - 1];
-				pathBuilder.MoveTo(startPoint.X * ppu, startPoint.Y * ppu);
+				path.MoveTo(startPoint.X * ppu, startPoint.Y * ppu);
 
 				var endPoint = target[pointIndex];
-				pathBuilder.LineTo(endPoint.X * ppu, endPoint.Y * ppu);
+				path.LineTo(endPoint.X * ppu, endPoint.Y * ppu);
 			}
 			else if (type == PathOperation.Quad)
 			{
 				var pointIndex = target.GetSegmentPointIndex(segmentIndex);
 				var startPoint = target[pointIndex - 1];
-				pathBuilder.MoveTo(startPoint.X * ppu, startPoint.Y * ppu);
+				path.MoveTo(startPoint.X * ppu, startPoint.Y * ppu);
 
 				var controlPoint = target[pointIndex++];
 				var endPoint = target[pointIndex];
-				pathBuilder.QuadTo(controlPoint.X * ppu, controlPoint.Y * ppu, endPoint.X * ppu, endPoint.Y * ppu);
+				path.QuadTo(controlPoint.X * ppu, controlPoint.Y * ppu, endPoint.X * ppu, endPoint.Y * ppu);
 			}
 			else if (type == PathOperation.Cubic)
 			{
 				var pointIndex = target.GetSegmentPointIndex(segmentIndex);
 				var startPoint = target[pointIndex - 1];
-				pathBuilder.MoveTo(startPoint.X * ppu, startPoint.Y * ppu);
+				path.MoveTo(startPoint.X * ppu, startPoint.Y * ppu);
 
 				var controlPoint1 = target[pointIndex++];
 				var controlPoint2 = target[pointIndex++];
 				var endPoint = target[pointIndex];
-				pathBuilder.CubicTo(controlPoint1.X * ppu, controlPoint1.Y * ppu, controlPoint2.X * ppu, controlPoint2.Y * ppu, endPoint.X * ppu, endPoint.Y * ppu);
+				path.CubicTo(controlPoint1.X * ppu, controlPoint1.Y * ppu, controlPoint2.X * ppu, controlPoint2.Y * ppu, endPoint.X * ppu, endPoint.Y * ppu);
 			}
 			else if (type == PathOperation.Arc)
 			{
@@ -338,10 +338,10 @@ namespace Microsoft.Maui.Graphics.Skia
 				if (!clockwise)
 					sweep *= -1;
 
-				pathBuilder.AddArc(rect, startAngle, sweep);
+				path.AddArc(rect, startAngle, sweep);
 			}
 
-			return pathBuilder.Detach();
+			return path;
 		}
 
 		/// <summary>
@@ -357,7 +357,7 @@ namespace Microsoft.Maui.Graphics.Skia
 		{
 			ppu = zoom * ppu;
 
-			using var pathBuilder = new SKPathBuilder();
+			var path = new SKPath();
 
 			var pointIndex = 0;
 			var arcAngleIndex = 0;
@@ -368,18 +368,18 @@ namespace Microsoft.Maui.Graphics.Skia
 				if (type == PathOperation.Move)
 				{
 					var point = target.GetRotatedPoint(pointIndex++, center, angle);
-					pathBuilder.MoveTo(point.X * ppu, point.Y * ppu);
+					path.MoveTo(point.X * ppu, point.Y * ppu);
 				}
 				else if (type == PathOperation.Line)
 				{
 					var endPoint = target.GetRotatedPoint(pointIndex++, center, angle);
-					pathBuilder.LineTo(endPoint.X * ppu, endPoint.Y * ppu);
+					path.LineTo(endPoint.X * ppu, endPoint.Y * ppu);
 				}
 				else if (type == PathOperation.Quad)
 				{
 					var controlPoint1 = target.GetRotatedPoint(pointIndex++, center, angle);
 					var endPoint = target.GetRotatedPoint(pointIndex++, center, angle);
-					pathBuilder.QuadTo(
+					path.QuadTo(
 						controlPoint1.X * ppu,
 						controlPoint1.Y * ppu,
 						endPoint.X * ppu,
@@ -390,7 +390,7 @@ namespace Microsoft.Maui.Graphics.Skia
 					var controlPoint1 = target.GetRotatedPoint(pointIndex++, center, angle);
 					var controlPoint2 = target.GetRotatedPoint(pointIndex++, center, angle);
 					var endPoint = target.GetRotatedPoint(pointIndex++, center, angle);
-					pathBuilder.CubicTo(
+					path.CubicTo(
 						controlPoint1.X * ppu,
 						controlPoint1.Y * ppu,
 						controlPoint2.X * ppu,
@@ -423,15 +423,15 @@ namespace Microsoft.Maui.Graphics.Skia
 					if (!clockwise)
 						sweep *= -1;
 
-					pathBuilder.AddArc(rect, startAngle, sweep);
+					path.AddArc(rect, startAngle, sweep);
 				}
 				else if (type == PathOperation.Close)
 				{
-					pathBuilder.Close();
+					path.Close();
 				}
 			}
 
-			return pathBuilder.Detach();
+			return path;
 		}
 
 		/// <summary>

@@ -41,9 +41,7 @@ namespace Microsoft.Maui.Graphics.Skia
 			LayoutLine callback,
 			TextFlow textFlow = TextFlow.ClipBounds,
 			SKPaint paint = null)
-			// SKPaint no longer carries text/font information (SkiaSharp 4.x removed those members),
-			// so fall through to the SKFont overload with a null font; it derives the font from textAttributes.
-			: this(value, rect, textAttributes, callback, textFlow, (SKFont)null)
+			: this(value, rect, textAttributes, callback, textFlow, paint?.ToFont())
 		{
 		}
 
