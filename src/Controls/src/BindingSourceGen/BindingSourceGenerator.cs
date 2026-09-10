@@ -72,12 +72,14 @@ public class BindingSourceGenerator : IIncrementalGenerator
 	}
 
 	internal static SimpleNameSyntax? GetInvokedMethodName(ExpressionSyntax expression)
-		=> expression switch
+	{
+		return expression switch
 		{
 			MemberAccessExpressionSyntax memberAccess => memberAccess.Name,
 			MemberBindingExpressionSyntax memberBinding => memberBinding.Name,
 			_ => null
 		};
+	}
 
 	private static bool IsCreateMethod(SyntaxNode node)
 	{
