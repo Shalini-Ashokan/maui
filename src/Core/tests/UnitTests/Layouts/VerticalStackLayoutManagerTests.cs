@@ -443,5 +443,32 @@ namespace Microsoft.Maui.UnitTests.Layouts
 
 			Assert.Equal(expectedHeight, measuredSize.Height);
 		}
+
+		[Fact(DisplayName = "VerticalStackLayout with explicit size should expand to accommodate children minimum requirements")]
+		public void VerticalStackLayoutWithExplicitSizeShouldExpandForChildren()
+		{
+			// Reproduces the issue where content inside VerticalStackLayout gets cropped
+			// when VerticalStackLayout has explicit HeightRequest that's smaller than children need
+			
+			var stack = CreateTestLayout();
+			
+			// Set explicit dimensions that are smaller than what the children will need
+			stack.Height.Returns(50);
+			stack.Width.Returns(100);
+			
+			// Create children that need more space
+			var child1 = CreateTestView(new Size(100, 60));
+			var child2 = CreateTestView(new Size(100, 60));
+			
+			SubstituteChildren(stack, child1, child2);
+			
+			var manager = new VerticalStackLayoutManager(stack);
+			var measuredSize = manager.Measure(double.PositiveInfinity, double.PositiveInfinity);
+			
+			// The stack should expand to accommodate the children even though explicit size is smaller
+			// Two children at 60 height each = 120 minimum needed
+			Assert.True(measuredSize.Height >= 120, $"VerticalStack height {measuredSize.Height} should be at least 120 to accommodate children");
+			Assert.True(measuredSize.Width >= 100, $"VerticalStack width {measuredSize.Width} should be at least 100 to accommodate children");
+		}
 	}
 }
