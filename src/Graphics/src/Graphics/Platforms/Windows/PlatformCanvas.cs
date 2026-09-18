@@ -547,7 +547,17 @@ namespace Microsoft.Maui.Graphics.Platform
 
 		protected override void PlatformDrawLine(float x1, float y1, float x2, float y2)
 		{
-			Draw(s => s.DrawLine(x1, y1, x2, y2, CurrentState.PlatformStrokeBrush, CurrentState.StrokeSize, CurrentState.PlatformStrokeStyle));
+			// Use path-based drawing to avoid line extension issues with Win2D's DrawLine
+			var builder = new CanvasPathBuilder(_session);
+			builder.BeginFigure(x1, y1);
+			builder.AddLine(x2, y2);
+			builder.EndFigure(CanvasFigureLoop.Open);
+			var geometry = CanvasGeometry.CreatePath(builder);
+
+			Draw(s => s.DrawGeometry(geometry, CurrentState.PlatformStrokeBrush, CurrentState.StrokeSize, CurrentState.PlatformStrokeStyle));
+			
+			geometry.Dispose();
+			builder.Dispose();
 		}
 
 		protected override void PlatformDrawArc(float x, float y, float width, float height, float startAngle, float endAngle, bool clockwise, bool closed)
@@ -598,15 +608,24 @@ namespace Microsoft.Maui.Graphics.Platform
 
 		protected override void PlatformDrawRectangle(float x, float y, float width, float height)
 		{
-			float strokeWidth = CurrentState.StrokeSize;
-			SetRect(x, y, width, height);
+			// Use path-based drawing to avoid stroke extension issues with Win2D's DrawRectangle
+			var builder = new CanvasPathBuilder(_session);
+			builder.BeginFigure(x, y);
+			builder.AddLine(x + width, y);
+			builder.AddLine(x + width, y + height);
+			builder.AddLine(x, y + height);
+			builder.EndFigure(CanvasFigureLoop.Closed);
+			var geometry = CanvasGeometry.CreatePath(builder);
 
-			Draw(s => s.DrawRectangle(_rect, CurrentState.PlatformStrokeBrush, CurrentState.StrokeSize, CurrentState.PlatformStrokeStyle));
+			Draw(s => s.DrawGeometry(geometry, CurrentState.PlatformStrokeBrush, CurrentState.StrokeSize, CurrentState.PlatformStrokeStyle));
+			
+			geometry.Dispose();
+			builder.Dispose();
 		}
 
 		protected override void PlatformDrawRoundedRectangle(float x, float y, float width, float height, float cornerRadius)
 		{
-			float strokeWidth = CurrentState.StrokeSize;
+			// Use path-based drawing to avoid stroke extension issues with Win2D's DrawRoundedRectangle
 			SetRect(x, y, width, height);
 
 			if (cornerRadius > _rect.Width / 2)
@@ -619,40 +638,43 @@ namespace Microsoft.Maui.Graphics.Platform
 				cornerRadius = (float)_rect.Height / 2;
 			}
 
-			Draw(s => s.DrawRoundedRectangle(_rect, cornerRadius, cornerRadius, CurrentState.PlatformStrokeBrush, CurrentState.StrokeSize, CurrentState.PlatformStrokeStyle));
+			var builder = new CanvasPathBuilder(_session);
+			builder.BeginFigure((float)_rect.X + cornerRadius, (float)_rect.Y);
+			builder.AddLine((float)_rect.X + (float)_rect.Width - cornerRadius, (float)_rect.Y);
+			builder.AddArc(new Vector2((float)_rect.X + (float)_rect.Width - cornerRadius, (float)_rect.Y + cornerRadius), cornerRadius, cornerRadius, (float)(Math.PI * 1.5), CanvasSweepDirection.Clockwise, CanvasArcSize.Small);
+			builder.AddLine((float)_rect.X + (float)_rect.Width, (float)_rect.Y + (float)_rect.Height - cornerRadius);
+			builder.AddArc(new Vector2((float)_rect.X + (float)_rect.Width - cornerRadius, (float)_rect.Y + (float)_rect.Height - cornerRadius), cornerRadius, cornerRadius, 0, CanvasSweepDirection.Clockwise, CanvasArcSize.Small);
+			builder.AddLine((float)_rect.X + cornerRadius, (float)_rect.Y + (float)_rect.Height);
+			builder.AddArc(new Vector2((float)_rect.X + cornerRadius, (float)_rect.Y + (float)_rect.Height - cornerRadius), cornerRadius, cornerRadius, (float)(Math.PI * 0.5), CanvasSweepDirection.Clockwise, CanvasArcSize.Small);
+			builder.AddLine((float)_rect.X, (float)_rect.Y + cornerRadius);
+			builder.AddArc(new Vector2((float)_rect.X + cornerRadius, (float)_rect.Y + cornerRadius), cornerRadius, cornerRadius, (float)Math.PI, CanvasSweepDirection.Clockwise, CanvasArcSize.Small);
+			builder.EndFigure(CanvasFigureLoop.Closed);
+			var geometry = CanvasGeometry.CreatePath(builder);
+
+			Draw(s => s.DrawGeometry(geometry, CurrentState.PlatformStrokeBrush, CurrentState.StrokeSize, CurrentState.PlatformStrokeStyle));
+			
+			geometry.Dispose();
+			builder.Dispose();
 		}
 
 		protected override void PlatformDrawEllipse(float x, float y, float width, float height)
 		{
-			float radiusX;
-			float radiusY;
-			float px;
-			float py;
-			float strokeWidth = CurrentState.StrokeSize;
+			// Use path-based drawing to avoid stroke extension issues with Win2D's DrawEllipse
+			float radiusX = Math.Abs(width) / 2;
+			float radiusY = Math.Abs(height) / 2;
+			float centerX = x + width / 2;
+			float centerY = y + height / 2;
 
-			if (width > 0 || width < 0)
-			{
-				px = x + width / 2;
-				radiusX = width / 2;
-			}
-			else
-			{
-				px = x;
-				radiusX = 0;
-			}
+			var builder = new CanvasPathBuilder(_session);
+			builder.BeginFigure(centerX + radiusX, centerY);
+			builder.AddArc(new Vector2(centerX + radiusX, centerY), radiusX, radiusY, 0, CanvasSweepDirection.Clockwise, CanvasArcSize.Large);
+			builder.EndFigure(CanvasFigureLoop.Closed);
+			var geometry = CanvasGeometry.CreatePath(builder);
 
-			if (height > 0 || height < 0)
-			{
-				py = y + height / 2;
-				radiusY = height / 2;
-			}
-			else
-			{
-				py = x;
-				radiusY = 0;
-			}
-
-			Draw(s => s.DrawEllipse(px, py, radiusX, radiusY, CurrentState.PlatformStrokeBrush, CurrentState.StrokeSize, CurrentState.PlatformStrokeStyle));
+			Draw(s => s.DrawGeometry(geometry, CurrentState.PlatformStrokeBrush, CurrentState.StrokeSize, CurrentState.PlatformStrokeStyle));
+			
+			geometry.Dispose();
+			builder.Dispose();
 		}
 
 		private CanvasGeometry GetPath(PathF path, CanvasFilledRegionDetermination fillMode = CanvasFilledRegionDetermination.Winding)
