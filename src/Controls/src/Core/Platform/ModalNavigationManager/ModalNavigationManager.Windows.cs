@@ -87,6 +87,11 @@ namespace Microsoft.Maui.Controls.Platform
 				throw new InvalidOperationException("Maui Context removed from outgoing page too early");
 
 			var windowManager = mauiContext.GetNavigationRootManager();
+			if (popping)
+			{
+				windowManager.SetTitleBar(null, null);
+			}
+
 			Container.RemovePage(windowManager.RootView);
 
 			if (!popping)
@@ -142,6 +147,9 @@ namespace Microsoft.Maui.Controls.Platform
 						{
 							wrv.SetTitleBarVisibility(UI.Xaml.Visibility.Collapsed);
 						}
+
+						// A TitleBar can only belong to one WinUI visual tree.
+						navRoot.SetTitleBar(null, null);
 					}
 
 					var windowManager = modalContext.GetNavigationRootManager();
@@ -165,7 +173,7 @@ namespace Microsoft.Maui.Controls.Platform
 							previousPage.GetParentWindow() is Window window &&
 							window.TitleBar is TitleBar titlebar)
 						{
-							windowManager.SetTitleBar(titlebar, modalContext);
+							windowManager.SetTitleBar(titlebar, modalContext, reuseExistingHandler: true);
 						}
 
 						var platform = newPage.ToPlatform(modalContext);
@@ -219,7 +227,7 @@ namespace Microsoft.Maui.Controls.Platform
 						previousPage.GetParentWindow() is Window window &&
 						window.TitleBar is TitleBar titlebar)
 					{
-						windowManager.SetTitleBar(titlebar, context);
+						windowManager.SetTitleBar(titlebar, context, reuseExistingHandler: true);
 					}
 
 					var platform = newPage.ToPlatform();

@@ -175,12 +175,12 @@ namespace Microsoft.Maui.Platform
 		internal void SetTitle(string? title) =>
 			_rootView.WindowTitle = title;
 
-		internal void SetTitleBar(ITitleBar? titlebar, IMauiContext? mauiContext)
+		internal void SetTitleBar(ITitleBar? titlebar, IMauiContext? mauiContext, bool reuseExistingHandler = false)
 		{
 			if (_platformWindow.TryGetTarget(out var window))
 			{
 				_rootView.AppWindowId = window.GetAppWindow()?.Id;
-				_rootView.SetTitleBar(titlebar, mauiContext);
+				_rootView.SetTitleBar(titlebar, mauiContext, reuseExistingHandler);
 			}
 		}
 

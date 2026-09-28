@@ -103,6 +103,39 @@ namespace Microsoft.Maui.DeviceTests
 		}
 
 		[Fact]
+		public async Task PushModalWithCustomTitleBarDoesNotThrow()
+		{
+			SetupBuilder();
+
+			var rootPage = new ContentPage();
+			var navPage = new NavigationPage(rootPage);
+			var modalPage = new ContentPage { BackgroundColor = Colors.Pink };
+			var titleBar = new TitleBar
+			{
+				Title = "Custom TitleBar"
+			};
+			var window = new Window(navPage)
+			{
+				TitleBar = titleBar
+			};
+
+			await CreateHandlerAndAddToWindow<IWindowHandler>(window,
+				async (_) =>
+				{
+					await OnLoadedAsync(rootPage);
+					var titleBarHandler = titleBar.Handler;
+					Assert.NotNull(titleBarHandler);
+
+					await rootPage.Navigation.PushModalAsync(modalPage);
+					await OnLoadedAsync(modalPage);
+
+					Assert.Same(titleBarHandler, titleBar.Handler);
+					Assert.Single(rootPage.Navigation.ModalStack);
+					Assert.Same(modalPage, rootPage.Navigation.ModalStack[0]);
+				});
+		}
+
+		[Fact]
 		public async Task WindowTitleIsCorrectAfterPushAndPop()
 		{
 			const string OriginalTitle = "Original Title";

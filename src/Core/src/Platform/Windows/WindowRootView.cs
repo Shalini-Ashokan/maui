@@ -443,11 +443,18 @@ namespace Microsoft.Maui.Platform
 			UpdateAppTitleBarMargins();
 		}
 
-		internal void SetTitleBar(ITitleBar? titlebar, IMauiContext? mauiContext)
+		internal void SetTitleBar(ITitleBar? titlebar, IMauiContext? mauiContext, bool reuseExistingHandler = false)
 		{
 			if (WindowTitleBarContent is not null)
 			{
 				WindowTitleBarContent.LayoutUpdated -= PlatformView_LayoutUpdated;
+
+				if (AppTitleBarContentControl?.Content == WindowTitleBarContent)
+				{
+					AppTitleBarContentControl.Content = null;
+				}
+
+				WindowTitleBarContent = null;
 			}
 
 			if (_titleBar is INotifyPropertyChanged p)
@@ -468,7 +475,8 @@ namespace Microsoft.Maui.Platform
 				return;
 			}
 
-			var handler = _titleBar?.ToHandler(mauiContext);
+			var handler = reuseExistingHandler ? _titleBar.Handler : null;
+			handler ??= _titleBar.ToHandler(mauiContext);
 			if (handler is not null &&
 				handler.PlatformView is not null)
 			{
@@ -612,9 +620,9 @@ namespace Microsoft.Maui.Platform
 				typeof(WindowRootView),
 				new PropertyMetadata(null));
 
-		internal FrameworkElement WindowTitleBarContent
+		internal FrameworkElement? WindowTitleBarContent
 		{
-			get => (FrameworkElement)GetValue(WindowTitleBarContentProperty);
+			get => (FrameworkElement?)GetValue(WindowTitleBarContentProperty);
 			set => SetValue(WindowTitleBarContentProperty, value);
 		}
 
