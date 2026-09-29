@@ -92,7 +92,7 @@ namespace Microsoft.Maui.Controls.Platform
 				throw new InvalidOperationException("Root View Needs to be set");
 		}
 
-		Task<Page> PopModalPlatformCoreAsync(bool animated)
+		Task<Page> PopModalPlatformAsync(bool animated)
 		{
 			Page modal = CurrentPlatformModalPage;
 			_platformModalPages.Remove(modal);
@@ -161,7 +161,7 @@ namespace Microsoft.Maui.Controls.Platform
 					throw new InvalidOperationException("Current Root View cannot be null");
 		}
 
-		async Task PushModalPlatformCoreAsync(Page modal, bool animated)
+		async Task PushModalPlatformAsync(Page modal, bool animated)
 		{
 			var viewToHide = GetCurrentRootView();
 

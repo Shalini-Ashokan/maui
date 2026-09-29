@@ -8,22 +8,22 @@ namespace Microsoft.Maui.Controls.Platform
 {
 	internal partial class ModalNavigationManager
 	{
-		Task<Page> PopModalPlatformCoreAsync(bool animated)
+		Task<Page> PopModalPlatformAsync(bool animated)
 		{
 			var currentPage = CurrentPlatformPage!;
 			_platformModalPages.Remove(currentPage);
 			return Task.FromResult(currentPage);
 		}
 
-		Task PushModalPlatformCoreAsync(Page modal, bool animated)
+		Task PushModalPlatformAsync(Page modal, bool animated)
 		{
 			_platformModalPages.Add(modal);
 			return Task.CompletedTask;
 		}
 
-		Task SyncModalStackWhenPlatformIsReadyCoreAsync() =>
+		Task SyncModalStackWhenPlatformIsReadyAsync() =>
 			SyncPlatformModalStackAsync();
 
-		bool IsModalPlatformReadyCore => true;
+		bool IsModalPlatformReady => true;
 	}
 }
