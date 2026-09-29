@@ -468,6 +468,11 @@ namespace Microsoft.Maui.Platform
 				return;
 			}
 
+			if (_titleBar is IView titleBarView && titleBarView.Handler?.MauiContext is { } currentContext && currentContext != mauiContext)
+			{
+				titleBarView.DisconnectHandlers();
+			}
+
 			var handler = _titleBar?.ToHandler(mauiContext);
 			if (handler is not null &&
 				handler.PlatformView is not null)
