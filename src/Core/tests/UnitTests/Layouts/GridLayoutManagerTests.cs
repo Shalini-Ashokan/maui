@@ -3123,6 +3123,30 @@ namespace Microsoft.Maui.UnitTests.Layouts
 			Assert.Equal(expectedEvenRowWidth, view3Dest.Width, 1.0);
 		}
 
+		[Fact(DisplayName = "Grid with explicit size should expand to accommodate children minimum requirements")]
+		public void GridWithExplicitSizeShouldExpandForChildren()
+		{
+			// Reproduces the issue where Path element inside Grid gets cropped
+			// when Grid has explicit WidthRequest/HeightRequest that's smaller than child needs
+			
+			var grid = CreateGridLayout();
+			
+			// Set explicit dimensions that are smaller than what the child will need
+			grid.Width.Returns(50);
+			grid.Height.Returns(50);
+			
+			// Create a child that needs more space
+			var childView = CreateTestView(new Size(100, 100));
+			SubstituteChildren(grid, childView);
+			SetLocation(grid, childView, 0, 0);
+			
+			var measure = MeasureAndArrange(grid, double.PositiveInfinity, double.PositiveInfinity);
+			
+			// The grid should expand to accommodate the child even though explicit size is smaller
+			Assert.True(measure.Width >= 100, $"Grid width {measure.Width} should be at least 100 to accommodate child");
+			Assert.True(measure.Height >= 100, $"Grid height {measure.Height} should be at least 100 to accommodate child");
+		}
+
 		static Rect GetArrangedRect(IView view)
 		{
 			var args = view.ReceivedCalls().Single(c => c.GetMethodInfo().Name == nameof(IView.Arrange)).GetArguments();
