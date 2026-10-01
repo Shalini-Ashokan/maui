@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentPage
+    x:Class="Maui.Controls.Sample.Issues.LineReferenceBinding"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:shapes="clr-namespace:Microsoft.Maui.Controls.Shapes;assembly=Microsoft.Maui.Controls"
+    Title="Line Reference Binding Test">
+    <ScrollView>
+        <VerticalStackLayout Spacing="20" Padding="20">
+            <Label
+                Text="Line Reference Binding Test"
+                FontSize="24"
+                FontAttributes="Bold" 
+                HorizontalOptions="Center" />
+            
+            <Label 
+                Text="The issue: Line X2 binding to Label width doesn't work on iOS"
+                FontSize="16"
+                HorizontalOptions="Center"
+                TextColor="Red" />
+            
+            <VerticalStackLayout Spacing="10">
+                <Label 
+                    x:Name="lblDistanceText"
+                    Text="Distance"
+                    FontSize="Medium"
+                    FontAttributes="Bold"
+                    VerticalOptions="CenterAndExpand"
+                    HorizontalOptions="Center"
+                    BackgroundColor="LightGray"
+                    Padding="10,5" />
+                
+                <shapes:Line 
+                    x:Name="testLine"
+                    Stroke="DarkGreen"
+                    StrokeThickness="3"
+                    StrokeLineCap="Round"
+                    Opacity="0.85"
+                    HorizontalOptions="Center"
+                    AutomationId="TestLine"
+                    X2="{Binding Source={x:Reference lblDistanceText}, Path=Width}">
+                    <shapes:Line.Shadow>
+                        <Shadow 
+                            Brush="DarkGreen"
+                            Offset="0,0"
+                            Radius="6"
+                            Opacity="0.9" />
+                    </shapes:Line.Shadow>
+                </shapes:Line>
+                
+                <Label 
+                    Text="TotalDistance here"
+                    FontSize="Medium"
+                    FontAttributes="Bold"
+                    VerticalOptions="CenterAndExpand"
+                    HorizontalOptions="Center" />
+            </VerticalStackLayout>
+            
+            <Button 
+                x:Name="changeWidthBtn"
+                Text="Change Label Width"
+                AutomationId="ChangeWidthBtn"
+                Clicked="OnChangeWidthClicked" />
+            
+            <Label 
+                x:Name="statusLabel"
+                Text="Status: Initial state"
+                FontSize="14"
+                HorizontalOptions="Center"
+                AutomationId="StatusLabel" />
+            
+            <VerticalStackLayout Spacing="5">
+                <Label Text="Debug Info:" FontAttributes="Bold" />
+                <Label x:Name="labelWidthLabel" Text="Label Width: 0" AutomationId="LabelWidthLabel" />
+                <Label x:Name="lineX2Label" Text="Line X2: 0" AutomationId="LineX2Label" />
+            </VerticalStackLayout>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
