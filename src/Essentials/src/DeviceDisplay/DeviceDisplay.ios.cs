@@ -1,7 +1,9 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Foundation;
+using Microsoft.Maui.ApplicationModel;
 using UIKit;
 using ObjCRuntime;
 
@@ -10,6 +12,12 @@ namespace Microsoft.Maui.Devices
 	partial class DeviceDisplayImplementation : IDeviceDisplay
 	{
 		NSObject? observer;
+
+#if !MACCATALYST
+		readonly Dictionary<UIWindowScene, IDisposable> sceneObservers = new();
+		NSObject? sceneActivatedObserver;
+		NSObject? sceneDisconnectedObserver;
+#endif
 
 #if MACCATALYST
 		static readonly NSString ScreenParametersChangedNotification =
@@ -85,7 +93,7 @@ namespace Microsoft.Maui.Devices
 			// In multi-monitor setups, this may not be the display the app window is on.
 			var displayId = CGMainDisplayID();
 			var mode = CGDisplayCopyDisplayMode(displayId);
-			
+
 			if (mode == IntPtr.Zero)
 			{
 				return GetFallbackDisplayInfo();
@@ -139,6 +147,7 @@ namespace Microsoft.Maui.Devices
 		{
 			var bounds = UIScreen.MainScreen.Bounds;
 			var scale = UIScreen.MainScreen.Scale;
+			var interfaceOrientation = GetInterfaceOrientation();
 
 			var rate = (OperatingSystem.IsIOSVersionAtLeast(10, 3) || OperatingSystem.IsMacCatalystVersionAtLeast(10, 3) || OperatingSystem.IsTvOSVersionAtLeast(10, 3))
 				? UIScreen.MainScreen.MaximumFramesPerSecond
@@ -148,12 +157,11 @@ namespace Microsoft.Maui.Devices
 				width: bounds.Width * scale,
 				height: bounds.Height * scale,
 				density: scale,
-				orientation: CalculateOrientation(),
-				rotation: CalculateRotation(),
+				orientation: CalculateOrientation(interfaceOrientation),
+				rotation: CalculateRotation(interfaceOrientation),
 				rate: rate);
 		}
 
-		[System.Runtime.Versioning.UnsupportedOSPlatform("ios13.0")]
 		protected override void StartScreenMetricsListeners()
 		{
 			var notificationCenter = NSNotificationCenter.DefaultCenter;
@@ -163,9 +171,22 @@ namespace Microsoft.Maui.Devices
 			// NSApplicationDidChangeScreenParametersNotification - for resolution/refresh rate changes
 			observer = notificationCenter.AddObserver(ScreenParametersChangedNotification, OnMainDisplayInfoChanged);
 #else
-			// On iOS, use status bar orientation changes (deprecated but still works)
+#pragma warning disable CA1416, CA1422 // Retain notifications for older iOS and apps without scenes.
 			var notification = UIApplication.DidChangeStatusBarOrientationNotification;
+#pragma warning restore CA1416, CA1422
 			observer = notificationCenter.AddObserver(notification, OnMainDisplayInfoChanged);
+
+			if (OperatingSystem.IsIOSVersionAtLeast(16))
+			{
+				sceneActivatedObserver = notificationCenter.AddObserver(UIScene.DidActivateNotification, OnSceneActivated);
+				sceneDisconnectedObserver = notificationCenter.AddObserver(UIScene.DidDisconnectNotification, OnSceneDisconnected);
+
+				foreach (var scene in UIApplication.SharedApplication.ConnectedScenes)
+				{
+					if (scene is UIWindowScene windowScene)
+						ObserveScene(windowScene);
+				}
+			}
 #endif
 		}
 
@@ -173,20 +194,78 @@ namespace Microsoft.Maui.Devices
 		{
 			observer?.Dispose();
 			observer = null;
+
+#if !MACCATALYST
+			sceneActivatedObserver?.Dispose();
+			sceneActivatedObserver = null;
+			sceneDisconnectedObserver?.Dispose();
+			sceneDisconnectedObserver = null;
+
+			foreach (var sceneObserver in sceneObservers.Values)
+				sceneObserver.Dispose();
+
+			sceneObservers.Clear();
+#endif
 		}
+
+#if !MACCATALYST
+		void ObserveScene(UIWindowScene scene)
+		{
+			if (!sceneObservers.ContainsKey(scene))
+			{
+				// effectiveGeometry is KVO-compliant and tracks interface rotation, including orientation lock.
+				sceneObservers.Add(scene, scene.AddObserver("effectiveGeometry", NSKeyValueObservingOptions.New,
+					_ => OnMainDisplayInfoChanged()));
+			}
+		}
+
+		void OnSceneActivated(NSNotification notification)
+		{
+			if (notification.Object is UIWindowScene scene)
+			{
+				ObserveScene(scene);
+				OnMainDisplayInfoChanged();
+			}
+		}
+
+		void OnSceneDisconnected(NSNotification notification)
+		{
+			if (notification.Object is UIWindowScene scene && sceneObservers.TryGetValue(scene, out var sceneObserver))
+			{
+				sceneObserver.Dispose();
+				sceneObservers.Remove(scene);
+			}
+		}
+#endif
 
 		void OnMainDisplayInfoChanged(NSNotification obj) =>
 			OnMainDisplayInfoChanged();
 
 #pragma warning disable CA1416 // UIApplication.StatusBarOrientation has [UnsupportedOSPlatform("ios9.0")]. (Deprecated but still works)
 #pragma warning disable CA1422 // Validate platform compatibility
-		static DisplayOrientation CalculateOrientation() =>
-			UIApplication.SharedApplication.StatusBarOrientation.IsLandscape()
+		static UIInterfaceOrientation GetInterfaceOrientation()
+		{
+#if !MACCATALYST
+			if (OperatingSystem.IsIOSVersionAtLeast(13) &&
+				WindowStateManager.Default.GetCurrentUIWindow()?.WindowScene is UIWindowScene scene)
+			{
+				return OperatingSystem.IsIOSVersionAtLeast(16)
+					? scene.EffectiveGeometry.InterfaceOrientation
+					: scene.InterfaceOrientation;
+			}
+#endif
+			return UIApplication.SharedApplication.StatusBarOrientation;
+		}
+#pragma warning restore CA1422
+#pragma warning restore CA1416
+
+		internal static DisplayOrientation CalculateOrientation(UIInterfaceOrientation orientation) =>
+			orientation.IsLandscape()
 				? DisplayOrientation.Landscape
 				: DisplayOrientation.Portrait;
 
-		static DisplayRotation CalculateRotation() =>
-			UIApplication.SharedApplication.StatusBarOrientation switch
+		internal static DisplayRotation CalculateRotation(UIInterfaceOrientation orientation) =>
+			orientation switch
 			{
 				UIInterfaceOrientation.Portrait => DisplayRotation.Rotation0,
 				UIInterfaceOrientation.PortraitUpsideDown => DisplayRotation.Rotation180,
@@ -194,8 +273,5 @@ namespace Microsoft.Maui.Devices
 				UIInterfaceOrientation.LandscapeRight => DisplayRotation.Rotation90,
 				_ => DisplayRotation.Unknown,
 			};
-
-#pragma warning restore CA1422 // Validate platform compatibility
-#pragma warning restore CA1416
 	}
 }

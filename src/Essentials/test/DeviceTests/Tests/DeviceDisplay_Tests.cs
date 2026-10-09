@@ -4,11 +4,30 @@ using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Devices;
 using Xunit;
 
+#if IOS
+using UIKit;
+#endif
+
 namespace Microsoft.Maui.Essentials.DeviceTests
 {
 	[Category("DeviceDisplay")]
 	public class DeviceDisplay_Tests
 	{
+#if IOS
+		[Theory]
+		[InlineData(UIInterfaceOrientation.Portrait, DisplayOrientation.Portrait, DisplayRotation.Rotation0)]
+		[InlineData(UIInterfaceOrientation.PortraitUpsideDown, DisplayOrientation.Portrait, DisplayRotation.Rotation180)]
+		[InlineData(UIInterfaceOrientation.LandscapeLeft, DisplayOrientation.Landscape, DisplayRotation.Rotation270)]
+		[InlineData(UIInterfaceOrientation.LandscapeRight, DisplayOrientation.Landscape, DisplayRotation.Rotation90)]
+		[InlineData(UIInterfaceOrientation.Unknown, DisplayOrientation.Portrait, DisplayRotation.Unknown)]
+		public void Interface_Orientation_Maps_To_Display_Info(
+			UIInterfaceOrientation interfaceOrientation, DisplayOrientation orientation, DisplayRotation rotation)
+		{
+			Assert.Equal(orientation, DeviceDisplayImplementation.CalculateOrientation(interfaceOrientation));
+			Assert.Equal(rotation, DeviceDisplayImplementation.CalculateRotation(interfaceOrientation));
+		}
+#endif
+
 		[Fact]
 		public Task Screen_Metrics_Are_Not_Null()
 		{
