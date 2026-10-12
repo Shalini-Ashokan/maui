@@ -1,6 +1,5 @@
 #nullable enable
 using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Foundation;
 using Microsoft.Maui.ApplicationModel;
@@ -14,7 +13,8 @@ namespace Microsoft.Maui.Devices
 		NSObject? observer;
 
 #if !MACCATALYST
-		readonly Dictionary<UIWindowScene, IDisposable> sceneObservers = new();
+		UIWindowScene? observedScene;
+		IDisposable? sceneGeometryObserver;
 		NSObject? sceneActivatedObserver;
 		NSObject? sceneDisconnectedObserver;
 #endif
@@ -176,16 +176,12 @@ namespace Microsoft.Maui.Devices
 #pragma warning restore CA1416, CA1422
 			observer = notificationCenter.AddObserver(notification, OnMainDisplayInfoChanged);
 
-			if (OperatingSystem.IsIOSVersionAtLeast(16))
+			if (OperatingSystem.IsIOSVersionAtLeast(27))
 			{
 				sceneActivatedObserver = notificationCenter.AddObserver(UIScene.DidActivateNotification, OnSceneActivated);
 				sceneDisconnectedObserver = notificationCenter.AddObserver(UIScene.DidDisconnectNotification, OnSceneDisconnected);
 
-				foreach (var scene in UIApplication.SharedApplication.ConnectedScenes)
-				{
-					if (scene is UIWindowScene windowScene)
-						ObserveScene(windowScene);
-				}
+				ObserveCurrentScene();
 			}
 #endif
 		}
@@ -201,39 +197,41 @@ namespace Microsoft.Maui.Devices
 			sceneDisconnectedObserver?.Dispose();
 			sceneDisconnectedObserver = null;
 
-			foreach (var sceneObserver in sceneObservers.Values)
-				sceneObserver.Dispose();
-
-			sceneObservers.Clear();
+			sceneGeometryObserver?.Dispose();
+			sceneGeometryObserver = null;
+			observedScene = null;
 #endif
 		}
 
 #if !MACCATALYST
-		void ObserveScene(UIWindowScene scene)
+		void ObserveCurrentScene()
 		{
-			if (!sceneObservers.ContainsKey(scene))
-			{
-				// effectiveGeometry is KVO-compliant and tracks interface rotation, including orientation lock.
-				sceneObservers.Add(scene, scene.AddObserver("effectiveGeometry", NSKeyValueObservingOptions.New,
-					_ => OnMainDisplayInfoChanged()));
-			}
+			var scene = WindowStateManager.Default.GetCurrentUIWindow()?.WindowScene;
+			if (scene == observedScene)
+				return;
+
+			sceneGeometryObserver?.Dispose();
+			observedScene = scene;
+			// Observe the same scene used to read orientation, not every connected scene.
+			sceneGeometryObserver = scene?.AddObserver("effectiveGeometry", NSKeyValueObservingOptions.New,
+				_ => OnMainDisplayInfoChanged());
 		}
 
 		void OnSceneActivated(NSNotification notification)
 		{
-			if (notification.Object is UIWindowScene scene)
+			if (notification.Object is UIWindowScene)
 			{
-				ObserveScene(scene);
-				OnMainDisplayInfoChanged();
+				ObserveCurrentScene();
 			}
 		}
 
 		void OnSceneDisconnected(NSNotification notification)
 		{
-			if (notification.Object is UIWindowScene scene && sceneObservers.TryGetValue(scene, out var sceneObserver))
+			if (notification.Object is UIWindowScene scene && scene == observedScene)
 			{
-				sceneObserver.Dispose();
-				sceneObservers.Remove(scene);
+				sceneGeometryObserver?.Dispose();
+				sceneGeometryObserver = null;
+				observedScene = null;
 			}
 		}
 #endif
@@ -246,12 +244,10 @@ namespace Microsoft.Maui.Devices
 		static UIInterfaceOrientation GetInterfaceOrientation()
 		{
 #if !MACCATALYST
-			if (OperatingSystem.IsIOSVersionAtLeast(13) &&
+			if (OperatingSystem.IsIOSVersionAtLeast(27) &&
 				WindowStateManager.Default.GetCurrentUIWindow()?.WindowScene is UIWindowScene scene)
 			{
-				return OperatingSystem.IsIOSVersionAtLeast(16)
-					? scene.EffectiveGeometry.InterfaceOrientation
-					: scene.InterfaceOrientation;
+				return scene.EffectiveGeometry.InterfaceOrientation;
 			}
 #endif
 			return UIApplication.SharedApplication.StatusBarOrientation;
