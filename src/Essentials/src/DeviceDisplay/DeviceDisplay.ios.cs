@@ -171,9 +171,8 @@ namespace Microsoft.Maui.Devices
 			// NSApplicationDidChangeScreenParametersNotification - for resolution/refresh rate changes
 			observer = notificationCenter.AddObserver(ScreenParametersChangedNotification, OnMainDisplayInfoChanged);
 #else
-#pragma warning disable CA1416, CA1422 // Retain notifications for older iOS and apps without scenes.
+            // On iOS, use status bar orientation changes (deprecated but still works)
 			var notification = UIApplication.DidChangeStatusBarOrientationNotification;
-#pragma warning restore CA1416, CA1422
 			observer = notificationCenter.AddObserver(notification, OnMainDisplayInfoChanged);
 
 			if (OperatingSystem.IsIOSVersionAtLeast(27))
@@ -255,12 +254,12 @@ namespace Microsoft.Maui.Devices
 #pragma warning restore CA1422
 #pragma warning restore CA1416
 
-		internal static DisplayOrientation CalculateOrientation(UIInterfaceOrientation orientation) =>
+		static DisplayOrientation CalculateOrientation(UIInterfaceOrientation orientation) =>
 			orientation.IsLandscape()
 				? DisplayOrientation.Landscape
 				: DisplayOrientation.Portrait;
 
-		internal static DisplayRotation CalculateRotation(UIInterfaceOrientation orientation) =>
+		static DisplayRotation CalculateRotation(UIInterfaceOrientation orientation) =>
 			orientation switch
 			{
 				UIInterfaceOrientation.Portrait => DisplayRotation.Rotation0,
@@ -269,5 +268,8 @@ namespace Microsoft.Maui.Devices
 				UIInterfaceOrientation.LandscapeRight => DisplayRotation.Rotation90,
 				_ => DisplayRotation.Unknown,
 			};
+
+#pragma warning restore CA1422 // Validate platform compatibility
+#pragma warning restore CA1416
 	}
 }
