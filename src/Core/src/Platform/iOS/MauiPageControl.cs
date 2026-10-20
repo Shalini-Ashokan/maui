@@ -16,6 +16,7 @@ namespace Microsoft.Maui.Platform
 		bool _updatingPosition;
 		double _lastAppliedIndicatorSize = DefaultIndicatorSize;
 
+		CGRect _lastTemplatedIndicatorViewFrame = CGRect.Empty;
 		public MauiPageControl()
 		{
 			ValueChanged += MauiPageControlValueChanged;
@@ -49,6 +50,22 @@ namespace Microsoft.Maui.Platform
 		}
 
 
+		public override CGSize SizeThatFits(CGSize size)
+		{
+			if (_indicatorView?.TryGetTarget(out var indicatorView) == true &&
+				(indicatorView as ITemplatedIndicatorView)?.IndicatorsLayoutOverride is not null)
+			{
+				var indicatorsLayoutOverride = (indicatorView as ITemplatedIndicatorView)?.IndicatorsLayoutOverride;
+				UIView? handler = (UIView?)(indicatorsLayoutOverride?.Handler?.PlatformView);
+				if (handler is not null)
+				{
+					return handler.SizeThatFits(size);
+				}
+			}
+
+			return base.SizeThatFits(size);
+		}
+
 		public override void LayoutSubviews()
 		{
 			base.LayoutSubviews();
@@ -57,6 +74,7 @@ namespace Microsoft.Maui.Platform
 				return;
 
 			UpdateIndicatorSize();
+			UpdateTemplatedIndicatorFrame();
 			if (_indicatorView?.TryGetTarget(out var indicatorView) == true && (indicatorView as ITemplatedIndicatorView)?.IndicatorsLayoutOverride == null)
 			{
 				UpdateIndicatorShape();
@@ -66,6 +84,11 @@ namespace Microsoft.Maui.Platform
 		public void UpdateIndicatorSize()
 		{
 			if (IndicatorSize == 0 || IndicatorSize == _lastAppliedIndicatorSize)
+				return;
+
+			// Don't apply indicator size transform when using a custom template
+			if (_indicatorView?.TryGetTarget(out var indicatorView) == true &&
+				(indicatorView as ITemplatedIndicatorView)?.IndicatorsLayoutOverride is not null)
 				return;
 
 			if (Math.Abs(IndicatorSize - _lastAppliedIndicatorSize) < IndicatorSizeTolerance)
@@ -167,6 +190,29 @@ namespace Microsoft.Maui.Platform
 			if (IsSquare && !(OperatingSystem.IsIOSVersionAtLeast(14) || OperatingSystem.IsTvOSVersionAtLeast(14) || OperatingSystem.IsMacCatalystVersionAtLeast(14)))
 				LayoutSubviews();
 
+		}
+
+		void UpdateTemplatedIndicatorFrame()
+		{
+			if (_indicatorView?.TryGetTarget(out var indicatorView) == true &&
+				(indicatorView as ITemplatedIndicatorView)?.IndicatorsLayoutOverride is not null)
+			{
+				var indicatorsLayoutOverride = (indicatorView as ITemplatedIndicatorView)?.IndicatorsLayoutOverride;
+				UIView? handler = (UIView?)(indicatorsLayoutOverride?.Handler?.PlatformView);
+				if (handler is not null)
+				{
+					var size = handler.SizeThatFits(Bounds.Size);
+					var x = (Bounds.Width - size.Width) / 2;
+					var y = (Bounds.Height - size.Height) / 2;
+					var newFrame = new CGRect(x, y, size.Width, size.Height);
+
+					if (!newFrame.Equals(_lastTemplatedIndicatorViewFrame))
+					{
+						handler.Frame = newFrame;
+						_lastTemplatedIndicatorViewFrame = newFrame;
+					}
+				}
+			}
 		}
 
 		[UnconditionalSuppressMessage("Memory", "MEM0002", Justification = IUIViewLifeCycleEvents.UnconditionalSuppressMessage)]
