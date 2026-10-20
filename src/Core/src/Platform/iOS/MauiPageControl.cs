@@ -16,7 +16,6 @@ namespace Microsoft.Maui.Platform
 		bool _updatingPosition;
 		double _lastAppliedIndicatorSize = DefaultIndicatorSize;
 
-		CGRect _lastTemplatedIndicatorViewFrame = CGRect.Empty;
 		public MauiPageControl()
 		{
 			ValueChanged += MauiPageControlValueChanged;
@@ -206,10 +205,9 @@ namespace Microsoft.Maui.Platform
 					var y = (Bounds.Height - size.Height) / 2;
 					var newFrame = new CGRect(x, y, size.Width, size.Height);
 
-					if (!newFrame.Equals(_lastTemplatedIndicatorViewFrame))
+					if (!handler.Frame.Equals(newFrame))
 					{
 						handler.Frame = newFrame;
-						_lastTemplatedIndicatorViewFrame = newFrame;
 					}
 				}
 			}
