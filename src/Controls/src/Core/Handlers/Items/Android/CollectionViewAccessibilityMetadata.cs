@@ -12,8 +12,6 @@ namespace Microsoft.Maui.Controls.Handlers.Items
         readonly RecyclerView _recyclerView;
         readonly DataObserver _observer;
 
-        RecyclerView.Adapter _observedAdapter;
-
         // _nonDataBefore[i] = count of supplementary items in adapter positions [0, i).
         // Length is (adapter.ItemCount + 1) so IsSupplementary(pos) can peek at pos+1.
         int[] _nonDataBefore;
@@ -25,26 +23,17 @@ namespace Microsoft.Maui.Controls.Handlers.Items
             _observer = new DataObserver(this);
         }
 
-        // Called by MauiRecyclerView whenever the adapter is swapped
-        // (data <-> EmptyViewAdapter, teardown, etc.).
-        public void OnAdapterAttached(RecyclerView.Adapter newAdapter)
+        // Observe each adapter for its lifetime. EmptyView swaps can happen inside a
+        // notification, when removing another observer would corrupt RecyclerView's iteration.
+        public void ObserveAdapter(RecyclerView.Adapter adapter)
         {
-            if (ReferenceEquals(_observedAdapter, newAdapter))
-            {
-                return;
-            }
+            adapter?.RegisterAdapterDataObserver(_observer);
+            InvalidateCache();
+        }
 
-            if (_observedAdapter is not null)
-            {
-                _observedAdapter.UnregisterAdapterDataObserver(_observer);
-            }
-
-            _observedAdapter = newAdapter;
-            if (newAdapter is not null)
-            {
-                newAdapter.RegisterAdapterDataObserver(_observer);
-            }
-
+        public void UnobserveAdapter(RecyclerView.Adapter adapter)
+        {
+            adapter?.UnregisterAdapterDataObserver(_observer);
             InvalidateCache();
         }
 
@@ -93,7 +82,7 @@ namespace Microsoft.Maui.Controls.Handlers.Items
             return _nonDataBefore[position + 1] > _nonDataBefore[position];
         }
 
-        void InvalidateCache()
+        public void InvalidateCache()
         {
             _hasCache = false;
             _nonDataBefore = null;
