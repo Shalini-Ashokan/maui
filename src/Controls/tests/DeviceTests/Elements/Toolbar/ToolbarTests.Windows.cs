@@ -21,6 +21,43 @@ namespace Microsoft.Maui.DeviceTests
 	[Category(TestCategory.Toolbar)]
 	public partial class ToolbarTests : ControlsHandlerTestBase
 	{
+		[Theory]
+		[InlineData(null, false)]
+		[InlineData("Letter X", false)]
+		[InlineData(null, true)]
+		[InlineData("Letter X", true)]
+		public async Task ToolbarIconIsVisibleWithAndWithoutText(string text, bool useFontImageSource)
+		{
+			SetupBuilder();
+			var item = new ToolbarItem
+			{
+				Text = text ?? string.Empty,
+				IconImageSource = useFontImageSource
+					? new FontImageSource { Glyph = "X", Color = Graphics.Colors.Red, Size = 24 }
+					: ImageSource.FromFile("red.png")
+			};
+			var navPage = new NavigationPage(new ContentPage
+			{
+				ToolbarItems = { item }
+			});
+
+			await CreateHandlerAndAddToWindow<WindowHandlerStub>(new Window(navPage), async (handler) =>
+			{
+				var toolbar = (Toolbar)(navPage.Window as IToolbarElement).Toolbar;
+				var commandBar = ((MauiToolbar)toolbar.Handler.PlatformView).CommandBar;
+				var button = Assert.IsType<AppBarButton>(Assert.Single(commandBar.PrimaryCommands));
+				var icon = Assert.IsType<ImageIcon>(button.Icon);
+
+				await AssertEventually(() => icon.Source != null && icon.ActualWidth > 0 && icon.ActualHeight > 0);
+				Assert.Equal(text ?? string.Empty, button.Label);
+
+				item.Text = "Updated label";
+				Assert.Equal("Updated label", button.Label);
+				Assert.Same(icon, button.Icon);
+				Assert.NotNull(icon.Source);
+			});
+		}
+
 		[Fact(DisplayName = "Toolbar Default Label Position")]
 		public async Task ToolbarDefaultLabelPositionWithNoImages()
 		{
