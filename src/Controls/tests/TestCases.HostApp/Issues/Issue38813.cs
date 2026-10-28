@@ -21,7 +21,7 @@ public class Issue38813 : Shell
 
             normalState.Setters.Add(new Setter
             {
-                Property = VisualElement.BackgroundProperty,
+                Property = BackgroundProperty,
                 Value = Colors.White
             });
 
@@ -32,7 +32,7 @@ public class Issue38813 : Shell
 
             selectedState.Setters.Add(new Setter
             {
-                Property = VisualElement.BackgroundProperty,
+                Property = BackgroundProperty,
                 Value = Colors.Blue
             });
 
