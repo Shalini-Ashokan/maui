@@ -29,7 +29,11 @@ namespace Microsoft.Maui.Platform
 			winuiWindow.SetWindow(window);
 
 			applicationContext.Services.InvokeLifecycleEvents<WindowsLifecycle.OnWindowCreated>(del => del(winuiWindow));
-			mauiContext.GetNavigationRootManager().UpdateTitleBarVisibility();
+			if (winuiWindow.GetAppWindow()?.TitleBar.ExtendsContentIntoTitleBar == false)
+			{
+				mauiContext.GetNavigationRootManager().UpdateTitleBarVisibility();
+				winuiWindow.SetTileBarButtonColors();
+			}
 			winuiWindow.Activate();
 		}
 	}

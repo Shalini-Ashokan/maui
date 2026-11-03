@@ -221,7 +221,7 @@ namespace Microsoft.Maui
 			DispatcherQueue.TryEnqueue(SetTileBarButtonColors);
 		}
 
-		void SetTileBarButtonColors()
+		internal void SetTileBarButtonColors()
 		{
 			if (AppWindowTitleBar.IsCustomizationSupported())
 			{
@@ -229,6 +229,18 @@ namespace Microsoft.Maui
 
 				if (titleBar is null)
 				{
+					return;
+				}
+
+				if (!titleBar.ExtendsContentIntoTitleBar)
+				{
+					if (titleBar.PreferredTheme == TitleBarTheme.Legacy)
+						titleBar.PreferredTheme = TitleBarTheme.UseDefaultAppMode;
+
+					if (titleBar.ButtonBackgroundColor == UI.Colors.Transparent)
+						titleBar.ButtonBackgroundColor = null;
+					if (titleBar.ButtonInactiveBackgroundColor == UI.Colors.Transparent)
+						titleBar.ButtonInactiveBackgroundColor = null;
 					return;
 				}
 

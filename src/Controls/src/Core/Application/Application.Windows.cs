@@ -130,6 +130,18 @@ namespace Microsoft.Maui.Controls
 				var titleBar = platformWindow.GetAppWindow()?.TitleBar;
 				if (titleBar is not null)
 				{
+					if (!titleBar.ExtendsContentIntoTitleBar)
+					{
+						titleBar.ButtonBackgroundColor = null;
+						titleBar.ButtonInactiveBackgroundColor = null;
+						titleBar.ButtonHoverBackgroundColor = null;
+						titleBar.ButtonPressedBackgroundColor = null;
+						titleBar.ButtonHoverForegroundColor = null;
+						titleBar.ButtonPressedForegroundColor = null;
+						titleBar.ButtonForegroundColor = null;
+						return;
+					}
+
 					titleBar.ButtonBackgroundColor = UI.Colors.Transparent;
 					titleBar.ButtonInactiveBackgroundColor = UI.Colors.Transparent;
 					titleBar.ButtonHoverBackgroundColor = isDark ? TitleBarColors.DarkHoverBackground : TitleBarColors.LightHoverBackground;
