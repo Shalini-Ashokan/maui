@@ -18,8 +18,13 @@ namespace Microsoft.Maui.Platform
 			_rootView = new WindowRootView();
 			_rootView.BackRequested += OnBackRequested;
 			_rootView.OnApplyTemplateFinished += WindowRootViewOnApplyTemplateFinished;
+			UpdateTitleBarVisibility();
+		}
 
-			var titleBar = platformWindow.GetAppWindow()?.TitleBar;
+		internal void UpdateTitleBarVisibility()
+		{
+			var platformWindow = _platformWindow.GetTargetOrDefault();
+			var titleBar = platformWindow?.GetAppWindow()?.TitleBar;
 			if (titleBar is not null)
 			{
 				SetTitleBarVisibility(titleBar.ExtendsContentIntoTitleBar);
