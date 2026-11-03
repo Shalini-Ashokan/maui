@@ -8,9 +8,12 @@ public class Issue39793 : ContentPage
 {
 	AppWindowTitleBar _platformTitleBar;
 	bool _originalExtendsContentIntoTitleBar;
+	Microsoft.Maui.Controls.Window _window;
+	string _originalWindowTitle;
 
 	public Issue39793()
 	{
+		Title = "Home";
 		Content = new Label
 		{
 			Text = "Only one native Windows title bar should be visible.",
@@ -23,8 +26,7 @@ public class Issue39793 : ContentPage
 	{
 		base.OnAppearing();
 
-		var nativeWindow = Window?.Handler?.PlatformView as Microsoft.UI.Xaml.Window
-			?? throw new InvalidOperationException("A Windows platform window is required.");
+		var nativeWindow = (Microsoft.UI.Xaml.Window)Window.Handler.PlatformView;
 
 		var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(nativeWindow);
 		var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hWnd);
@@ -32,6 +34,9 @@ public class Issue39793 : ContentPage
 
 		_platformTitleBar = appWindow.TitleBar;
 		_originalExtendsContentIntoTitleBar = _platformTitleBar.ExtendsContentIntoTitleBar;
+		_window = Window;
+		_originalWindowTitle = _window.Title;
+		_window.Title = "TitleBar";
 		_platformTitleBar.ExtendsContentIntoTitleBar = false;
 	}
 
@@ -40,7 +45,9 @@ public class Issue39793 : ContentPage
 		if (_platformTitleBar is not null)
 		{
 			_platformTitleBar.ExtendsContentIntoTitleBar = _originalExtendsContentIntoTitleBar;
+			_window.Title = _originalWindowTitle;
 			_platformTitleBar = null;
+			_window = null;
 		}
 
 		base.OnDisappearing();
