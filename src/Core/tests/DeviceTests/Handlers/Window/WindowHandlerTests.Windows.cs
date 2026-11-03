@@ -4,12 +4,36 @@ using Microsoft.Maui.Controls;
 using Microsoft.Maui.DeviceTests.Stubs;
 using Windows.Graphics;
 using Xunit;
+using static Microsoft.Maui.DeviceTests.AssertHelpers;
 using WVisibility = Microsoft.UI.Xaml.Visibility;
 
 namespace Microsoft.Maui.DeviceTests
 {
 	public partial class WindowHandlerTests : CoreHandlerTestBase
 	{
+		[Fact]
+		public async Task NativeTitleBarDoesNotShowDuplicateMauiTitleBar()
+		{
+			var window = new Window(new ContentPage()) { Title = "TitleBar" };
+			window.Created += (_, _) =>
+			{
+				var platformWindow = (UI.Xaml.Window)window.Handler.PlatformView;
+				platformWindow.GetAppWindow().TitleBar.ExtendsContentIntoTitleBar = false;
+			};
+
+			await RunWindowTest(window, async handler =>
+			{
+				Assert.False(handler.PlatformView.GetAppWindow().TitleBar.ExtendsContentIntoTitleBar);
+
+				var rootView = Assert.IsType<WindowRootView>(handler.MauiContext.GetNavigationRootManager().RootView);
+				await AssertEventually(() => rootView.AppTitleBarContentControl is not null);
+				var titleBar = Assert.IsType<UI.Xaml.Controls.ContentControl>(rootView.AppTitleBarContentControl);
+
+				Assert.Equal(WVisibility.Collapsed, titleBar.Visibility);
+				Assert.Equal(0, titleBar.MinHeight);
+			});
+		}
+
 		[Fact(DisplayName = "Back Button Not Visible With No Navigation Page")]
 		public async Task BackButtonNotVisibleWithBasicView()
 		{
