@@ -22,6 +22,7 @@ namespace Microsoft.Maui
 		IntPtr _windowIcon;
 		bool _enableResumeEvent;
 		bool _isActivated;
+		bool _extendsContentIntoTitleBar = true;
 		ViewManagement.UISettings _viewSettings;
 
 		public MauiWinUIWindow()
@@ -32,6 +33,7 @@ namespace Microsoft.Maui
 			Activated += OnActivated;
 			Closed += OnClosedPrivate;
 			VisibilityChanged += OnVisibilityChanged;
+			SizeChanged += OnSizeChanged;
 
 			// We set this to true by default so later on if it's
 			// set to false we know the user toggled this to false 
@@ -104,6 +106,7 @@ namespace Microsoft.Maui
 			Activated -= OnActivated;
 			Closed -= OnClosedPrivate;
 			VisibilityChanged -= OnVisibilityChanged;
+			SizeChanged -= OnSizeChanged;
 			_viewSettings.ColorValuesChanged -= ViewSettingsColorValuesChanged;
 
 			if (_windowIcon != IntPtr.Zero)
@@ -219,6 +222,25 @@ namespace Microsoft.Maui
 		void ViewSettingsColorValuesChanged(ViewManagement.UISettings sender, object args)
 		{
 			DispatcherQueue.TryEnqueue(SetTileBarButtonColors);
+		}
+
+		void OnSizeChanged(object sender, UI.Xaml.WindowSizeChangedEventArgs args)
+		{
+			 UpdateTitleBarMode();
+		}
+
+		void UpdateTitleBarMode()
+		{
+			if (Window?.Handler?.MauiContext is not IMauiContext mauiContext)
+				return;
+
+			var titleBar = this.GetAppWindow()?.TitleBar;
+			if (titleBar is null || titleBar.ExtendsContentIntoTitleBar == _extendsContentIntoTitleBar)
+				return;
+
+			_extendsContentIntoTitleBar = titleBar.ExtendsContentIntoTitleBar;
+			mauiContext.GetNavigationRootManager().UpdateTitleBarVisibility();
+			SetTileBarButtonColors();
 		}
 
 		internal void SetTileBarButtonColors()
