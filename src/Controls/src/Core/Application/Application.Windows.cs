@@ -20,6 +20,8 @@ namespace Microsoft.Maui.Controls
 		partial void OnPlatformWindowAdded(Window window)
 		{
 			window.HandlerChanged += OnWindowHandlerChanged;
+			window.HandlerChanging += OnWindowHandlerChanging;
+			ConnectTitleBarModeChanged(window);
 
 			if (_currentThemeForWindows is not null && window.Handler is not null)
 			{
@@ -30,12 +32,37 @@ namespace Microsoft.Maui.Controls
 		partial void OnPlatformWindowRemoved(Window window)
 		{
 			window.HandlerChanged -= OnWindowHandlerChanged;
+			window.HandlerChanging -= OnWindowHandlerChanging;
+			if (window.Handler?.PlatformView is MauiWinUIWindow platformWindow)
+				platformWindow.TitleBarModeChanged -= OnTitleBarModeChanged;
+		}
+
+		void OnWindowHandlerChanging(object? sender, HandlerChangingEventArgs e)
+		{
+			if (e.OldHandler?.PlatformView is MauiWinUIWindow platformWindow)
+				platformWindow.TitleBarModeChanged -= OnTitleBarModeChanged;
+		}
+
+		void ConnectTitleBarModeChanged(Window window)
+		{
+			if (window.Handler?.PlatformView is MauiWinUIWindow platformWindow)
+			{
+				platformWindow.TitleBarModeChanged -= OnTitleBarModeChanged;
+				platformWindow.TitleBarModeChanged += OnTitleBarModeChanged;
+			}
+		}
+
+		void OnTitleBarModeChanged(object? sender, EventArgs e)
+		{
+			if (sender is MauiWinUIWindow platformWindow && platformWindow.Content is FrameworkElement root)
+				SetTitleBarButtonColors(platformWindow, root.ActualTheme == ElementTheme.Dark);
 		}
 
 		void OnWindowHandlerChanged(object? sender, EventArgs e)
 		{
 			if (sender is Window window)
 			{
+				ConnectTitleBarModeChanged(window);
 				TryApplyThemeToWindow(window);
 			}
 		}
@@ -132,6 +159,12 @@ namespace Microsoft.Maui.Controls
 				{
 					if (!titleBar.ExtendsContentIntoTitleBar)
 					{
+						titleBar.PreferredTheme = UserAppTheme switch
+						{
+							AppTheme.Dark => TitleBarTheme.Dark,
+							AppTheme.Light => TitleBarTheme.Light,
+							_ => TitleBarTheme.UseDefaultAppMode
+						};
 						titleBar.ButtonBackgroundColor = null;
 						titleBar.ButtonInactiveBackgroundColor = null;
 						titleBar.ButtonHoverBackgroundColor = null;
