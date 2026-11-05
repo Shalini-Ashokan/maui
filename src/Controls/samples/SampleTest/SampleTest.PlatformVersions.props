@@ -1,0 +1,6 @@
+<Project>
+	<PropertyGroup Condition="'$(_MauiTargetPlatformIsiOS)' == 'True' OR '$(_MauiTargetPlatformIsMacCatalyst)' == 'True'">
+		<SupportedOSPlatformVersion>17.0</SupportedOSPlatformVersion>
+		<TargetPlatformMinVersion>17.0</TargetPlatformMinVersion>
+	</PropertyGroup>
+</Project>
