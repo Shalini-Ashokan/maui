@@ -111,7 +111,6 @@
                         <Grid x:Name="RootGrid" RowSpacing="0" ColumnSpacing="0" Margin="0" Padding="0">
                             <ContentControl x:Name="AppTitleBarContainer"
                                             IsTabStop="False"
-                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                             VerticalAlignment="Top"
                                             VerticalContentAlignment="Stretch"
                                             HorizontalContentAlignment="Stretch"

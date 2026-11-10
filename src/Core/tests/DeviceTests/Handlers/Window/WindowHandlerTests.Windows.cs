@@ -161,6 +161,62 @@ namespace Microsoft.Maui.DeviceTests
 			});
 		}
 
+		[Theory]
+		[InlineData(AppTheme.Light, AppTheme.Dark)]
+		[InlineData(AppTheme.Dark, AppTheme.Light)]
+		public async Task WindowTitleForegroundUpdatesWhenUserAppThemeChanges(AppTheme initialTheme, AppTheme changedTheme)
+		{
+			await InvokeOnMainThreadAsync(async () =>
+			{
+				var app = Application.Current;
+				var originalTheme = app.UserAppTheme;
+
+				try
+				{
+					app.UserAppTheme = initialTheme;
+
+					var window = new Window(new ContentPage())
+					{
+						Title = "Issue 40066"
+					};
+
+					await RunWindowTest(window, async handler =>
+					{
+						var root = Assert.IsType<WindowRootView>(handler.MauiContext.GetNavigationRootManager().RootView);
+						await AssertEventually(() => root.AppTitle is { IsLoaded: true },
+							message: "The native window title did not load.");
+
+						var title = root.AppTitle;
+						Assert.Equal(window.Title, title.Text);
+						Assert.Equal(WVisibility.Visible, title.Visibility);
+						Assert.True(title.ActualWidth > 0 && title.ActualHeight > 0);
+
+						// Check the displayed title's brush, not just the root's theme or foreground.
+						var initialColor = Assert.IsType<UI.Xaml.Media.SolidColorBrush>(title.Foreground).Color;
+
+						app.UserAppTheme = changedTheme;
+
+						await AssertEventually(() =>
+							title.Foreground is UI.Xaml.Media.SolidColorBrush brush && brush.Color != initialColor,
+							message: $"Issue 40066: window title foreground did not update from {initialTheme} to {changedTheme}.");
+						var changedColor = Assert.IsType<UI.Xaml.Media.SolidColorBrush>(title.Foreground).Color;
+						Assert.NotEqual(initialColor, changedColor);
+
+						app.UserAppTheme = initialTheme;
+
+						await AssertEventually(() =>
+							title.Foreground is UI.Xaml.Media.SolidColorBrush brush && brush.Color == initialColor,
+							message: $"Issue 40066: window title foreground did not return from {changedTheme} to {initialTheme}.");
+						Assert.Equal(initialColor, Assert.IsType<UI.Xaml.Media.SolidColorBrush>(title.Foreground).Color);
+					});
+				}
+				finally
+				{
+					app.UserAppTheme = originalTheme;
+				}
+			});
+		}
+
 		void MovePlatformWindow(UI.Xaml.Window window, Rect rect)
 		{
 			var density = window.GetDisplayDensity();

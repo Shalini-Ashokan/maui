@@ -2,6 +2,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
+using Microsoft.UI.Xaml.Media;
 
 namespace Microsoft.Maui.Platform
 {
@@ -10,7 +11,6 @@ namespace Microsoft.Maui.Platform
 		readonly WeakReference<Window> _platformWindow;
 		WindowRootView _rootView;
 		bool _disconnected = true;
-		bool _isWindowActive = true;
 		internal event EventHandler? OnApplyTemplateFinished;
 
 		public NavigationRootManager(Window platformWindow)
@@ -69,11 +69,9 @@ namespace Microsoft.Maui.Platform
 				.UpdateValue(nameof(IWindow.TitleBarDragRectangles));
 		}
 
-		void WindowRootViewOnApplyTemplateFinished(object? sender, System.EventArgs e)
-		{
-			UpdateWindowTitleForeground();
+		void WindowRootViewOnApplyTemplateFinished(object? sender, System.EventArgs e) =>
 			OnApplyTemplateFinished?.Invoke(this, EventArgs.Empty);
-		}
+
 
 		void OnBackRequested(NavigationView sender, NavigationViewBackRequestedEventArgs args)
 		{
@@ -190,23 +188,8 @@ namespace Microsoft.Maui.Platform
 
 		void OnWindowActivated(object sender, WindowActivatedEventArgs e)
 		{
-			_isWindowActive = e.WindowActivationState != WindowActivationState.Deactivated;
-			UpdateWindowTitleForeground();
-		}
-
-		void UpdateWindowTitleForeground()
-		{
-			if (_rootView.AppTitleBarContainer is null)
-				return;
-
-			// Keep the foreground bound to an element-scoped theme resource rather than an application-level brush.
-			_rootView.SetBinding(WindowRootView.WindowTitleForegroundProperty, new Binding
-			{
-				Source = _rootView.AppTitleBarContainer,
-				Path = new PropertyPath(nameof(Control.Foreground))
-			});
-
-			VisualStateManager.GoToState(_rootView, _isWindowActive ? "WindowActivated" : "WindowDeactivated", false);
+			var isWindowActive = e.WindowActivationState != WindowActivationState.Deactivated;
+			VisualStateManager.GoToState(_rootView, isWindowActive ? "WindowActivated" : "WindowDeactivated", false);
 		}
 	}
 }

@@ -147,7 +147,11 @@ namespace Microsoft.Maui.Platform
 			AppTitleBarContainer = (FrameworkElement)GetTemplateChild("AppTitleBarContainer");
 			AppTitleBarContentControl = (ContentControl?)GetTemplateChild("AppTitleBarContentControl") ??
 				AppTitleBarContainer.GetDescendantByName<ContentControl>("AppTitleBarContentControl");
-
+            _rootView.SetBinding(WindowRootView.WindowTitleForegroundProperty, new Binding
+			{
+				Source = _rootView.AppTitleBarContainer,
+				Path = new PropertyPath(nameof(Control.Foreground))
+			});
 			if (AppTitleBarContentControl != null)
 			{
 				LoadAppTitleBarContainer();
