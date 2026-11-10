@@ -57,25 +57,20 @@
         </ContentControl>
     </DataTemplate>
 
-    <Style TargetType="maui:WindowRootView">
+  <Style x:Key="MauiWindowTitleBarActiveStyle" TargetType="ContentControl">
+    <Setter Property="Foreground" Value="{ThemeResource TextFillColorPrimaryBrush}"/>
+  </Style>
+
+  <Style x:Key="MauiWindowTitleBarInactiveStyle" TargetType="ContentControl">
+    <Setter Property="Foreground" Value="{ThemeResource TextFillColorDisabledBrush}"/>
+  </Style>
+
+  <Style TargetType="maui:WindowRootView">
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="maui:WindowRootView">
                     <Page Margin="0" Padding="0" x:Name="RootPage">
-                        <VisualStateManager.VisualStateGroups>
-                            <VisualStateGroup x:Name="WindowActivationStates">
-                                <VisualState x:Name="WindowActivated">
-                                    <VisualState.Setters>
-                                        <Setter Target="AppTitleBarContainer.Foreground" Value="{ThemeResource TextFillColorPrimaryBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                                <VisualState x:Name="WindowDeactivated">
-                                    <VisualState.Setters>
-                                        <Setter Target="AppTitleBarContainer.Foreground" Value="{ThemeResource TextFillColorDisabledBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                            </VisualStateGroup>
-                        </VisualStateManager.VisualStateGroups>
+                        
                         <Page.Resources>
 
                             <!-- 
@@ -111,6 +106,7 @@
                         <Grid x:Name="RootGrid" RowSpacing="0" ColumnSpacing="0" Margin="0" Padding="0">
                             <ContentControl x:Name="AppTitleBarContainer"
                                             IsTabStop="False"
+                                            Style="{StaticResource MauiWindowTitleBarActiveStyle}"
                                             VerticalAlignment="Top"
                                             VerticalContentAlignment="Stretch"
                                             HorizontalContentAlignment="Stretch"

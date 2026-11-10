@@ -187,7 +187,16 @@ namespace Microsoft.Maui.Platform
 		void OnWindowActivated(object sender, WindowActivatedEventArgs e)
 		{
 			var isWindowActive = e.WindowActivationState != WindowActivationState.Deactivated;
-			VisualStateManager.GoToState(_rootView, isWindowActive ? "WindowActivated" : "WindowDeactivated", false);
+			if (_rootView.AppTitleBarContainer is not FrameworkElement titleBarContainer)
+				return;
+
+				var styleKey = isWindowActive ? "MauiWindowTitleBarActiveStyle" : "MauiWindowTitleBarInactiveStyle";
+				var style = (Style)Application.Current.Resources[styleKey];
+				if (titleBarContainer.Style == style)
+					return;
+
+			titleBarContainer.Style = style;
+			titleBarContainer.RefreshThemeResources();
 		}
 	}
 }
