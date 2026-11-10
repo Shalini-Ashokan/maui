@@ -170,11 +170,9 @@ namespace Microsoft.Maui.DeviceTests
 			{
 				var app = Application.Current;
 				var originalTheme = app.UserAppTheme;
-
 				try
 				{
 					app.UserAppTheme = initialTheme;
-
 					var window = new Window(new ContentPage())
 					{
 						Title = "Issue 40066"
@@ -193,9 +191,7 @@ namespace Microsoft.Maui.DeviceTests
 
 						// Check the displayed title's brush, not just the root's theme or foreground.
 						var initialColor = Assert.IsType<UI.Xaml.Media.SolidColorBrush>(title.Foreground).Color;
-
 						app.UserAppTheme = changedTheme;
-
 						await AssertEventually(() =>
 							title.Foreground is UI.Xaml.Media.SolidColorBrush brush && brush.Color != initialColor,
 							message: $"Issue 40066: window title foreground did not update from {initialTheme} to {changedTheme}.");
@@ -203,7 +199,6 @@ namespace Microsoft.Maui.DeviceTests
 						Assert.NotEqual(initialColor, changedColor);
 
 						app.UserAppTheme = initialTheme;
-
 						await AssertEventually(() =>
 							title.Foreground is UI.Xaml.Media.SolidColorBrush brush && brush.Color == initialColor,
 							message: $"Issue 40066: window title foreground did not return from {changedTheme} to {initialTheme}.");

@@ -1,7 +1,6 @@
 ﻿using System;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media;
 
 namespace Microsoft.Maui.Platform
@@ -71,7 +70,6 @@ namespace Microsoft.Maui.Platform
 
 		void WindowRootViewOnApplyTemplateFinished(object? sender, System.EventArgs e) =>
 			OnApplyTemplateFinished?.Invoke(this, EventArgs.Empty);
-
 
 		void OnBackRequested(NavigationView sender, NavigationViewBackRequestedEventArgs args)
 		{

@@ -8,6 +8,7 @@ using Microsoft.UI.Input;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.Win32;
 using Windows.Foundation;
@@ -147,9 +148,10 @@ namespace Microsoft.Maui.Platform
 			AppTitleBarContainer = (FrameworkElement)GetTemplateChild("AppTitleBarContainer");
 			AppTitleBarContentControl = (ContentControl?)GetTemplateChild("AppTitleBarContentControl") ??
 				AppTitleBarContainer.GetDescendantByName<ContentControl>("AppTitleBarContentControl");
-            _rootView.SetBinding(WindowRootView.WindowTitleForegroundProperty, new Binding
+
+			SetBinding(WindowTitleForegroundProperty, new Binding
 			{
-				Source = _rootView.AppTitleBarContainer,
+				Source = AppTitleBarContainer,
 				Path = new PropertyPath(nameof(Control.Foreground))
 			});
 			if (AppTitleBarContentControl != null)
