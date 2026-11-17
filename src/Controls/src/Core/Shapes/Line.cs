@@ -85,7 +85,22 @@ namespace Microsoft.Maui.Controls.Shapes
 				propertyName == Y1Property.PropertyName ||
 				propertyName == X2Property.PropertyName ||
 				propertyName == Y2Property.PropertyName)
+			{
 				Handler?.UpdateValue(nameof(IShapeView.Shape));
+				
+				// Force layout and redraw on iOS/MacCatalyst to ensure x:Reference bindings work correctly
+#if IOS || MACCATALYST
+				if (Handler is IShapeViewHandler shapeHandler && shapeHandler.PlatformView != null)
+				{
+					// Invalidate measure to ensure the Line view is properly sized for the new coordinates
+					InvalidateMeasure();
+					
+					// Update the shape and force a redraw
+					shapeHandler.PlatformView?.UpdateShape(this);
+					shapeHandler.PlatformView?.InvalidateShape(this);
+				}
+#endif
+			}
 		}
 
 		public override PathF GetPath()
