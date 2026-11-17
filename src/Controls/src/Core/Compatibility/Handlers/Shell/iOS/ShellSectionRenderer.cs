@@ -578,12 +578,18 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 			var page = e.Page;
 			var animated = e.Animated;
 
-			_popCompletionTask = new TaskCompletionSource<bool>();
-			e.Task = _popCompletionTask.Task;
+			var task = new TaskCompletionSource<bool>();
+			_popCompletionTask = task;
+			e.Task = task.Task;
+			var showsPresentation = IsSelectedTab;
 
 			PopViewController(animated);
 
-			await _popCompletionTask.Task;
+			// An unselected tab may not receive the DidShowViewController callback.
+			if (!showsPresentation)
+				task.TrySetResult(true);
+
+			await task.Task;
 
 			DisposePage(page);
 		}
@@ -618,11 +624,13 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 			var animated = e.Animated;
 			var task = new TaskCompletionSource<bool>();
 			var pages = _shellSection.Stack.ToList();
+			var showsPresentation = IsSelectedTab;
 
 			try
 			{
 				_ignorePopCall = true;
-				_completionTasks[_renderer.ViewController] = task;
+				if (showsPresentation)
+					_completionTasks[_renderer.ViewController] = task;
 				e.Task = task.Task;
 				PopToRootViewController(animated);
 			}
@@ -630,6 +638,9 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 			{
 				_ignorePopCall = false;
 			}
+
+			if (!showsPresentation)
+				task.TrySetResult(true);
 
 			await e.Task;
 
@@ -841,6 +852,10 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 			}
 		}
 
+		bool IsSelectedTab =>
+			ParentViewController is not UITabBarController tabBarController ||
+			ReferenceEquals(tabBarController.SelectedViewController, this);
+
 		UINavigationController ActiveNavigationController()
 		{
 			if (IsInMoreTab && ParentViewController is UITabBarController tabBarController)
@@ -910,8 +925,7 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 
 			_trackers[page] = tracker;
 
-			var parentTabBar = ParentViewController as UITabBarController;
-			var showsPresentation = parentTabBar == null || ReferenceEquals(parentTabBar.SelectedViewController, this);
+			var showsPresentation = IsSelectedTab;
 			if (completionSource != null && showsPresentation)
 				_completionTasks[pageViewController] = completionSource;
 

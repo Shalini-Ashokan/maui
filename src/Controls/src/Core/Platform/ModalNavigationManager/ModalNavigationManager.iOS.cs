@@ -19,13 +19,18 @@ namespace Microsoft.Maui.Controls.Platform
 		// the background so we don't care if it becomes inactive
 		bool _platformActivated;
 		bool _waitForModalToFinish;
+		Shell? _shellWaitingForNavigation;
 
 		partial void InitializePlatform()
 		{
 			_window.Activated += OnWindowActivated;
 			_window.Resumed += (_, _) => SyncPlatformModalStack();
 			_window.HandlerChanging += OnPlatformWindowHandlerChanging;
-			_window.Destroying += (_, _) => _platformActivated = false;
+			_window.Destroying += (_, _) =>
+			{
+				_platformActivated = false;
+				DisconnectShellNavigation();
+			};
 			_window.PropertyChanging += OnWindowPropertyChanging;
 			_platformActivated = _window.IsActivated;
 		}
@@ -36,6 +41,8 @@ namespace Microsoft.Maui.Controls.Platform
 			{
 				return;
 			}
+
+			DisconnectShellNavigation();
 
 			if (_currentPage is not null &&
 				_currentPage.Handler is IPlatformViewHandler pvh &&
@@ -49,13 +56,41 @@ namespace Microsoft.Maui.Controls.Platform
 			}
 		}
 
-		Task SyncModalStackWhenPlatformIsReadyCoreAsync() =>
-			SyncPlatformModalStackAsync();
+		Task SyncModalStackWhenPlatformIsReadyCoreAsync()
+		{
+			if (IsWaitingForShellNavigation)
+				return Task.CompletedTask;
 
-		bool IsModalPlatformReadyCore => _platformActivated && !_waitForModalToFinish;
+			DisconnectShellNavigation();
+			return SyncPlatformModalStackAsync();
+		}
+
+		bool IsWaitingForShellNavigation =>
+			_shellWaitingForNavigation is not null &&
+			ReferenceEquals(_window.Page, _shellWaitingForNavigation) &&
+			_shellWaitingForNavigation.NavigationManager.AccumulateNavigatedEvents;
+
+		bool IsModalPlatformReadyCore =>
+			_platformActivated && !_waitForModalToFinish && !IsWaitingForShellNavigation;
+
+		void OnShellNavigated(object? sender, ShellNavigatedEventArgs e)
+		{
+			DisconnectShellNavigation();
+			SyncModalStackWhenPlatformIsReady();
+		}
+
+		void DisconnectShellNavigation()
+		{
+			if (_shellWaitingForNavigation is Shell shell)
+			{
+				shell.NavigationManager.Navigated -= OnShellNavigated;
+				_shellWaitingForNavigation = null;
+			}
+		}
 
 		void OnPlatformWindowHandlerChanging(object? sender, HandlerChangingEventArgs e)
 		{
+			DisconnectShellNavigation();
 			_platformActivated = _window.IsActivated;
 		}
 
@@ -108,6 +143,18 @@ namespace Microsoft.Maui.Controls.Platform
 
 		Task PushModalPlatformCoreAsync(Page modal, bool animated)
 		{
+			if (_platformModalPages.Count == 0 &&
+				_window.Page is Shell shell &&
+				shell.NavigationManager.AccumulateNavigatedEvents)
+			{
+				// Shell may pop and replace this modal while preparing an absolute route.
+				// Keep it logical-only until the final stack and selected tab are settled.
+				DisconnectShellNavigation();
+				_shellWaitingForNavigation = shell;
+				shell.NavigationManager.Navigated += OnShellNavigated;
+				return Task.CompletedTask;
+			}
+
 			EndEditing();
 
 			_platformModalPages.Add(modal);
