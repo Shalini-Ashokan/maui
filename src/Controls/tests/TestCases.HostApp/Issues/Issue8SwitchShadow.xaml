@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx:2009/xaml"
+             x:Class="Maui.Controls.Sample.Issues.Issue8SwitchShadow"
+             Title="Switch Shadow Issue">
+    <StackLayout Padding="20" Spacing="40">
+        <Label Text="Toggle the switch to test if shadow follows the thumb"
+               FontSize="18"
+               HorizontalOptions="Center"/>
+        
+        <Label Text="Switch with Shadow:"
+               FontSize="16"
+               FontAttributes="Bold"/>
+        
+        <Switch x:Name="TestSwitch"
+                AutomationId="SwitchWithShadow"
+                HorizontalOptions="Center"
+                VerticalOptions="Center">
+            <Switch.Shadow>
+                <Shadow Brush="Black"
+                        Offset="5,5"
+                        Radius="10"
+                        Opacity="0.5"/>
+            </Switch.Shadow>
+        </Switch>
+        
+        <Label Text="Switch state will be shown here"
+               x:Name="StatusLabel"
+               AutomationId="StatusLabel"
+               FontSize="16"
+               HorizontalOptions="Center"/>
+        
+        <Button Text="Toggle Switch Programmatically"
+                AutomationId="ToggleButton"
+                Clicked="OnToggleClicked"
+                HorizontalOptions="Center"/>
+    </StackLayout>
+</ContentPage>

@@ -3,6 +3,7 @@ using Android.Graphics.Drawables;
 using Android.Nfc.CardEmulators;
 using Android.Widget;
 using Microsoft.Maui.Graphics;
+using Microsoft.Maui.Platform;
 using ASwitch = AndroidX.AppCompat.Widget.SwitchCompat;
 
 namespace Microsoft.Maui.Handlers
@@ -71,6 +72,12 @@ namespace Microsoft.Maui.Handlers
 				return;
 
 			VirtualView.IsOn = isOn;
+			
+			// Simple invalidation to trigger shadow redraw
+			if (VirtualView.Shadow is not null)
+			{
+				ContainerView?.Invalidate();
+			}
 		}
 
 		sealed class CheckedChangeListener : Java.Lang.Object, CompoundButton.IOnCheckedChangeListener
