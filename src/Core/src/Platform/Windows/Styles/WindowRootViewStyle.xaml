@@ -1,21 +1,44 @@
 <ResourceDictionary
-	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-	xmlns:maui="using:Microsoft.Maui.Platform">
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:maui="using:Microsoft.Maui.Platform">
 
-    <maui:DefaultOrUserDataTemplateSelector 
-        UserTemplateName="MauiAppTitleBarTemplate" 
+    <maui:DefaultOrUserDataTemplateSelector
+        UserTemplateName="MauiAppTitleBarTemplate"
         DefaultTemplateName="MauiAppTitleBarTemplateDefault"
         x:Key="MauiAppTitleBarTemplateSelector"/>
 
-    <maui:DefaultOrUserDataTemplateSelector 
-        UserTemplateName="MauiAppTitleBarContainerTemplate" 
+    <maui:DefaultOrUserDataTemplateSelector
+        UserTemplateName="MauiAppTitleBarContainerTemplate"
         DefaultTemplateName="MauiAppTitleBarContainerTemplateDefault"
         x:Key="MauiAppTitleBarContainerTemplateSelector"/>
 
+    <ResourceDictionary x:Key="MauiWindowTitleForegroundResources">
+        <ResourceDictionary.ThemeDictionaries>
+            <ResourceDictionary x:Key="Light">
+                <StaticResource x:Key="Active"
+                        ResourceKey="TextFillColorPrimaryBrush"/>
+                <StaticResource x:Key="Inactive"
+                        ResourceKey="TextFillColorDisabledBrush"/>
+            </ResourceDictionary>
+            <ResourceDictionary x:Key="Dark">
+                <StaticResource x:Key="Active"
+                        ResourceKey="TextFillColorPrimaryBrush"/>
+                <StaticResource x:Key="Inactive"
+                        ResourceKey="TextFillColorDisabledBrush"/>
+            </ResourceDictionary>
+            <ResourceDictionary x:Key="HighContrast">
+                <StaticResource x:Key="Active"
+                        ResourceKey="TextFillColorPrimaryBrush"/>
+                <StaticResource x:Key="Inactive"
+                        ResourceKey="TextFillColorDisabledBrush"/>
+            </ResourceDictionary>
+        </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+
     <DataTemplate x:Key="MauiAppTitleBarTemplateDefault">
         <Grid
-            Canvas.ZIndex="1" 
+            Canvas.ZIndex="1"
             VerticalAlignment="Stretch"
             HorizontalAlignment="Stretch"
             Margin="{Binding WindowTitleMargin}">
@@ -23,30 +46,30 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <Image 
+            <Image
                 x:Name="AppFontIcon"
-                HorizontalAlignment="Left" 
+                HorizontalAlignment="Left"
                 VerticalAlignment="Center"
                 Source="Square44x44Logo.png"
                 Visibility="{Binding WindowTitleIconVisibility}"
-                Width="16" 
+                Width="16"
                 Height="16"
                 Margin="8,0,0,0"/>
             <TextBlock x:Name="AppTitle"
-                 VerticalAlignment="Center"
-                 Margin="16,0,0,0"
-                 MinWidth="48"
-                 Text="{Binding WindowTitle}"
-                 Foreground="{Binding WindowTitleForeground}"
-                 Style="{StaticResource CaptionTextBlockStyle}"
-                 Grid.Column="1"
-                 TextTrimming="CharacterEllipsis"
-                 TextWrapping="NoWrap"/>
+                       VerticalAlignment="Center"
+                       Margin="16,0,0,0"
+                       MinWidth="48"
+                       Text="{Binding WindowTitle}"
+                       Foreground="{Binding WindowTitleForeground}"
+                       Style="{StaticResource CaptionTextBlockStyle}"
+                       Grid.Column="1"
+                       TextTrimming="CharacterEllipsis"
+                       TextWrapping="NoWrap"/>
         </Grid>
     </DataTemplate>
 
     <DataTemplate x:Key="MauiAppTitleBarContainerTemplateDefault">
-        <ContentControl 
+        <ContentControl
             IsTabStop="False"
             HorizontalContentAlignment="Stretch"
             VerticalContentAlignment="Stretch"
@@ -61,17 +84,21 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="maui:WindowRootView">
-                    <Page Margin="0" Padding="0" x:Name="RootPage">
+                    <Page Margin="0"
+                            Padding="0"
+                            x:Name="RootPage">
                         <VisualStateManager.VisualStateGroups>
                             <VisualStateGroup x:Name="WindowActivationStates">
                                 <VisualState x:Name="WindowActivated">
                                     <VisualState.Setters>
-                                        <Setter Target="AppTitleBarContainer.Foreground" Value="{ThemeResource TextFillColorPrimaryBrush}"/>
+                                        <Setter Target="AppTitleBarContainer.Foreground"
+                                                Value="{ThemeResource TextFillColorPrimaryBrush}"/>
                                     </VisualState.Setters>
                                 </VisualState>
                                 <VisualState x:Name="WindowDeactivated">
                                     <VisualState.Setters>
-                                        <Setter Target="AppTitleBarContainer.Foreground" Value="{ThemeResource TextFillColorDisabledBrush}"/>
+                                        <Setter Target="AppTitleBarContainer.Foreground"
+                                                Value="{ThemeResource TextFillColorDisabledBrush}"/>
                                     </VisualState.Setters>
                                 </VisualState>
                             </VisualStateGroup>
@@ -104,11 +131,15 @@
                             <!-- This removes a corner radius that gets applied to the content on the NavigationView when
                                 you are in left pane mode -->
                             <CornerRadius  x:Key="NavigationViewContentGridCornerRadius">0,0,0,0</CornerRadius>
-                            
+
                             <!-- Remove all the padding around the Flyout Items. This way the user can just control the margins. -->
                             <Thickness x:Key="NavigationViewItemContentPresenterMargin">0,0,0,0</Thickness>
                         </Page.Resources>
-                        <Grid x:Name="RootGrid" RowSpacing="0" ColumnSpacing="0" Margin="0" Padding="0">
+                        <Grid x:Name="RootGrid"
+                                RowSpacing="0"
+                                ColumnSpacing="0"
+                                Margin="0"
+                                Padding="0">
                             <ContentControl x:Name="AppTitleBarContainer"
                                             IsTabStop="False"
                                             VerticalAlignment="Top"
@@ -117,8 +148,7 @@
                                             Canvas.ZIndex="1"
                                             Margin="{TemplateBinding WindowTitleBarContainerMargin}"
                                             DataContext="{Binding RelativeSource={RelativeSource TemplatedParent}}"
-                                            ContentTemplateSelector="{StaticResource MauiAppTitleBarContainerTemplateSelector}"
-                                            >
+                                            ContentTemplateSelector="{StaticResource MauiAppTitleBarContainerTemplateSelector}">
                             </ContentControl>
                             <ContentPresenter Canvas.ZIndex="0"></ContentPresenter>
                         </Grid>

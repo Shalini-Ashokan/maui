@@ -1,3 +1,22 @@
 ﻿<ContentPage x:Class="Maui.Controls.Sample.MainPage"
-             xmlns:local="clr-namespace:Maui.Controls.Sample">
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             Title="PR #40369: legacy root template">
+    <Grid Padding="24">
+        <ScrollView>
+            <VerticalStackLayout Spacing="12">
+                <Label Text="Windows: old app-owned WindowRootView template" FontAttributes="Bold" />
+                <Label Text="The native app resource template omits WindowActivated/WindowDeactivated but keeps MAUI's default title content." />
+                <Label Text="1. Select Light. Keep Sandbox and another nonmaximized app visible side by side." />
+                <Label Text="2. Without changing theme, click the other app. Watch the Sandbox title text (not the page heading or caption buttons), then click Sandbox again." />
+                <Label Text="3. Repeat in Dark. Expected: the inactive title dims and becomes normal again on activation." />
+                <HorizontalStackLayout Spacing="12">
+                    <Button Text="Light" Clicked="OnLightClicked" />
+                    <Button Text="Dark" Clicked="OnDarkClicked" />
+                </HorizontalStackLayout>
+                <Label Text="PR #40369 without the compatibility fallback: the inactive title fails to dim. With the existing fallback: dimming should work; this is a validation scenario, not an expected failure." />
+                <Label Text="Optional baseline: temporarily remove only the app-owned WindowRootView style from Platforms/Windows/App.xaml to compare MAUI's default template, then restore the style." />
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
 </ContentPage>

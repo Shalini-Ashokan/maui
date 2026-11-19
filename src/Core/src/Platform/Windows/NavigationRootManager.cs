@@ -69,8 +69,13 @@ namespace Microsoft.Maui.Platform
 				.UpdateValue(nameof(IWindow.TitleBarDragRectangles));
 		}
 
-		void WindowRootViewOnApplyTemplateFinished(object? sender, System.EventArgs e) =>
+		void WindowRootViewOnApplyTemplateFinished(object? sender, System.EventArgs e)
+		{
+			if (!_disconnected)
+				UpdateWindowTitleForeground();
+
 			OnApplyTemplateFinished?.Invoke(this, EventArgs.Empty);
+		}
 
 		void OnBackRequested(NavigationView sender, NavigationViewBackRequestedEventArgs args)
 		{
@@ -203,7 +208,16 @@ namespace Microsoft.Maui.Platform
 
 		void UpdateWindowTitleForeground()
 		{
-			VisualStateManager.GoToState(_rootView, _isWindowActive ? "WindowActivated" : "WindowDeactivated", false);
+			if (VisualStateManager.GoToState(_rootView, _isWindowActive ? "WindowActivated" : "WindowDeactivated", false))
+				return;
+
+			// Older app-owned root templates do not have the activation visual states.
+			var resources = (ResourceDictionary)Application.Current.Resources["MauiWindowTitleForegroundResources"];
+			var theme = new global::Windows.UI.ViewManagement.AccessibilitySettings().HighContrast
+				? "HighContrast"
+				: _rootView.ActualTheme.ToString();
+			var themeResources = (ResourceDictionary)resources.ThemeDictionaries[theme];
+			_rootView.WindowTitleForeground = (Brush)themeResources[_isWindowActive ? "Active" : "Inactive"];
 		}
 	}
 }
