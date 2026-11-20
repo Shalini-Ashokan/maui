@@ -149,4 +149,20 @@ namespace Microsoft.Maui.Maps
 		/// <returns>The image to use for the cluster marker, or <see langword="null"/> to use the default marker.</returns>
 		IImageSource? GetClusterImage(IReadOnlyList<IMapPin> pins, int count, Location location);
 	}
+
+	/// <summary>
+	/// Optional contract for map implementations that configure custom marker image sizes.
+	/// </summary>
+	public interface IMapIconSizeProvider
+	{
+		/// <summary>
+		/// Gets the square bounding-box size, in pixels, for custom pin and cluster images on Android.
+		/// </summary>
+		/// <remarks>
+		/// Values are clamped to 64 through 250 pixels. Images retain their aspect ratio.
+		/// Maps that do not implement this contract use 100 pixels.
+		/// Default marker images are unaffected. Other platforms ignore this setting.
+		/// </remarks>
+		int CustomIconSize { get; }
+	}
 }

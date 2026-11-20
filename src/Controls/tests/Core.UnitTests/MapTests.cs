@@ -18,6 +18,23 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 
 	public class MapTests : BaseTestFixture
 	{
+		[Theory]
+		[InlineData(int.MinValue, 64)]
+		[InlineData(63, 64)]
+		[InlineData(64, 64)]
+		[InlineData(120, 120)]
+		[InlineData(250, 250)]
+		[InlineData(251, 250)]
+		[InlineData(int.MaxValue, 250)]
+		public void CustomIconSizeIsClampedToSupportedRange(int requestedSize, int expectedSize)
+		{
+			var map = new Map();
+
+			map.SetValue(Map.CustomIconSizeProperty, requestedSize);
+
+			Assert.Equal(expectedSize, map.CustomIconSize);
+		}
+
 		[Fact]
 		public void AddPin()
 		{
@@ -1536,6 +1553,25 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 			Assert.NotNull(firstKey);
 			Assert.StartsWith("file:", firstKey, StringComparison.Ordinal);
 			Assert.Equal(firstKey, secondKey);
+		}
+
+		[Fact]
+		public async Task IconCacheDoesNotReuseDifferentIconSizes()
+		{
+			var source = new FileImageSource { File = "icon.png" };
+			var cache = new IconCache<object>(2);
+			var smallIcon = new object();
+			var largeIcon = new object();
+			var smallKey = MapHandler.GetIconCacheKey(source, 100);
+			var largeKey = MapHandler.GetIconCacheKey(source, 250);
+
+			var small = await cache.GetOrCreateAsync(smallKey, () => Task.FromResult<object?>(smallIcon), () => DateTime.MaxValue);
+			var large = await cache.GetOrCreateAsync(largeKey, () => Task.FromResult<object?>(largeIcon), () => DateTime.MaxValue);
+			var repeatedSmall = await cache.GetOrCreateAsync(smallKey, () => Task.FromResult<object?>(new object()), () => DateTime.MaxValue);
+
+			Assert.Same(smallIcon, small);
+			Assert.Same(largeIcon, large);
+			Assert.Same(smallIcon, repeatedSmall);
 		}
 
 		[Fact]

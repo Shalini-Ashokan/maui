@@ -1,1 +1,4 @@
 #nullable enable
+Microsoft.Maui.Maps.IMapIconSizeProvider
+Microsoft.Maui.Maps.IMapIconSizeProvider.CustomIconSize.get -> int
+static Microsoft.Maui.Maps.Handlers.MapHandler.MapCustomIconSize(Microsoft.Maui.Maps.Handlers.IMapHandler! handler, Microsoft.Maui.Maps.IMap! map) -> void

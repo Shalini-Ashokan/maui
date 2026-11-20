@@ -212,6 +212,17 @@ namespace Microsoft.Maui.Maps.Handlers
 			googleMap?.UpdateMapStyle(map);
 		}
 
+		/// <summary>
+		/// Rebuilds markers to apply the map's custom icon size on Android.
+		/// </summary>
+		/// <param name="handler">The map handler.</param>
+		/// <param name="map">The map control.</param>
+		public static void MapCustomIconSize(IMapHandler handler, IMap map)
+		{
+			if (handler.Map != null)
+				handler.UpdateValue(nameof(IMap.Pins));
+		}
+
 		public static void MapMoveToRegion(IMapHandler handler, IMap map, object? arg)
 		{
 			if (arg is MoveToRegionRequest request && request.Region != null)
@@ -929,7 +940,7 @@ namespace Microsoft.Maui.Maps.Handlers
 			{
 				// Clustering re-runs AddPins on every zoom change, so without the cache the icon of
 				// every un-clustered pin is decoded and rescaled again on each pass.
-				var icon = await GetIconAsync(_pinIconCache, requestedSource, MauiContext, ct);
+				var icon = await GetIconAsync(_pinIconCache, requestedSource, MauiContext, GetCustomIconSize(VirtualView), ct);
 
 				// Re-checked after the await: UpdatePinImageSourceAsync can have applied a newer
 				// source in the meantime, and it guards its own write the same way. Without this
@@ -973,7 +984,7 @@ namespace Microsoft.Maui.Maps.Handlers
 				// into a single load, and the next recluster pass finds the entry. Note GetIconAsync
 				// drops ct for a keyable load, so this can outlive a pins reset - the guards below
 				// still discard the result.
-				icon = await GetIconAsync(_pinIconCache, requestedSource, mauiContext, ct);
+				icon = await GetIconAsync(_pinIconCache, requestedSource, mauiContext, GetCustomIconSize(VirtualView), ct);
 				// null means load failed/cancelled - leave the marker's current icon untouched.
 				if (icon == null)
 					return;
@@ -996,25 +1007,30 @@ namespace Microsoft.Maui.Maps.Handlers
 			}
 		}
 
-		// One decoded descriptor backs every marker naming the same image, so a recluster pass reuses
+		static int GetCustomIconSize(IMap? map) =>
+			map is IMapIconSizeProvider sizeProvider
+				? Math.Max(64, Math.Min(250, sizeProvider.CustomIconSize))
+				: IconSize;
+
+		// One decoded descriptor backs every marker naming the same image and size, so a recluster pass reuses
 		// it instead of decoding per marker. GetIconCacheKey returns null for a source that can't be
 		// keyed stably, or that opted out of caching - those load fresh every time, which is also why
 		// they keep this caller's ct: nobody else is waiting on them. A keyable load is shared, so it
 		// must not be cancelled by whichever caller happened to start it.
-		static Task<BitmapDescriptor?> GetIconAsync(IconCache<BitmapDescriptor> cache, IImageSource imageSource, IMauiContext mauiContext, CancellationToken ct)
+		static Task<BitmapDescriptor?> GetIconAsync(IconCache<BitmapDescriptor> cache, IImageSource imageSource, IMauiContext mauiContext, int iconSize, CancellationToken ct)
 		{
-			var cacheKey = GetIconCacheKey(imageSource);
+			var cacheKey = GetIconCacheKey(imageSource, iconSize);
 			var loadToken = cacheKey is null ? ct : CancellationToken.None;
 
 			return cache.GetOrCreateAsync(
 				cacheKey,
-				() => LoadPinIconAsync(imageSource, mauiContext, loadToken),
+				() => LoadPinIconAsync(imageSource, mauiContext, iconSize, loadToken),
 				() => GetIconCacheExpiry(imageSource));
 		}
 
 		// Loads imageSource into a BitmapDescriptor
 		// Returns null on cancel/failure/no drawable.
-		static async Task<BitmapDescriptor?> LoadPinIconAsync(IImageSource imageSource, IMauiContext mauiContext, CancellationToken ct)
+		static async Task<BitmapDescriptor?> LoadPinIconAsync(IImageSource imageSource, IMauiContext mauiContext, int iconSize, CancellationToken ct)
 		{
 			IImageSourceServiceResult<ADrawable>? result = null;
 
@@ -1028,7 +1044,7 @@ namespace Microsoft.Maui.Maps.Handlers
 				// reads it once the descriptor exists. Disposed rather than recycled: this drops
 				// the JNI peer and leaves the pixels to the Java GC, which stays correct even if
 				// FromBitmap retained the source rather than copying it. Recycling would not.
-				using var bitmap = DrawableToBitmap(drawable);
+				using var bitmap = DrawableToBitmap(drawable, iconSize);
 				if (bitmap is null)
 					return null;
 
@@ -1101,7 +1117,7 @@ namespace Microsoft.Maui.Maps.Handlers
 
 			BitmapDescriptor? icon = null;
 			if (image != null)
-				icon = await GetIconAsync(_clusterIconCache, image, mauiContext, ct);
+				icon = await GetIconAsync(_clusterIconCache, image, mauiContext, GetCustomIconSize(virtualView), ct);
 
 			if (ct.IsCancellationRequested || !ReferenceEquals(Map, map))
 				return;
@@ -1119,11 +1135,11 @@ namespace Microsoft.Maui.Maps.Handlers
 			}
 		}
 
-		static ABitmap? DrawableToBitmap(ADrawable drawable)
+		static ABitmap? DrawableToBitmap(ADrawable drawable, int iconSize)
 		{
 			if (drawable is ABitmapDrawable bitmapDrawable && bitmapDrawable.Bitmap is ABitmap source)
 			{
-				var sized = ScaleBitmap(source, IconSize, IconSize);
+				var sized = ScaleBitmap(source, iconSize, iconSize);
 				if (!ReferenceEquals(sized, source))
 					return sized;
 
@@ -1147,8 +1163,8 @@ namespace Microsoft.Maui.Maps.Handlers
 
 			if (width <= 0 || height <= 0)
 			{
-				width = IconSize;
-				height = IconSize;
+				width = iconSize;
+				height = iconSize;
 			}
 
 			var bitmap = ABitmap.CreateBitmap(width, height, ABitmap.Config.Argb8888!);
@@ -1160,7 +1176,7 @@ namespace Microsoft.Maui.Maps.Handlers
 			drawable.Draw(canvas);
 			canvas.Dispose();
 
-			var scaled = ScaleBitmap(bitmap, IconSize, IconSize);
+			var scaled = ScaleBitmap(bitmap, iconSize, iconSize);
 			if (scaled != bitmap)
 				bitmap.Dispose();
 			return scaled;
@@ -1175,8 +1191,8 @@ namespace Microsoft.Maui.Maps.Handlers
 			float heightRatio = (float)targetHeight / height;
 			float ratio = Math.Min(widthRatio, heightRatio);
 
-			int newWidth = (int)(width * ratio);
-			int newHeight = (int)(height * ratio);
+			int newWidth = Math.Max(1, (int)(width * ratio));
+			int newHeight = Math.Max(1, (int)(height * ratio));
 
 			return ABitmap.CreateScaledBitmap(source, newWidth, newHeight, true)!;
 		}

@@ -91,7 +91,8 @@ namespace Microsoft.Maui.Controls.Maps
 		/// </summary>
 		/// <remarks>
 		/// Supported image sources include file-based images, embedded resources, URIs, and streams.
-		/// The image will be scaled by the underlying platform to fit within a platform-defined size (32x32 points on iOS, 100x100 pixels on Android).
+		/// The image will be scaled to fit within 32x32 points on iOS.
+		/// On Android, <see cref="Map.CustomIconSize"/> controls the bounding-box size in pixels (100 by default).
 		/// Provide images that look clear when scaled to these sizes.
 		/// </remarks>
 		public ImageSource? ImageSource

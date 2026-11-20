@@ -8,7 +8,7 @@ using Microsoft.Maui.Maps;
 
 namespace Microsoft.Maui.Controls.Maps
 {
-	public partial class Map : IMap, IMapClusterImageProvider, IEnumerable<IMapPin>
+	public partial class Map : IMap, IMapClusterImageProvider, IMapIconSizeProvider, IEnumerable<IMapPin>
 	{
 		IList<IMapElement> IMap.Elements => _mapElements.Cast<IMapElement>().ToList();
 

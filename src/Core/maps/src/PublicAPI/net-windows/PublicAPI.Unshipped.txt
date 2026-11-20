@@ -1,1 +1,3 @@
 #nullable enable
+Microsoft.Maui.Maps.IMapIconSizeProvider
+Microsoft.Maui.Maps.IMapIconSizeProvider.CustomIconSize.get -> int

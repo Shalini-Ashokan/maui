@@ -39,6 +39,10 @@ namespace Microsoft.Maui.Controls.Maps
 			propertyChanging: (b, o, n) => ((Map)b).OnClusterImageSourceChanging((ImageSource?)o),
 			propertyChanged: (b, o, n) => ((Map)b).OnClusterImageSourceChanged((ImageSource?)n));
 
+		/// <summary>Bindable property for <see cref="CustomIconSize"/>.</summary>
+		public static readonly BindableProperty CustomIconSizeProperty = BindableProperty.Create(nameof(CustomIconSize), typeof(int), typeof(Map), 100,
+			coerceValue: (b, v) => Math.Max(64, Math.Min(250, (int)v)));
+
 		/// <summary>Bindable property for <see cref="MapStyle"/>.</summary>
 		public static readonly BindableProperty MapStyleProperty = BindableProperty.Create(nameof(MapStyle), typeof(string), typeof(Map), default(string));
 
@@ -161,14 +165,36 @@ namespace Microsoft.Maui.Controls.Maps
 		/// This is a bindable property.
 		/// </summary>
 		/// <remarks>
-		/// No pin count is drawn over the image. Each platform scales it to a marker-sized icon
-		/// (Android fits within 100 pixels, iOS within 32 points), matching <see cref="Pin.ImageSource"/>.
+		/// No pin count is drawn over the image. Android fits it within <see cref="CustomIconSize"/>
+		/// pixels; iOS fits it within 32 points, matching <see cref="Pin.ImageSource"/>.
 		/// Changing this value rebuilds existing cluster markers immediately.
 		/// </remarks>
 		public ImageSource? ClusterImageSource
 		{
 			get => (ImageSource?)GetValue(ClusterImageSourceProperty);
 			set => SetValue(ClusterImageSourceProperty, value);
+		}
+
+		/// <summary>
+		/// Gets or sets the square bounding-box size, in pixels, for all custom pin and cluster images on Android.
+		/// The default value is 100. This is a bindable property.
+		/// </summary>
+		/// <remarks>
+		/// Values below 64 are clamped to 64, and values above 250 are clamped to 250.
+		/// Images retain their aspect ratio, so a rectangular image may have one dimension smaller than 64.
+		/// Changing this value rebuilds existing markers.
+		/// Google's default pin and the default cluster icon are unaffected.
+		/// This setting is ignored on iOS, MacCatalyst, and Windows.
+		/// </remarks>
+#if !NETSTANDARD
+		[System.Runtime.Versioning.UnsupportedOSPlatform("ios")]
+		[System.Runtime.Versioning.UnsupportedOSPlatform("maccatalyst")]
+		[System.Runtime.Versioning.UnsupportedOSPlatform("windows")]
+#endif
+		public int CustomIconSize
+		{
+			get => (int)GetValue(CustomIconSizeProperty);
+			set => SetValue(CustomIconSizeProperty, value);
 		}
 
 		/// <summary>

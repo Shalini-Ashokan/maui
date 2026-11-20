@@ -31,6 +31,9 @@ namespace Microsoft.Maui.Maps.Handlers
 			[nameof(IMap.IsTrafficEnabled)] = MapIsTrafficEnabled,
 			[nameof(IMap.IsZoomEnabled)] = MapIsZoomEnabled,
 			[nameof(IMap.IsClusteringEnabled)] = MapIsClusteringEnabled,
+#if MONOANDROID
+			[nameof(IMapIconSizeProvider.CustomIconSize)] = MapCustomIconSize,
+#endif
 
 			[nameof(IMap.MapStyle)] = MapMapStyle,
 			[nameof(IMap.Pins)] = MapPins,
@@ -127,6 +130,12 @@ namespace Microsoft.Maui.Maps.Handlers
 					$"font:{font.Glyph}|{font.Font.Family}|{font.Font.Size}|{font.Font.Weight}|{font.Font.Slant}|{font.Font.AutoScalingEnabled}|{font.Color?.ToArgbHex()}",
 				_ => null,
 			};
+
+		internal static string? GetIconCacheKey(IImageSource? source, int iconSize)
+		{
+			var key = GetIconCacheKey(source);
+			return key is null ? null : $"{key}|size:{iconSize}";
+		}
 
 		// URI sources carry an explicit CacheValidity; other stable sources never expire on their own
 		// (the cache is bounded and cleared during handler cleanup). Clamped so a large
