@@ -17,7 +17,9 @@
        and rebuild the entire codebase using: dotnet build ./Microsoft.Maui.BuildTasks.slnf -->
     <UseMaterial3>false</UseMaterial3>
   </PropertyGroup>
-
+<PropertyGroup>
+  <UseiOSShellHandler>true</UseiOSShellHandler>
+</PropertyGroup>
   <PropertyGroup>
     <ApplicationTitle>Sandbox</ApplicationTitle>
     <!-- Workaround for https://github.com/dotnet/sdk/issues/47727
