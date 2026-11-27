@@ -793,6 +793,14 @@ namespace Microsoft.Maui.Controls
 				SemaphoreSlim.Release();
 			}
 
+#if IOS || MACCATALYST
+		// UIKit can complete navigation before the queued Loaded check runs.
+		if (Handler is NavigationViewHandler && CurrentPage is Page currentPage && currentPage.IsLoaded && !currentPage.IsLoadedFired)
+		{
+			currentPage.RefreshPlatformLoadedStatusIfWatching();
+		}																						                     					
+#endif
+
 			// Send navigated event to currently visible pages and associated navigation event
 			fireNavigatedEvents?.Invoke();
 		}
